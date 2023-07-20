@@ -80,6 +80,13 @@ config MACH_RK3568_EVB
 	help
 	  Say Y here if you are using a RK3568 EVB
 
+config MACH_RK3568_MG_EVB
+	select ARCH_RK3568
+	depends on $(success,test -e $(srctree)/arch/arm/boards/rockchip-rk3568-mg-evb/sdram-init.bin)
+	bool "MG RK3568 EVB"
+	help
+	  Say Y here if you are using a MacroGroup RK3568 EVB
+
 config MACH_RK3568_BPI_R2PRO
 	select ARCH_RK3568
 	depends on $(success,test -e $(srctree)/arch/arm/boards/rockchip-rk3568-bpi-r2pro/sdram-init.bin)

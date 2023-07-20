@@ -2,3 +2,4 @@
 
 *.bin
 *.bin-optee
+!rk3568-bl31.bin

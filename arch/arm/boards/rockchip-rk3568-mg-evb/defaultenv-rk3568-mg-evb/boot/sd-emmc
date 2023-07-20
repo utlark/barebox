@@ -1,0 +1,6 @@
+#!/bin/sh
+
+if [ -f /mnt/mmc0.1/boot/Image.gz ]; then
+	global.bootm.image="/mnt/mmc0.1/boot/Image.gz"
+	global.linux.bootargs.dyn.root="root=/dev/mmcblk0p2 ro rootdelay=3"
+fi
