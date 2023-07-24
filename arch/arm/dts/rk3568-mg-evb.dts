@@ -28,13 +28,13 @@
 
 		environment-sd {
 			compatible = "barebox,environment";
-			device-path = &environment_sd;
+			device-path = &sdmmc0, "partname:env";
 			status = "disabled";
 		};
 
 		environment-emmc {
 			compatible = "barebox,environment";
-			device-path = &environment_emmc;
+			device-path = &sdhci, "partname:env";
 			status = "disabled";
 		};
 	};
@@ -835,17 +835,6 @@
 	vmmc-supply = <&vcc_3v3_sw1>;
 	vqmmc-supply = <&vcc_1v8>;
 	status = "okay";
-
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <2>;
-		#size-cells = <2>;
-
-		environment_emmc: partition@408000 {
-			label = "barebox-environment";
-			reg = <0x0 0x408000 0x0 0x8000>;
-		};
-	};
 };
 
 &sdmmc0 {
@@ -860,17 +849,6 @@
 	vmmc-supply = <&vcc3v3_sys>;
 	vqmmc-supply = <&vccio_sd>;
 	status = "okay";
-
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <2>;
-		#size-cells = <2>;
-
-		environment_sd: partition@408000 {
-			label = "barebox-environment";
-			reg = <0x0 0x408000 0x0 0x8000>;
-		};
-	};
 };
 
 &spi1 {
