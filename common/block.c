@@ -6,10 +6,12 @@
  */
 #include <common.h>
 #include <block.h>
+#include <disks.h>
 #include <malloc.h>
 #include <linux/err.h>
 #include <linux/list.h>
 #include <dma.h>
+#include <file-list.h>
 
 #define BLOCKSIZE(blk)	(1 << blk->blockbits)
 
@@ -408,6 +410,9 @@ int blockdevice_register(struct block_device *blk)
 
 	cdev_create_default_automount(&blk->cdev);
 
+	/* Lack of partition table is unusual, but not a failure */
+	(void)parse_partition_table(blk);
+
 	return 0;
 }
 
@@ -453,4 +458,19 @@ int block_write(struct block_device *blk, void *buf, sector_t block, blkcnt_t nu
 			block << blk->blockbits, 0);
 
 	return ret < 0 ? ret : 0;
+}
+
+unsigned file_list_add_blockdevs(struct file_list *files)
+{
+	struct block_device *blk;
+	unsigned count = 0;
+	int err;
+
+	list_for_each_entry(blk, &block_device_list, list) {
+		err = file_list_add_cdev_entry(files, &blk->cdev, 0);
+		if (!err)
+			count++;
+	}
+
+	return count;
 }

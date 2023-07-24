@@ -3,6 +3,7 @@
 #define __LINUX_PRINTK_H
 
 #include <linux/list.h>
+#include <linux/err.h>
 #include <printk.h>
 #include <stdarg.h>
 
@@ -89,6 +90,8 @@ static inline int dev_err_probe(struct device *dev, int err, const char *fmt,
 }
 #endif
 
+#define dev_errp_probe(dev, errptr, args...) dev_err_probe((dev), PTR_ERR(errptr), args)
+
 #define __pr_printk(level, format, args...) \
 	({	\
 		(level) <= LOGLEVEL ? pr_print((level), (format), ##args) : 0; \
@@ -158,16 +161,6 @@ extern void log_clean(unsigned int limit);
 #define BAREBOX_LOG_PRINT_RAW		BIT(2)
 #define BAREBOX_LOG_DIFF_TIME		BIT(1)
 #define BAREBOX_LOG_PRINT_TIME		BIT(0)
-
-#define BAREBOX_LOG_PRINT_VDEBUG	BIT(8)
-#define BAREBOX_LOG_PRINT_DEBUG		BIT(7)
-#define BAREBOX_LOG_PRINT_INFO		BIT(6)
-#define BAREBOX_LOG_PRINT_NOTICE	BIT(5)
-#define BAREBOX_LOG_PRINT_WARNING	BIT(4)
-#define BAREBOX_LOG_PRINT_ERR		BIT(3)
-#define BAREBOX_LOG_PRINT_CRIT		BIT(2)
-#define BAREBOX_LOG_PRINT_ALERT		BIT(1)
-#define BAREBOX_LOG_PRINT_EMERG		BIT(0)
 
 int log_writefile(const char *filepath);
 void log_print(unsigned flags, unsigned levels);

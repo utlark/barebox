@@ -473,8 +473,7 @@ static bool entry_is_of_compatible(struct blspec_entry *entry)
 	ret = false;
 
 out:
-	if (root)
-		of_delete_node(root);
+	of_delete_node(root);
 	free(filename);
 
 	return ret;
@@ -730,7 +729,7 @@ int blspec_scan_device(struct bootentries *bootentries, struct device *dev)
 		 * partition with the MBR type id of 0xEA already exists it
 		 * should be used as $BOOT
 		 */
-		if (cdev->dos_partition_type == 0xea) {
+		if (cdev_is_mbr_partitioned(cdev->master) && cdev->dos_partition_type == 0xea) {
 			ret = blspec_scan_cdev(bootentries, cdev);
 			if (ret == 0)
 				ret = -ENOENT;

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0
 VERSION = 2023
-PATCHLEVEL = 06
-SUBLEVEL = 0
+PATCHLEVEL = 07
+SUBLEVEL = 1
 EXTRAVERSION =
 NAME = None
 
@@ -654,6 +654,8 @@ endif
 # Force gcc to behave correct even for buggy distributions
 KBUILD_CFLAGS          += $(call cc-option, -fno-stack-protector)
 
+KBUILD_CFLAGS-$(CONFIG_WERROR) += -Werror
+
 # This warning generated too much noise in a regular build.
 # Use make W=1 to enable this warning (see scripts/Makefile.build)
 KBUILD_CFLAGS += $(call cc-disable-warning, unused-but-set-variable)
@@ -697,6 +699,8 @@ KBUILD_CFLAGS += $(call cc-option,-Wno-pointer-sign,)
 
 # change __FILE__ to the relative path from the srctree
 KBUILD_CFLAGS += $(call cc-option,-fmacro-prefix-map=$(srctree)/=)
+
+KBUILD_CFLAGS += $(KBUILD_CFLAGS-y)
 
 include-y +=scripts/Makefile.ubsan
 include-$(CONFIG_KASAN)         += scripts/Makefile.kasan

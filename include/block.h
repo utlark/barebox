@@ -7,6 +7,7 @@
 #include <linux/types.h>
 
 struct block_device;
+struct file_list;
 
 struct block_device_ops {
 	int (*read)(struct block_device *, void *buf, sector_t block, blkcnt_t num_blocks);
@@ -51,11 +52,31 @@ static inline int block_flush(struct block_device *blk)
 
 #ifdef CONFIG_BLOCK
 struct block_device *cdev_get_block_device(const struct cdev *cdev);
+unsigned file_list_add_blockdevs(struct file_list *files);
 #else
 static inline struct block_device *cdev_get_block_device(const struct cdev *cdev)
 {
 	return NULL;
 }
+static inline unsigned file_list_add_blockdevs(struct file_list *files)
+{
+	return 0;
+}
 #endif
+
+static inline bool cdev_is_block_device(const struct cdev *cdev)
+{
+	return cdev_get_block_device(cdev) != NULL;
+}
+
+static inline bool cdev_is_block_partition(const struct cdev *cdev)
+{
+	return cdev_is_block_device(cdev) && cdev_is_partition(cdev);
+}
+
+static inline bool cdev_is_block_disk(const struct cdev *cdev)
+{
+	return cdev_is_block_device(cdev) && !cdev_is_partition(cdev);
+}
 
 #endif /* __BLOCK_H */

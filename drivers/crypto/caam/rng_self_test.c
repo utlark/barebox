@@ -116,7 +116,7 @@ static void construct_rng_self_test_jobdesc(u32 *desc, const u32 *rng_st_dsc, u8
 	}
 
 	/* Replace destination address in the descriptor */
-	desc[result_addr_idx] = (u32)res_addr;
+	desc[result_addr_idx] = virt_to_phys(res_addr);
 }
 
 /* rng_self_test_done() - callback for caam_jr_enqueue */
@@ -186,9 +186,9 @@ int caam_rng_self_test(struct device *dev, const u8 caam_era, const u8 rngvid,
 
 	construct_rng_self_test_jobdesc(desc, rng_st_dsc, result, desc_size);
 
-	dma_sync_single_for_device((unsigned long)desc,
+	dma_sync_single_for_device(dev, (unsigned long)desc,
 			desc_size * sizeof(*desc), DMA_TO_DEVICE);
-	dma_sync_single_for_device((unsigned long)result,
+	dma_sync_single_for_device(dev, (unsigned long)result,
 			result_size * sizeof(*result), DMA_FROM_DEVICE);
 
 	/* wait for job completion */
@@ -205,7 +205,7 @@ int caam_rng_self_test(struct device *dev, const u8 caam_era, const u8 rngvid,
 		goto err;
 	}
 
-	dma_sync_single_for_cpu((unsigned long)result, result_size * sizeof(*result),
+	dma_sync_single_for_cpu(dev, (unsigned long)result, result_size * sizeof(*result),
 			DMA_FROM_DEVICE);
 
 	if (memcmp(result, exp_result, sizeof(*result) * result_size) != 0) {

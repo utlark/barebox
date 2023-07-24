@@ -1929,6 +1929,18 @@ config CMD_I2C
 		  -w		use word (16 bit) wide access
 		  -v		verbose
 
+config CMD_PWM
+	bool
+	depends on PWM
+	prompt "PWM commands: pwm"
+	help
+	  pwm - set or show pwm state
+
+	  Usage: pwm [dDPfwisv]
+
+	  Controls the pwm values such as period and duty cycle, or shows
+	  the current values.
+
 config CMD_LED
 	bool
 	depends on LED
@@ -2189,6 +2201,21 @@ config CMD_LSMOD
 	prompt "lsmod"
 	help
 	  List loaded barebox modules.
+
+config CMD_OF_COMPATIBLE
+	tristate
+	select OFTREE
+	prompt "of_compatible"
+	help
+	  Check DT node's compatible
+
+	  Usage: [-fFnk] [COMPAT]
+
+	  Options:
+		-f dtb	work on dtb instead of internal devicetree
+		-F	apply fixups on devicetree before compare
+		-n node	node path or alias to compare its compatible (default is /)
+		-k	compare $global.of.kernel.add_machine_compatible as well
 
 config CMD_OF_DIFF
 	tristate
