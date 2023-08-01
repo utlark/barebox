@@ -234,12 +234,11 @@
 		pinctrl-0 = <&pcie30_oe_pins>;
 		pinctrl-names = "default";
 		compatible = "regulator-fixed";
-		enable-active-high;
 		gpio = <&gpio3 RK_PD4 GPIO_ACTIVE_HIGH>;
 		regulator-name = "3v3_pi6c";
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
-		startup-delay-us = <10000>;
+		startup-delay-us = <1000>;
 		vin-supply = <&vcc3v3_pcie30>;
 	};
 
@@ -792,12 +791,12 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pcie30_pins>;
 	reset-gpios = <&gpio4 RK_PC4 GPIO_ACTIVE_HIGH>;
-	vpcie3v3-supply = <&vcc3v3_pcie30>;
+	vpcie3v3-supply = <&vcc3v3_pi6c>;
 	status = "okay";
 };
 
 &pcie30phy {
-	phy-supply = <&vcc3v3_pi6c>;
+	phy-supply = <&vcc3v3_pcie30>;
 	status = "okay";
 };
 
@@ -1068,17 +1067,17 @@
 			rockchip,pins =
 				<4 RK_PC2 4 &pcfg_pull_none>,			/* PCIE30X2_CLKREQn_M2 */
 				<4 RK_PC3 4 &pcfg_pull_none>,			/* PCIE30X2_WAKEn_M2 */
-				<4 RK_PC4 RK_FUNC_GPIO &pcfg_pull_none>;	/* PCIE30X2_PERSTn_M2 */
+				<4 RK_PC4 RK_FUNC_GPIO &pcfg_pull_up>;		/* PCIE30X2_PERSTn_M2 */
 		};
 
 		pcie30_oe_pins: pcie30_oe_pins {
 			rockchip,pins =
-				<3 RK_PD4 RK_FUNC_GPIO &pcfg_pull_none>;	/* PCIECLKIC_OE */
+				<3 RK_PD4 RK_FUNC_GPIO &pcfg_pull_up>;		/* PCIECLKIC_OE */
 		};
 
 		pcie30_pwr_pins: pcie30_pwr_pins {
 			rockchip,pins =
-				<3 RK_PD5 RK_FUNC_GPIO &pcfg_pull_none>;	/* PCIE30_PWREN */
+				<3 RK_PD5 RK_FUNC_GPIO &pcfg_pull_up>;		/* PCIE30_PWREN */
 		};
 	};
 
