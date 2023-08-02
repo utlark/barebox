@@ -193,30 +193,17 @@
 		vin-supply = <&vcc3v3_pmu>;
 	};
 
-	vcc3v3_pcie20_pwr: vcc3v3-pcie20-pwr-regulator {
+	vcc3v3_pcie20: vcc3v3-pcie20-pwr-regulator {
 		pinctrl-0 = <&pcie20_pwr_pins>;
 		pinctrl-names = "default";
 		compatible = "regulator-fixed";
 		enable-active-high;
 		gpio = <&gpio3 RK_PD3 GPIO_ACTIVE_HIGH>;
-		regulator-name = "3v3_pcie20_pwr";
+		regulator-name = "3v3_pcie20";
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
 		startup-delay-us = <20000>;
 		vin-supply = <&vcc3v3_sys>;
-	};
-
-	vcc3v3_pcie20_rst: vcc3v3-pcie20-rst-regulator {
-		pinctrl-0 = <&pcie20_rst_pins>;
-		pinctrl-names = "default";
-		compatible = "regulator-fixed";
-		enable-active-high;
-		gpio = <&gpio1 RK_PB1 GPIO_ACTIVE_HIGH>;
-		regulator-name = "3v3_pcie20_rst";
-		regulator-min-microvolt = <3300000>;
-		regulator-max-microvolt = <3300000>;
-		startup-delay-us = <10000>;
-		vin-supply = <&vcc3v3_pcie20_pwr>;
 	};
 
 	vcc3v3_pcie30: vcc3v3-pcie30-regulator {
@@ -282,6 +269,7 @@
 
 &combphy2 {
 	/* PCI-E 2.0 */
+	phy-supply = <&vcc3v3_pcie20>;
 	status = "okay";
 };
 
@@ -775,7 +763,8 @@
 		 <0x03000000 0x0 0x40000000 0x3 0x00000000 0x0 0x40000000>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pcie20_pins>;
-	vpcie3v3-supply = <&vcc3v3_pcie20_rst>;
+	reset-gpios = <&gpio1 RK_PB1 GPIO_ACTIVE_HIGH>;
+	vpcie3v3-supply = <&vcc3v3_pcie20>;
 	status = "okay";
 };
 
@@ -1050,17 +1039,13 @@
 		pcie20_pins: pcie20_pins {
 			rockchip,pins =
 				<2 RK_PD0 4 &pcfg_pull_none>,			/* PCIE20_CLKREQn_M1 */
-				<2 RK_PD1 4 &pcfg_pull_none>;			/* PCIE20_WAKEn_M1 */
+				<2 RK_PD1 4 &pcfg_pull_none>,			/* PCIE20_WAKEn_M1 */
+				<1 RK_PB1 RK_FUNC_GPIO &pcfg_pull_none>;	/* PCIE20_PERST */
 		};
 
 		pcie20_pwr_pins: pcie20_pwr_pins {
 			rockchip,pins =
 				<3 RK_PD3 RK_FUNC_GPIO &pcfg_pull_none>;	/* PCIE20_PWREN */
-		};
-
-		pcie20_rst_pins: pcie20_rst_pins {
-			rockchip,pins =
-				<1 RK_PB1 RK_FUNC_GPIO &pcfg_pull_none>;	/* PCIE20_PERST */
 		};
 	};
 
