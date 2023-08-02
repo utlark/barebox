@@ -82,20 +82,6 @@
 		default-brightness-level = <255>;
 	};
 
-	sound {
-		compatible = "simple-audio-card";
-		simple-audio-card,name = "I2S1ESS8388";
-		simple-audio-card,format = "i2s";
-
-		simple-audio-card,cpu {
-			sound-dai = <&i2s1_8ch>;
-		};
-
-		simple-audio-card,codec {
-			sound-dai = <&es8388>;
-		};
-	};
-
 	hdmi-con {
 		compatible = "hdmi-connector";
 		type = "a";
@@ -142,6 +128,22 @@
 		resets = <&cru SRST_RGA_CORE>, <&cru SRST_A_RGA>, <&cru SRST_H_RGA>;
 		reset-names = "core", "axi", "ahb";
 		power-domains = <&power RK3568_PD_RGA>;
+	};
+
+	sound_es8388 {
+		compatible = "simple-audio-card";
+		simple-audio-card,name = "I2S1ESS8388";
+		simple-audio-card,format = "i2s";
+		simple-audio-card,bitclock-master = <&sound_es8388_master>;
+		simple-audio-card,frame-master = <&sound_es8388_master>;
+
+		sound_es8388_master: simple-audio-card,cpu {
+			sound-dai = <&i2s1_8ch>;
+		};
+
+		simple-audio-card,codec {
+			sound-dai = <&es8388>;
+		};
 	};
 
 	usbmux {

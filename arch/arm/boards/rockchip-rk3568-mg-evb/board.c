@@ -20,13 +20,15 @@ static void rk3568_mg_evb_disable_device(struct device_node *root,
 
 static int rk3568_mg_evb_probe_i2c(struct i2c_adapter *adapter, int addr)
 {
-	struct i2c_client client;
-	u8 value;
+	u8 buf[1];
+	struct i2c_msg msg = {
+		.addr = addr,
+		.buf = buf,
+		.len = sizeof(buf),
+		.flags = I2C_M_RD,
+	};
 
-	client.adapter = adapter;
-	client.addr = addr;
-
-	return (i2c_read_reg(&client, 0, &value, 1) < 0) ? -ENODEV : value;
+	return (i2c_transfer(adapter, &msg, 1) == 1) ? 0: -ENODEV;
 }
 
 static int rk3568_mg_evb_i2c_fixup(struct device_node *root, void *unused)
@@ -35,9 +37,10 @@ static int rk3568_mg_evb_i2c_fixup(struct device_node *root, void *unused)
 	if (!adapter)
 		return -ENODEV;
 
-	if (rk3568_mg_evb_probe_i2c(adapter, 0x10) < 0) {
+	/* i2c4@0x10 */
+	if (rk3568_mg_evb_probe_i2c(adapter, 0x10)) {
 		pr_warn("ES8388 not found, disabling sound node.\n");
-		rk3568_mg_evb_disable_device(root, "sound");
+		rk3568_mg_evb_disable_device(root, "sound_es8388");
 	}
 
 	return 0;
