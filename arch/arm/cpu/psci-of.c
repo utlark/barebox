@@ -10,7 +10,6 @@
 int of_psci_fixup(struct device_node *root, unsigned long psci_version,
 		  const char *method)
 {
-#if 0
 	struct device_node *psci;
 	int ret;
 	const char *compat;
@@ -51,7 +50,6 @@ int of_psci_fixup(struct device_node *root, unsigned long psci_version,
 	ret = of_property_write_string(psci, "method", method);
 	if (ret)
 		return ret;
-#endif
 
 	return 0;
 }
