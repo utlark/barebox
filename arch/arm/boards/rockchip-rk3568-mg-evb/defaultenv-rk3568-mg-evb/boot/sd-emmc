@@ -9,7 +9,7 @@ if [ -f /mnt/mmc0.2/boot/Image.gz ]; then
 	DTB=rk3568-mg-evb.dtb
 	if [ -f /mnt/mmc0.2/boot/$DTB ]; then
 		echo "Using external devicetree blob from /boot/$DTB"
-		global.bootm.oftree$DTB
+		global.bootm.oftree=$DTB
 	else
 		echo "Using internal devicetree blob"
 	fi
