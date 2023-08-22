@@ -1,6 +1,20 @@
 #!/bin/sh
 
 if [ -f /mnt/mmc0.2/boot/Image.gz ]; then
-	global.bootm.image="/mnt/mmc0.2/boot/Image.gz"
+	echo "Booting from MMC"
+
+	global.bootm.image=/mnt/mmc0.2/boot/Image.gz
 	global.linux.bootargs.dyn.root="root=/dev/mmcblk0p3 ro rootdelay=3"
+
+	DTB=rk3568-mg-evb.dtb
+	if [ -f /mnt/mmc0.2/boot/$DTB ]; then
+		echo "Using external devicetree blob from /boot/$DTB"
+		global.bootm.oftree$DTB
+	else
+		echo "Using internal devicetree blob"
+	fi
+
+	exit 0
 fi
+
+exit 0
