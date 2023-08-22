@@ -223,7 +223,7 @@
 		pinctrl-0 = <&pcie30_oe_pins>;
 		pinctrl-names = "default";
 		compatible = "regulator-fixed";
-		gpio = <&gpio3 RK_PD4 GPIO_ACTIVE_HIGH>;
+		gpio = <&gpio3 RK_PD4 GPIO_ACTIVE_LOW>;
 		regulator-name = "3v3_pi6c";
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
