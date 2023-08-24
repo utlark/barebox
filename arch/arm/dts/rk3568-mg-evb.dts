@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0+ */
 /* SPDX-FileCopyrightText: Alexander Shiyan <shc_work@mail.ru> */
 
+/* CAN: https://github.com/ariaboard-com/rockchip_rk3568_kernel */
+
 /dts-v1/;
 
 #include <dt-bindings/gpio/gpio.h>
@@ -44,7 +46,6 @@
 		reg = <0x0 0x00a00000 0x0 0x7f600000>;
 	};
 
-	/* Added from https://github.com/ariaboard-com/rockchip_rk3568_kernel */
 	can1: can@fe580000 {
 		compatible = "rockchip,canfd-1.0";
 		reg = <0x0 0xfe580000 0x0 0x1000>;
@@ -59,7 +60,6 @@
 		pinctrl-0 = <&can1m0_pins>;
 	};
 
-	/* Added from https://github.com/ariaboard-com/rockchip_rk3568_kernel */
 	can2: can@fe590000 {
 		compatible = "rockchip,canfd-1.0";
 		reg = <0x0 0xfe590000 0x0 0x1000>;
@@ -118,6 +118,13 @@
 		};
 	};
 
+	panel {
+		pinctrl-names = "default";
+		pinctrl-0 = <&dsi_pins>;
+		//TODO:
+	};
+
+#if 0
 	/* Should be added in 6.5 */
 	rga: rga@fdeb0000 {
 		compatible = "rockchip,rk3568-rga", "rockchip,rk3288-rga";
@@ -125,10 +132,11 @@
 		interrupts = <GIC_SPI 90 IRQ_TYPE_LEVEL_HIGH>;
 		clocks = <&cru ACLK_RGA>, <&cru HCLK_RGA>, <&cru CLK_RGA_CORE>;
 		clock-names = "aclk", "hclk", "sclk";
+		power-domains = <&power RK3568_PD_RGA>;
 		resets = <&cru SRST_RGA_CORE>, <&cru SRST_A_RGA>, <&cru SRST_H_RGA>;
 		reset-names = "core", "axi", "ahb";
-		power-domains = <&power RK3568_PD_RGA>;
 	};
+#endif
 
 	sound_es8388 {
 		compatible = "simple-audio-card";
@@ -295,10 +303,6 @@
 	/delete-node/ opp-1992000000;
 };
 
-&csi_dphy {
-	status = "okay";
-};
-
 //&dsi0 {
 //	status = "okay";
 //};
@@ -344,38 +348,6 @@
 	phy-supply = <&vcc3v3_sys>;
 	status = "okay";
 };
-
-//&gpio0 {
-//	csi_0 {
-//		gpio-hog;
-//		gpios = <RK_PD4 GPIO_ACTIVE_HIGH>;
-//		output-high;
-//	};
-//};
-
-&gpio1 {
-//	csi_1 {
-//		gpio-hog;
-//		gpios = <RK_PB3 GPIO_ACTIVE_HIGH>;
-//		output-high;
-//	};
-};
-
-//&gpio2 {
-//	csi_2 {
-//		gpio-hog;
-//		gpios = <RK_PD2 GPIO_ACTIVE_HIGH>;
-//		output-low;
-//	};
-//};
-
-//&gpio3 {
-//	csi_3 {
-//		gpio-hog;
-//		gpios = <RK_PB6 GPIO_ACTIVE_HIGH>;
-//		output-high;
-//	};
-//};
 
 &gpu {
 	mali-supply = <&vdd_gpu>;
@@ -702,10 +674,12 @@
 		#sound-dai-cells = <0>;
 	};
 
-//	xc7160b: xc7160b@1b {
-//	//sc8238
-//		reg = <0x1b>;
-//	};
+	xc7160b: xc7160b@1b {
+		pinctrl-names = "default";
+		pinctrl-0 = <&cif_clk &csi0_pins>;
+		reg = <0x1b>;
+		//TODO:
+	};
 };
 
 &i2s0_8ch {
@@ -754,13 +728,6 @@
 	/* Deprecated */
 	/delete-property/ num-ib-windows;
 	/delete-property/ num-ob-windows;
-	/* reg & ranges should be fixed in 6.5 */
-	reg = <0x3 0xc0000000 0x0 0x00400000>,
-	      <0x0 0xfe260000 0x0 0x00010000>,
-	      <0x0 0xf4000000 0x0 0x00100000>;
-	ranges = <0x01000000 0x0 0xf4100000 0x0 0xf4100000 0x0 0x00100000>,
-		 <0x02000000 0x0 0xf4200000 0x0 0xf4200000 0x0 0x01e00000>,
-		 <0x03000000 0x0 0x40000000 0x3 0x00000000 0x0 0x40000000>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pcie20_pins>;
 	reset-gpios = <&gpio1 RK_PB1 GPIO_ACTIVE_HIGH>;
@@ -772,13 +739,6 @@
 	/* Deprecated */
 	/delete-property/ num-ib-windows;
 	/delete-property/ num-ob-windows;
-	/* reg & ranges should be fixed in 6.5 */
-	reg = <0x3 0xc0800000 0x0 0x00400000>,
-	      <0x0 0xfe280000 0x0 0x00010000>,
-	      <0x0 0xf0000000 0x0 0x00100000>;
-	ranges = <0x01000000 0x0 0xf0100000 0x0 0xf0100000 0x0 0x00100000>,
-		 <0x02000000 0x0 0xf0200000 0x0 0xf0200000 0x0 0x01e00000>,
-		 <0x03000000 0x0 0x40000000 0x3 0x80000000 0x0 0x40000000>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pcie30_pins>;
 	reset-gpios = <&gpio4 RK_PC4 GPIO_ACTIVE_HIGH>;
@@ -970,23 +930,23 @@
 };
 
 &pinctrl {
-	//TEMP!!!
-	pinctrl-0 = <&csi0_pins &csi1_pins &dsi_pins &gpios_pins>;
+	pinctrl-0 = <&gpios_pins>;
 	pinctrl-names = "default";
 
 	csi {
 		csi0_pins: csi0_pins {
+			/* CLKOUT = cif_clk */
 			rockchip,pins =
 				<2 RK_PD2 RK_FUNC_GPIO &pcfg_pull_up>,		/* CSI_PWREN0 */
-				<3 RK_PB6 RK_FUNC_GPIO &pcfg_pull_up>,		/* CSI_RESET0# */
-				<4 RK_PC0 1 &pcfg_pull_none>;			/* CIF_CLKOUT */
+				<3 RK_PB6 RK_FUNC_GPIO &pcfg_pull_up>;		/* CSI_RESET0# */
 		};
 
+		/omit-if-no-ref/
 		csi1_pins: csi1_pins {
+			/* CLKOUT = refclk_pins */
 			rockchip,pins =
 				<0 RK_PD4 RK_FUNC_GPIO &pcfg_pull_up>,		/* CSI_PWREN1 */
-				<1 RK_PB3 RK_FUNC_GPIO &pcfg_pull_up>,		/* CSI_RESET1# */
-				<0 RK_PA0 1 &pcfg_pull_none>;			/* REFCLKOUT */
+				<1 RK_PB3 RK_FUNC_GPIO &pcfg_pull_up>;		/* CSI_RESET1# */
 		};
 	};
 
