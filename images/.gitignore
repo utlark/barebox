@@ -10,6 +10,7 @@
 *.src
 *.kwbimg
 *.kwbuartimg
+*.rkimg
 *.socfpgaimg
 *.t20img
 *.t20img.cfg
