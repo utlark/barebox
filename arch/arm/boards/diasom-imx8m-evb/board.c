@@ -9,7 +9,7 @@
 
 static int diasom_imx8m_evb_probe(struct device *dev)
 {
-	int def = 2;
+	int flag = BBU_HANDLER_FLAG_DEFAULT;
 
 	barebox_set_hostname("ds-imx8m-evb");
 
@@ -18,7 +18,7 @@ static int diasom_imx8m_evb_probe(struct device *dev)
 		if (bootsource_get_instance() == 1) {
 			pr_info("Boot from SD...\n");
 			of_device_enable_path("/chosen/environment-sd");
-			def = 1;
+			flag = 0;
 			break;
 		}
 		fallthrough;
@@ -28,10 +28,7 @@ static int diasom_imx8m_evb_probe(struct device *dev)
 		break;
 	}
 
-	imx8m_bbu_internal_mmc_register_handler("SD", "/dev/mmc1.barebox",
-						(def == 1) ? BBU_HANDLER_FLAG_DEFAULT : 0);
-	imx8m_bbu_internal_mmcboot_register_handler("eMMC", "/dev/mmc2",
-						(def == 2) ? BBU_HANDLER_FLAG_DEFAULT : 0);
+	imx8m_bbu_internal_mmcboot_register_handler("eMMC", "/dev/mmc2", flag);
 
 	defaultenv_append_directory(defaultenv_diasom_imx8m_evb);
 
