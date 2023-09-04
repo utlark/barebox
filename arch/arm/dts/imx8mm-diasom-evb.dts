@@ -346,11 +346,8 @@
 
 	adv7535: hdmi@3d {
 		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_dsi>;
+		pinctrl-0 = <&pinctrl_adv7535>;
 		compatible = "adi,adv7535";
-//		reg = <0x3d>, <0x3f>, <0x3c>, <0x38>;
-//reg = <0x3d>, <0x3b>, <0x3f>, <0x38>;
-//		reg-names = "main", "edid", "cec", "packet";
 		reg = <0x3d>, <0x3e>, <0x3c>, <0x3f>;
 		reg-names = "main", "edid", "cec", "packet";
 		adi,dsi-lanes = <4>;
@@ -403,7 +400,7 @@
 
 	ov5640_camera: camera@3c {
 		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_csi_ov5640>;
+		pinctrl-0 = <&pinctrl_ov5640>;
 		compatible = "ovti,ov5640";
 		reg = <0x3c>;
 		clocks = <&clk IMX8MM_CLK_CLKO1>;
@@ -433,7 +430,7 @@
 	*/
 	ar0234_camera: camera@3d {
 		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_csi_ar0234>;
+		pinctrl-0 = <&pinctrl_ar0234>;
 		compatible = "tn,tevi-ap1302";
 		reg = <0x3d>;
 		data-lanes = <4>;
@@ -681,26 +678,18 @@
 */
 
 &iomuxc {
-	pinctrl_csi_ov5640: csi-1-grp {
+	pinctrl_adv7535: dsi-grp {
 		fsl,pins = <
-			MX8MM_IOMUXC_GPIO1_IO06_GPIO1_IO6		0x19
-			MX8MM_IOMUXC_GPIO1_IO07_GPIO1_IO7		0x19
-			MX8MM_IOMUXC_GPIO1_IO14_CCMSRCGPCMIX_CLKO1	0x59
+			MX8MM_IOMUXC_GPIO1_IO08_GPIO1_IO8		0x19
+			MX8MM_IOMUXC_GPIO1_IO09_GPIO1_IO9		0x141
 		>;
 	};
 
-	pinctrl_csi_ar0234: csi-2-grp {
+	pinctrl_ar0234: csi-2-grp {
 		fsl,pins = <
 			MX8MM_IOMUXC_GPIO1_IO06_GPIO1_IO6		0x19
 			MX8MM_IOMUXC_GPIO1_IO07_GPIO1_IO7		0x19
 			MX8MM_IOMUXC_GPIO1_IO14_GPIO1_IO14		0x19
-		>;
-	};
-
-	pinctrl_dsi: dsi-grp {
-		fsl,pins = <
-			MX8MM_IOMUXC_GPIO1_IO08_GPIO1_IO8		0x19
-			MX8MM_IOMUXC_GPIO1_IO09_GPIO1_IO9		0x141
 		>;
 	};
 
@@ -794,6 +783,14 @@
 		fsl,pins = <
 			MX8MM_IOMUXC_I2C4_SCL_GPIO5_IO20		0x400001c3
 			MX8MM_IOMUXC_I2C4_SDA_GPIO5_IO21		0x400001c3
+		>;
+	};
+
+	pinctrl_ov5640: csi-1-grp {
+		fsl,pins = <
+			MX8MM_IOMUXC_GPIO1_IO06_GPIO1_IO6		0x19
+			MX8MM_IOMUXC_GPIO1_IO07_GPIO1_IO7		0x19
+			MX8MM_IOMUXC_GPIO1_IO14_CCMSRCGPCMIX_CLKO1	0x59
 		>;
 	};
 
