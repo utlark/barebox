@@ -555,6 +555,18 @@ if 64BIT
 
 comment "i.MX8M boards"
 
+config MACH_DIASOM_DS_IMX8M_EVB
+	bool "Diasom DS-IMX8M-EVB"
+	select ARCH_IMX8MM
+	select DEFAULT_ENVIRONMENT
+	select FIRMWARE_IMX_LPDDR4_PMU_TRAIN
+	select FIRMWARE_IMX8MM_ATF
+	select ARM_SMCCC
+	select MCI_IMX_ESDHC_PBL
+	select IMX8M_DRAM
+	select I2C_IMX_EARLY
+	select USB_GADGET_DRIVER_ARC_PBL
+
 config MACH_INNOCOMM_WB15
 	bool "InnoComm WB15 (i.MX8MM) EVK"
 	select ARCH_IMX8MM
