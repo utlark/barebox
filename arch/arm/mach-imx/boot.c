@@ -706,7 +706,7 @@ void imx8mm_get_boot_source(enum bootsource *src, int *instance)
 	uint32_t sbmr1 = readl(src_base + 0x58);
 	uint32_t sbmr2 = readl(src_base + 0x70);
 
-	if (!of_machine_is_compatible("diasom,ds-imx8m-evb")) {
+	if (!IS_ENABLED(CONFIG_MACH_DIASOM_DS_IMX8M_EVB)) {
 		if (imx6_bootsource_serial(sbmr2)) {
 			*src = BOOTSOURCE_SERIAL;
 			return;

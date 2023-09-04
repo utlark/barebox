@@ -431,10 +431,10 @@ FILE_barebox-kamstrup-mx7-concentrator.img = start_kamstrup_mx7_concentrator.pbl
 image-$(CONFIG_MACH_KAMSTRUP_MX7_CONCENTRATOR) += barebox-kamstrup-mx7-concentrator.img
 
 # ----------------------- i.MX8mm based boards --------------------------
-pblb-$(CONFIG_MACH_DIASOM_IMX8M_EVB) += start_diasom_imx8m_evb
+pblb-$(CONFIG_MACH_DIASOM_DS_IMX8M_EVB) += start_diasom_imx8m_evb
 CFG_start_diasom_imx8m_evb.pblb.imximg = $(board)/diasom-imx8m-evb/flash-header-diasom-imx8m-evb.imxcfg
 FILE_barebox-diasom-imx8m-evb.img = start_diasom_imx8m_evb.pblb.pimximg
-image-$(CONFIG_MACH_DIASOM_IMX8M_EVB) += barebox-diasom-imx8m-evb.img
+image-$(CONFIG_MACH_DIASOM_DS_IMX8M_EVB) += barebox-diasom-imx8m-evb.img
 
 pblb-$(CONFIG_MACH_NXP_IMX8MM_EVK) += start_nxp_imx8mm_evk
 CFG_start_nxp_imx8mm_evk.pblb.imximg = $(board)/nxp-imx8mm-evk/flash-header-imx8mm-evk.imxcfg
