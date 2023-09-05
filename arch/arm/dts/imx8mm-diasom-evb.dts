@@ -34,7 +34,7 @@
 		reg = <0x0 0x40000000 0 0x80000000>;
 	};
 
-	backlight: backlight {
+	backlight {
 		compatible = "pwm-backlight";
 		pwms = <&pwm1 0 5000000 0>;
 		brightness-levels = <0 255>;
@@ -50,7 +50,7 @@
 
 	hdmi-connector {
 		compatible = "hdmi-connector";
-		label = "hdmi";
+		label = "HDMI";
 		type = "a";
 
 		port {
@@ -64,6 +64,7 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_usbconn>;
 		compatible = "gpio-usb-b-connector", "usb-b-connector";
+		label = "Type-C";
 		type = "micro";
 		id-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
 
@@ -83,7 +84,7 @@
 
 	spdif-sound {
 		compatible = "fsl,imx-audio-spdif";
-		model = "IMX8MMSPDIF";
+		model = "SPDIF";
 		spdif-controller = <&spdif1>;
 		spdif-in;
 		spdif-out;
@@ -91,7 +92,7 @@
 
 	usdhc1_pwrseq: usdhc1-pwrseq {
 		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_usdhc1_gpio>;
+		pinctrl-0 = <&pinctrl_usdhc1_pwrseq>;
 		compatible = "mmc-pwrseq-emmc";
 		reset-gpios = <&gpio2 10 GPIO_ACTIVE_HIGH>;
 	};
@@ -215,7 +216,7 @@
 	clock-frequency = <400000>;
 	status = "okay";
 
-	pmic: pmic@4b {
+	pmic@4b {
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_pmic>;
 		compatible = "rohm,bd71847";
@@ -344,7 +345,7 @@
 	clock-frequency = <400000>;
 	status = "okay";
 
-	adv7535: hdmi@3d {
+	hdmi@3d {
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_adv7535>;
 		compatible = "adi,adv7535";
@@ -398,7 +399,7 @@
 	clock-frequency = <400000>;
 	status = "okay";
 
-	ov5640_camera: camera@3c {
+	camera@3c {
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_ov5640>;
 		compatible = "ovti,ov5640";
@@ -428,7 +429,7 @@
 	   This pin is not documented in the TEVI-AR0234 datasheet,
 	   and seems floated unused.
 	*/
-	ar0234_camera: camera@3d {
+	camera@3d {
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_ar0234>;
 		compatible = "tn,tevi-ap1302";
@@ -914,7 +915,7 @@
 		>;
 	};
 
-	pinctrl_usdhc1_gpio: usdhc1-gpio-grp {
+	pinctrl_usdhc1_pwrseq: usdhc1-pwrseq-grp {
 		fsl,pins = <
 			MX8MM_IOMUXC_SD1_RESET_B_GPIO2_IO10		0x41
 		>;
