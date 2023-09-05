@@ -679,14 +679,14 @@
 */
 
 &iomuxc {
-	pinctrl_adv7535: dsi-grp {
+	pinctrl_adv7535: adv7535-grp {
 		fsl,pins = <
 			MX8MM_IOMUXC_GPIO1_IO08_GPIO1_IO8		0x19
 			MX8MM_IOMUXC_GPIO1_IO09_GPIO1_IO9		0x141
 		>;
 	};
 
-	pinctrl_ar0234: csi-2-grp {
+	pinctrl_ar0234: ar0234-grp {
 		fsl,pins = <
 			MX8MM_IOMUXC_GPIO1_IO06_GPIO1_IO6		0x19
 			MX8MM_IOMUXC_GPIO1_IO07_GPIO1_IO7		0x19
@@ -787,7 +787,7 @@
 		>;
 	};
 
-	pinctrl_ov5640: csi-1-grp {
+	pinctrl_ov5640: ov5640-grp {
 		fsl,pins = <
 			MX8MM_IOMUXC_GPIO1_IO06_GPIO1_IO6		0x19
 			MX8MM_IOMUXC_GPIO1_IO07_GPIO1_IO7		0x19
