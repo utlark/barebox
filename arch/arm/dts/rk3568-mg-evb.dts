@@ -5,12 +5,12 @@
 
 /dts-v1/;
 
+#include <arm64/rockchip/rk3568.dtsi>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/leds/common.h>
 #include <dt-bindings/pinctrl/rockchip.h>
 #include <dt-bindings/soc/rockchip,vop2.h>
 #include <dt-bindings/usb/pd.h>
-#include <arm64/rockchip/rk3568.dtsi>
 
 #include "rk356x.dtsi"
 
@@ -46,7 +46,7 @@
 		reg = <0x0 0x00a00000 0x0 0x7f600000>;
 	};
 
-	can1: can@fe580000 {
+	can@fe580000 {
 		compatible = "rockchip,canfd-1.0";
 		reg = <0x0 0xfe580000 0x0 0x1000>;
 		interrupts = <GIC_SPI 2 IRQ_TYPE_LEVEL_HIGH>;
@@ -60,7 +60,7 @@
 		pinctrl-0 = <&can1m0_pins>;
 	};
 
-	can2: can@fe590000 {
+	can@fe590000 {
 		compatible = "rockchip,canfd-1.0";
 		reg = <0x0 0xfe590000 0x0 0x1000>;
 		interrupts = <GIC_SPI 3 IRQ_TYPE_LEVEL_HIGH>;
@@ -74,7 +74,7 @@
 		pinctrl-0 = <&can2m0_pins>;
 	};
 
-	backlight: backlight {
+	backlight {
 		compatible = "pwm-backlight";
 		pwms = <&pwm5 0 25000 0>;
 		brightness-levels = <0 255>;
@@ -82,13 +82,14 @@
 		default-brightness-level = <255>;
 	};
 
-	hdmi-con {
+	hdmi-connector {
 		compatible = "hdmi-connector";
+		label = "HDMI";
 		type = "a";
 
 		port {
-			hdmi_con_in: endpoint {
-				remote-endpoint = <&hdmi_out_con>;
+			hdmi_connector_in: endpoint {
+				remote-endpoint = <&hdmi_connector_out>;
 			};
 		};
 	};
@@ -98,7 +99,7 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&leds_pins>;
 
-		led_live {
+		led-live {
 			label = "som:live";
 			gpios = <&gpio0 RK_PA6 GPIO_ACTIVE_HIGH>;
 			function = LED_FUNCTION_HEARTBEAT;
@@ -108,7 +109,7 @@
 			panic-indicator;
 		};
 
-		led_act {
+		led-act {
 			label = "som:act";
 			gpios = <&gpio0 RK_PC0 GPIO_ACTIVE_HIGH>;
 			function = LED_FUNCTION_ACTIVITY;
@@ -126,7 +127,7 @@
 
 #if 0
 	/* Should be added in 6.5 */
-	rga: rga@fdeb0000 {
+	rga@fdeb0000 {
 		compatible = "rockchip,rk3568-rga", "rockchip,rk3288-rga";
 		reg = <0x0 0xfdeb0000 0x0 0x180>;
 		interrupts = <GIC_SPI 90 IRQ_TYPE_LEVEL_HIGH>;
@@ -138,14 +139,14 @@
 	};
 #endif
 
-	sound_es8388 {
+	es8388-sound {
 		compatible = "simple-audio-card";
-		simple-audio-card,name = "I2S1ESS8388";
+		simple-audio-card,name = "ES8388";
 		simple-audio-card,format = "i2s";
-		simple-audio-card,bitclock-master = <&sound_es8388_master>;
-		simple-audio-card,frame-master = <&sound_es8388_master>;
+		simple-audio-card,bitclock-master = <&es8388_master>;
+		simple-audio-card,frame-master = <&es8388_master>;
 
-		sound_es8388_master: simple-audio-card,cpu {
+		es8388_master: simple-audio-card,cpu {
 			sound-dai = <&i2s1_8ch>;
 		};
 
@@ -154,14 +155,13 @@
 		};
 	};
 
-	usbmux {
+	usb {
 		pinctrl-names = "default";
 		pinctrl-0 = <&usbmux_pins>;
 		compatible = "genesys,gl9962", "gpio-sbu-mux";
 		enable-gpios = <&gpio3 RK_PA2 GPIO_ACTIVE_HIGH>;
 		select-gpios = <&gpio4 RK_PD2 GPIO_ACTIVE_LOW>;
 		orientation-switch;
-		vbus-supply = <&vcc3v3_sys>;
 
 		port {
 			typec_sbu: endpoint {
@@ -239,7 +239,7 @@
 		vin-supply = <&vcc3v3_pcie30>;
 	};
 
-	vcc5v0_usb3_host1: vcc5v0-usb3-host1 {
+	vcc5v0_usb3_host1: vcc5v0-usb3-host1-regulator {
 		pinctrl-names = "default";
 		pinctrl-0 = <&usb3_host1_en_pins>;
 		compatible = "regulator-fixed";
@@ -252,7 +252,7 @@
 		vin-supply = <&vcc5v0_sys>;
 	};
 
-	vcc5v0_usb3_otg0: vcc5v0-usb3-otg0 {
+	vcc5v0_usb3_otg0: vcc5v0-usb3-otg0-regulator {
 		pinctrl-names = "default";
 		pinctrl-0 = <&usb3_otg0_en_pins>;
 		compatible = "regulator-fixed";
@@ -262,6 +262,11 @@
 		regulator-max-microvolt = <5000000>;
 		startup-delay-us = <20000>;
 		vin-supply = <&vcc5v0_sys>;
+	};
+
+	dummy: dummy-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "dummy";
 	};
 };
 
@@ -367,8 +372,8 @@
 };
 
 &hdmi_out {
-	hdmi_out_con: endpoint {
-		remote-endpoint = <&hdmi_con_in>;
+	hdmi_connector_out: endpoint {
+		remote-endpoint = <&hdmi_connector_in>;
 	};
 };
 
@@ -380,7 +385,7 @@
 	clock-frequency = <1000000>;
 	status = "okay";
 
-	rk809: pmic@20 {
+	pmic@20 {
 		pinctrl-names = "default";
 		pinctrl-0 = <&pmic_pins &pmic_int_pins>;
 		compatible = "rockchip,rk809";
@@ -398,6 +403,7 @@
 		vcc8-supply = <&vcc3v3_sys>;
 		vcc9-supply = <&vcc3v3_sys>;
 		wakeup-source;
+		#clock-cells = <0>;
 
 		regulators {
 			vdd_logic: DCDC_REG1 {
@@ -583,7 +589,7 @@
 	clock-frequency = <400000>;
 	status = "okay";
 
-	fusb302@22 {
+	usb@22 {
 		pinctrl-names = "default";
 		pinctrl-0 = <&fusb302_pins>;
 		compatible = "fcs,fusb302";
@@ -659,22 +665,23 @@
 	clock-frequency = <400000>;
 	status = "okay";
 
-	es8388: es8388@10 {
+	es8388: codec@10 {
+		compatible = "everest,es8388";
 		assigned-clocks = <&cru I2S1_MCLKOUT_TX>;
 		assigned-clock-rates = <12288000>;
 		assigned-clock-parents = <&cru CLK_I2S1_8CH_TX>;
-		compatible = "everest,es8388";
 		reg = <0x10>;
 		clocks = <&cru I2S1_MCLKOUT_TX>;
 		DVDD-supply = <&vcc1v8_sys>;
 		AVDD-supply = <&vcc3v3_sys>;
-		PVDD-supply = <&vcc1v8_sys>;
-		HPVDD-supply = <&vcc3v3_sys>;
+		PVDD-supply = <&dummy>;
+		HPVDD-supply = <&dummy>;
 
 		#sound-dai-cells = <0>;
 	};
 
-	xc7160b: xc7160b@1b {
+	camera@1b {
+		/* xc7160b */
 		pinctrl-names = "default";
 		pinctrl-0 = <&cif_clk &csi0_pins>;
 		reg = <0x1b>;
@@ -701,7 +708,7 @@
 };
 
 &mdio0 {
-	rgmii_phy0: ethernet-phy@0 {
+	rgmii_phy0: phy@0 {
 		pinctrl-names = "default";
 		pinctrl-0 = <&gmac0_rst_pins>;
 		compatible = "ethernet-phy-ieee802.3-c22";
@@ -713,7 +720,7 @@
 };
 
 &mdio1 {
-	rgmii_phy1: ethernet-phy@0 {
+	rgmii_phy1: phy@0 {
 		pinctrl-names = "default";
 		pinctrl-0 = <&gmac1_rst_pins>;
 		compatible = "ethernet-phy-ieee802.3-c22";
@@ -806,7 +813,7 @@
 	num-cs = <1>;
 	status = "okay";
 
-	spi_dev@0 {
+	spi@0 {
 		compatible = "rohm,dh2228fv";
 		reg = <0>;
 	};
@@ -817,12 +824,12 @@
 	num-cs = <2>;
 	status = "okay";
 
-	spi_dev@0 {
+	spi@0 {
 		compatible = "rohm,dh2228fv";
 		reg = <0>;
 	};
 
-	spi_dev@1 {
+	spi@1 {
 		compatible = "rohm,dh2228fv";
 		reg = <1>;
 	};
@@ -930,43 +937,11 @@
 };
 
 &pinctrl {
-	pinctrl-0 = <&gpios_pins>;
+	pinctrl-0 = <&board_pins>;
 	pinctrl-names = "default";
 
-	csi {
-		csi0_pins: csi0_pins {
-			/* CLKOUT = cif_clk */
-			rockchip,pins =
-				<2 RK_PD2 RK_FUNC_GPIO &pcfg_pull_up>,		/* CSI_PWREN0 */
-				<3 RK_PB6 RK_FUNC_GPIO &pcfg_pull_up>;		/* CSI_RESET0# */
-		};
-
-		/omit-if-no-ref/
-		csi1_pins: csi1_pins {
-			/* CLKOUT = refclk_pins */
-			rockchip,pins =
-				<0 RK_PD4 RK_FUNC_GPIO &pcfg_pull_up>,		/* CSI_PWREN1 */
-				<1 RK_PB3 RK_FUNC_GPIO &pcfg_pull_up>;		/* CSI_RESET1# */
-		};
-	};
-
-	dsi {
-		dsi_pins: dsi_pins {
-			rockchip,pins =
-				<0 RK_PC5 RK_FUNC_GPIO &pcfg_pull_up>,		/* DSI_PWREN */
-				<0 RK_PB6 RK_FUNC_GPIO &pcfg_pull_up>;		/* DSI_RESET# */
-		};
-	};
-
-	fusb302 {
-		fusb302_pins: fusb302_pins {
-			rockchip,pins =
-				<0 RK_PC1 RK_FUNC_GPIO &pcfg_pull_up>;		/* USB3_OTG_INT */
-		};
-	};
-
-	gpios {
-		gpios_pins: gpios_pins {
+	board {
+		board_pins: board-pins {
 			rockchip,pins =
 				<1 RK_PA4 RK_FUNC_GPIO &pcfg_pull_up>,		/* GPIO_1 */
 				<1 RK_PA6 RK_FUNC_GPIO &pcfg_pull_up>,		/* GPIO_2 */
@@ -975,8 +950,40 @@
 		};
 	};
 
+	csi {
+		csi0_pins: csi0-pins {
+			/* CLKOUT = cif_clk */
+			rockchip,pins =
+				<2 RK_PD2 RK_FUNC_GPIO &pcfg_pull_up>,		/* CSI_PWREN0 */
+				<3 RK_PB6 RK_FUNC_GPIO &pcfg_pull_up>;		/* CSI_RESET0# */
+		};
+
+		/omit-if-no-ref/
+		csi1_pins: csi1-pins {
+			/* CLKOUT = refclk_pins */
+			rockchip,pins =
+				<0 RK_PD4 RK_FUNC_GPIO &pcfg_pull_up>,		/* CSI_PWREN1 */
+				<1 RK_PB3 RK_FUNC_GPIO &pcfg_pull_up>;		/* CSI_RESET1# */
+		};
+	};
+
+	dsi {
+		dsi_pins: dsi-pins {
+			rockchip,pins =
+				<0 RK_PC5 RK_FUNC_GPIO &pcfg_pull_up>,		/* DSI_PWREN */
+				<0 RK_PB6 RK_FUNC_GPIO &pcfg_pull_up>;		/* DSI_RESET# */
+		};
+	};
+
+	fusb302 {
+		fusb302_pins: fusb302-pins {
+			rockchip,pins =
+				<0 RK_PC1 RK_FUNC_GPIO &pcfg_pull_up>;		/* USB3_OTG_INT */
+		};
+	};
+
 	leds {
-		leds_pins: leds_pins {
+		leds_pins: leds-pins {
 			rockchip,pins =
 				<0 RK_PA6 RK_FUNC_GPIO &pcfg_pull_none>,	/* LED1 */
 				<0 RK_PC0 RK_FUNC_GPIO &pcfg_pull_none>;	/* LED2 */
@@ -984,71 +991,71 @@
 	};
 
 	net {
-		gmac0_rst_pins: gmac0_rst_pins {
+		gmac0_rst_pins: gmac0-rst-pins {
 			rockchip,pins =
 				<2 RK_PD3 RK_FUNC_GPIO &pcfg_pull_none>;	/* GMAC0_RST */
 		};
 
-		gmac1_rst_pins: gmac1_rst_pins {
+		gmac1_rst_pins: gmac1-rst-pins {
 			rockchip,pins =
 				<4 RK_PC1 RK_FUNC_GPIO &pcfg_pull_none>;	/* GMAC1_RST */
 		};
 	};
 
 	pcie20 {
-		pcie20_pins: pcie20_pins {
+		pcie20_pins: pcie20-pins {
 			rockchip,pins =
 				<2 RK_PD0 4 &pcfg_pull_none>,			/* PCIE20_CLKREQn_M1 */
 				<2 RK_PD1 4 &pcfg_pull_none>,			/* PCIE20_WAKEn_M1 */
 				<1 RK_PB1 RK_FUNC_GPIO &pcfg_pull_none>;	/* PCIE20_PERST */
 		};
 
-		pcie20_pwr_pins: pcie20_pwr_pins {
+		pcie20_pwr_pins: pcie20-pwr-pins {
 			rockchip,pins =
 				<3 RK_PD3 RK_FUNC_GPIO &pcfg_pull_none>;	/* PCIE20_PWREN */
 		};
 	};
 
 	pcie30 {
-		pcie30_pins: pcie30_pins {
+		pcie30_pins: pcie30-pins {
 			rockchip,pins =
 				<4 RK_PC2 4 &pcfg_pull_none>,			/* PCIE30X2_CLKREQn_M2 */
 				<4 RK_PC3 4 &pcfg_pull_none>,			/* PCIE30X2_WAKEn_M2 */
 				<4 RK_PC4 RK_FUNC_GPIO &pcfg_pull_up>;		/* PCIE30X2_PERSTn_M2 */
 		};
 
-		pcie30_oe_pins: pcie30_oe_pins {
+		pcie30_oe_pins: pcie30-oe-pins {
 			rockchip,pins =
 				<3 RK_PD4 RK_FUNC_GPIO &pcfg_pull_up>;		/* PCIECLKIC_OE */
 		};
 
-		pcie30_pwr_pins: pcie30_pwr_pins {
+		pcie30_pwr_pins: pcie30-pwr-pins {
 			rockchip,pins =
 				<3 RK_PD5 RK_FUNC_GPIO &pcfg_pull_up>;		/* PCIE30_PWREN */
 		};
 	};
 
 	pmic {
-		pmic_int_pins: pmic_int_pins {
+		pmic_int_pins: pmic-int-pins {
 			rockchip,pins =
 				<0 RK_PA3 RK_FUNC_GPIO &pcfg_pull_up>;		/* PMIC_IRQ# */
 		};
 	};
 
 	usb {
-		usb3_host1_en_pins: usb3_host1_en_pins {
+		usb3_host1_en_pins: usb3-host1-en-pins {
 			rockchip,pins =
 				<1 RK_PB2 RK_FUNC_GPIO &pcfg_pull_none>;	/* USB3_HOST1_EN */
 		};
 
-		usb3_otg0_en_pins: usb3_otg0_en_pins {
+		usb3_otg0_en_pins: usb3-otg0-en-pins {
 			rockchip,pins =
 				<1 RK_PA5 RK_FUNC_GPIO &pcfg_pull_none>;	/* USB3_OTG0_EN */
 		};
 	};
 
 	usbmux {
-		usbmux_pins: usbmux_pins {
+		usbmux_pins: usbmux-pins {
 			rockchip,pins =
 				<4 RK_PD2 RK_FUNC_GPIO &pcfg_pull_up>,		/* USB3_OTG0_SEL */
 				<3 RK_PA2 RK_FUNC_GPIO &pcfg_pull_none>;	/* Unused */
