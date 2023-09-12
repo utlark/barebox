@@ -15,8 +15,8 @@
 #include "rk356x.dtsi"
 
 / {
-	model = "Rockchip RK3568 MG EVB";
-	compatible = "macro,rk3568-evb", "rockchip,rk3568";
+	model = "Diasom DS-RK3568-EVB";
+	compatible = "diasom,ds-rk3568-evb", "rockchip,rk3568";
 
 	aliases {
 		ethernet0 = &gmac0;

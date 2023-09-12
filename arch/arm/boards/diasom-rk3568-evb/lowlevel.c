@@ -7,9 +7,9 @@
 #include <mach/rockchip/atf.h>
 #include <debug_ll.h>
 
-extern char __dtb_rk3568_mg_evb_start[];
+extern char __dtb_rk3568_diasom_evb_start[];
 
-ENTRY_FUNCTION(start_rk3568_mg_evb, r0, r1, r2)
+ENTRY_FUNCTION(start_rk3568_diasom_evb, r0, r1, r2)
 {
 	/*
 	 * Enable vccio4 1.8V and vccio6 1.8V
@@ -30,5 +30,5 @@ ENTRY_FUNCTION(start_rk3568_mg_evb, r0, r1, r2)
 
 	setup_c();
 
-	rk3568_barebox_entry(__dtb_rk3568_mg_evb_start);
+	rk3568_barebox_entry(__dtb_rk3568_diasom_evb_start);
 }

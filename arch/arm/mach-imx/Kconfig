@@ -566,6 +566,8 @@ config MACH_DIASOM_DS_IMX8M_EVB
 	select IMX8M_DRAM
 	select I2C_IMX_EARLY
 	select USB_GADGET_DRIVER_ARC_PBL
+	help
+	  Say Y here if you are using a Diasom DS-IMX8M-EVB board
 
 config MACH_INNOCOMM_WB15
 	bool "InnoComm WB15 (i.MX8MM) EVK"

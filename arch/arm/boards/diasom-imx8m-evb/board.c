@@ -11,7 +11,7 @@ static int diasom_imx8m_evb_probe(struct device *dev)
 {
 	int flag = BBU_HANDLER_FLAG_DEFAULT;
 
-	barebox_set_hostname("ds-imx8m-evb");
+	barebox_set_hostname("diasom-evb");
 
 	switch (bootsource_get()) {
 	case BOOTSOURCE_MMC:
