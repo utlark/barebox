@@ -18,7 +18,7 @@ static void rk3568_mg_evb_disable_device(struct device_node *root,
 		of_device_disable(np);
 }
 
-static int rk3568_mg_evb_probe_i2c(struct i2c_adapter *adapter, int addr)
+static int rk3568_mg_evb_probe_i2c(struct i2c_adapter *adapter, const int addr)
 {
 	u8 buf[1];
 	struct i2c_msg msg = {
@@ -46,15 +46,6 @@ static int rk3568_mg_evb_i2c_fixup(struct device_node *root, void *unused)
 	return 0;
 }
 
-static __init int rk3568_mg_evb_fixup(void)
-{
-	if (of_machine_is_compatible("macro,rk3568-evb"))
-		of_register_fixup(rk3568_mg_evb_i2c_fixup, NULL);
-
-	return 0;
-}
-postcore_initcall(rk3568_mg_evb_fixup);
-
 static int __init rk3568_mg_evb_probe(struct device *dev)
 {
 	enum bootsource bootsource = bootsource_get();
@@ -74,6 +65,8 @@ static int __init rk3568_mg_evb_probe(struct device *dev)
 
 	if (IS_ENABLED(CONFIG_DEFAULT_ENVIRONMENT))
 		defaultenv_append_directory(defaultenv_rk3568_mg_evb);
+
+	of_register_fixup(rk3568_mg_evb_i2c_fixup, NULL);
 
 	return 0;
 }
