@@ -39,8 +39,8 @@ static int rk3568_mg_evb_i2c_fixup(struct device_node *root, void *unused)
 
 	/* i2c4@0x10 */
 	if (rk3568_mg_evb_probe_i2c(adapter, 0x10)) {
-		pr_warn("ES8388 not found, disabling sound node.\n");
-		rk3568_mg_evb_disable_device(root, "sound_es8388");
+		pr_warn("ES8388 not found, disabling codec.\n");
+		rk3568_mg_evb_disable_device(root, "codec@10");
 	}
 
 	return 0;
