@@ -8,13 +8,12 @@
 #include <i2c/i2c.h>
 #include <mach/imx/bbu.h>
 
-#if 0
-static void diasom_imx8m_evb_disable_device(struct device_node *root,
-					    const char *label)
+static void diasom_imx8m_evb_enable_device(struct device_node *root,
+					   const char *label)
 {
 	struct device_node *np = of_find_node_by_name(root, label);
 	if (np)
-		of_device_disable(np);
+		of_device_enable(np);
 }
 
 static int diasom_imx8m_evb_probe_i2c(struct i2c_adapter *adapter, const int addr)
@@ -29,7 +28,6 @@ static int diasom_imx8m_evb_probe_i2c(struct i2c_adapter *adapter, const int add
 
 	return (i2c_transfer(adapter, &msg, 1) == 1) ? 0: -ENODEV;
 }
-#endif
 
 static int diasom_imx8m_evb_fixup(struct device_node *root, void *unused)
 {
@@ -37,7 +35,13 @@ static int diasom_imx8m_evb_fixup(struct device_node *root, void *unused)
 	if (!adapter)
 		return -ENODEV;
 
-	//TODO:
+	if (!diasom_imx8m_evb_probe_i2c(adapter, 0x54)) {
+		pr_info("Camera AR0234 detected.\n");
+		diasom_imx8m_evb_enable_device(root, "camera@3d");
+	} else {
+		pr_info("Camera AR0234 not detected. Assume using OV5640.\n");
+		diasom_imx8m_evb_enable_device(root, "camera@3c");
+	}
 
 	return 0;
 }

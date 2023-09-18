@@ -414,11 +414,11 @@
 		AVDD-supply = <&dummy>;
 		DVDD-supply = <&dummy>;
 		DOVDD-supply = <&dummy>;
+		status = "disabled";
 
 		port {
 			ov5640_out: endpoint {
-				remote-endpoint = <&mipi_csi_in>;
-				clock-lanes = <0>;
+				remote-endpoint = <&ov5640_in>;
 				data-lanes = <1 2>;
 			};
 		};
@@ -432,18 +432,35 @@
 	camera@3d {
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_ar0234>;
-		compatible = "tn,tevi-ap1302";
+		compatible = "onnn,ap1302";
 		reg = <0x3d>;
-		data-lanes = <4>;
-		device-power-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
+		standby-gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
 		nvmem = <&ar0234_eeprom>;
-		nvmem-names = "calib-data";
-		reset-gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
+		vcc-supply = <&dummy>;
+		status = "disabled";
 
 		port {
-//			ar0234_out: endpoint {
-//				remote-endpoint = <&mipi_csi_in>;
-//			};
+			ar0234_out: endpoint {
+				remote-endpoint = <&ar0234_in>;
+				data-lanes = <1 2 3 4>;
+				link-frequencies = /bits/ 64 <816000000>;
+			};
+		};
+
+		sensors {
+			sensor,model = "ar0234";
+			sensor,resolution = <1920 1200>;
+			sensor,format = <0x200f>; /* MEDIA_BUS_FMT_UYVY8_1X16 */
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			sensor@0 {
+				reg = <0>;
+				sip = <0>;
+				status = "immutable";
+			};
 		};
 	};
 
@@ -467,6 +484,29 @@
 
 &lcdif {
 	status = "okay";
+};
+
+&mipi_csi {
+	status = "okay";
+
+	ports {
+		port@0 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			ov5640_in: endpoint@0 {
+				reg = <0>;
+				remote-endpoint = <&ov5640_out>;
+				data-lanes = <1 2>;
+			};
+
+			ar0234_in: endpoint@1 {
+				reg = <1>;
+				remote-endpoint = <&ar0234_out>;
+				data-lanes = <1 2 3 4>;
+			};
+		};
+	};
 };
 
 &mipi_dsi {
@@ -537,7 +577,7 @@
 
 &uart1 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart1>;
+	pinctrl-0 = <&pinctrl_uart1 &pinctrl_esp32>;
 	status = "okay";
 };
 
@@ -636,48 +676,6 @@
 	status = "okay";
 };
 
-///////////////////////////
-
-&mipi_csi {
-	status = "okay";
-
-	ports {
-		port@0 {
-			mipi_csi_in: endpoint {
-				remote-endpoint = <&ov5640_out>;
-				data-lanes = <1 2>;
-			};
-		};
-	};
-};
-
-/*
-	// Upstream driver: https://github.com/nxp-imx/linux-imx/blob/lf-6.1.y/drivers/media/i2c/ap1302.c
-	tevi_ar0234_camera: ar0234_camera@3d {
-		compatible = "onsemi,ap1302";
-		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_ar0234>;
-		reg = <0x3d>;
-		reset-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
-		isp_en-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
-
-		port {
-			tevi_ar0234_ep: endpoint {
-				remote-endpoint = <&mipi1_sensor_ep>;
-			};
-		};
-	};
-*/
-
-/*
-&mipi1_sensor_ep {
-	csis-hs-settle = <16>;
-	csis-clk-settle = <0>;
-	data-lanes = <4>;
-	remote-endpoint = <&tevi_ar0234_ep>;
-};
-*/
-
 &iomuxc {
 	pinctrl_adv7535: adv7535-grp {
 		fsl,pins = <
@@ -709,6 +707,13 @@
 			MX8MM_IOMUXC_ECSPI2_MOSI_ECSPI2_MOSI		0x44
 			MX8MM_IOMUXC_ECSPI2_MISO_ECSPI2_MISO		0x44
 			MX8MM_IOMUXC_ECSPI2_SS0_GPIO5_IO13		0x40
+		>;
+	};
+
+	pinctrl_esp32: esp32-grp {
+		fsl,pins = <
+			MX8MM_IOMUXC_SAI3_RXFS_GPIO4_IO28		0x19	/* WIFI_STRAP_BOOT */
+			MX8MM_IOMUXC_SAI3_TXFS_GPIO4_IO31		0x19	/* WIFI_POWER_UP */
 		>;
 	};
 
