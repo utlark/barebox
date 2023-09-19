@@ -29,6 +29,11 @@
 		};
 	};
 
+	aliases {
+		camera0 = &ov5640;
+		camera1 = &ar0234;
+	};
+
 	memory@40000000 {
 		device_type = "memory";
 		reg = <0x0 0x40000000 0 0x80000000>;
@@ -399,7 +404,7 @@
 	clock-frequency = <400000>;
 	status = "okay";
 
-	camera@3c {
+	ov5640: camera@3c {
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_ov5640>;
 		compatible = "ovti,ov5640";
@@ -429,7 +434,7 @@
 	   This pin is not documented in the TEVI-AR0234 datasheet,
 	   and seems floated unused.
 	*/
-	camera@3d {
+	ar0234: camera@3d {
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_ar0234>;
 		compatible = "onnn,ap1302";
@@ -450,7 +455,7 @@
 
 		sensors {
 			sensor,model = "ar0234";
-			sensor,resolution = <1920 1200>;
+			sensor,resolution = <1920 1080>;
 			sensor,format = <0x200f>; /* MEDIA_BUS_FMT_UYVY8_1X16 */
 
 			#address-cells = <1>;

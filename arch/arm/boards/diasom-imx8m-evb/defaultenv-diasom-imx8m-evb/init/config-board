@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# Put camera GPIOs into active state
+gpio_direction_output 6 0
+msleep 10
+gpio_direction_output 7 0
+msleep 10
+gpio_direction_output 6 1
+
+exit 0

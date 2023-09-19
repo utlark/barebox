@@ -8,14 +8,6 @@
 #include <i2c/i2c.h>
 #include <mach/imx/bbu.h>
 
-static void diasom_imx8m_evb_enable_device(struct device_node *root,
-					   const char *label)
-{
-	struct device_node *np = of_find_node_by_name(root, label);
-	if (np)
-		of_device_enable(np);
-}
-
 static int diasom_imx8m_evb_probe_i2c(struct i2c_adapter *adapter, const int addr)
 {
 	u8 buf[1];
@@ -29,19 +21,24 @@ static int diasom_imx8m_evb_probe_i2c(struct i2c_adapter *adapter, const int add
 	return (i2c_transfer(adapter, &msg, 1) == 1) ? 0: -ENODEV;
 }
 
-static int diasom_imx8m_evb_fixup(struct device_node *root, void *unused)
+static int diasom_imx8m_evb_fixup(struct device_node *, void *)
 {
-	struct i2c_adapter *adapter = i2c_get_adapter(2);
-	if (!adapter)
-		return -ENODEV;
+	struct i2c_adapter *adapter;
 
-	if (!diasom_imx8m_evb_probe_i2c(adapter, 0x54)) {
-		pr_info("Camera AR0234 detected.\n");
-		diasom_imx8m_evb_enable_device(root, "camera@3d");
-	} else {
-		pr_info("Camera AR0234 not detected. Assume using OV5640.\n");
-		diasom_imx8m_evb_enable_device(root, "camera@3c");
+	adapter = i2c_get_adapter(2);
+	if (adapter) {
+		if (!diasom_imx8m_evb_probe_i2c(adapter, 0x3c)) {
+			pr_info("Camera OV5640 detected.\n");
+			of_register_set_status_fixup("camera0", true);
+			return 0;
+		} else if (!diasom_imx8m_evb_probe_i2c(adapter, 0x3d)) {
+			pr_info("Camera AR0234 detected.\n");
+			of_register_set_status_fixup("camera1", true);
+			return 0;
+		}
 	}
+
+	pr_warn("Camera not detected. All camera nodes are disabled.\n");
 
 	return 0;
 }
