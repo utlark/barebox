@@ -683,7 +683,7 @@
 
 &iomuxc {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_esp32>;
+	pinctrl-0 = <&pinctrl_esp32 &pinctrl_gpios>;
 
 	pinctrl_adv7535: adv7535-grp {
 		fsl,pins = <
@@ -741,6 +741,16 @@
 			MX8MM_IOMUXC_ENET_RXC_ENET1_RGMII_RXC		0x91
 			MX8MM_IOMUXC_ENET_RX_CTL_ENET1_RGMII_RX_CTL	0x91
 			MX8MM_IOMUXC_ENET_TX_CTL_ENET1_RGMII_TX_CTL	0x1f
+		>;
+	};
+
+	pinctrl_gpios: gpios-grp {
+		fsl,pins = <
+			MX8MM_IOMUXC_GPIO1_IO00_GPIO1_IO0		0x19	/* X14.3 */
+			MX8MM_IOMUXC_GPIO1_IO04_GPIO1_IO4		0x19	/* X14.6 */
+			MX8MM_IOMUXC_GPIO1_IO05_GPIO1_IO5		0x19	/* X14.7 */
+			MX8MM_IOMUXC_GPIO1_IO11_GPIO1_IO11		0x19	/* X14.13 */
+			MX8MM_IOMUXC_GPIO1_IO13_GPIO1_IO13		0x19	/* X14.15 */
 		>;
 	};
 
