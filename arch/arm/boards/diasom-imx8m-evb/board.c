@@ -27,13 +27,13 @@ static int diasom_imx8m_evb_fixup(struct device_node *, void *)
 
 	adapter = i2c_get_adapter(2);
 	if (adapter) {
-		if (!diasom_imx8m_evb_probe_i2c(adapter, 0x3c)) {
-			pr_info("Camera OV5640 detected.\n");
-			of_register_set_status_fixup("camera0", true);
-			return 0;
-		} else if (!diasom_imx8m_evb_probe_i2c(adapter, 0x3d)) {
+		if (!diasom_imx8m_evb_probe_i2c(adapter, 0x3d)) {
 			pr_info("Camera AR0234 detected.\n");
 			of_register_set_status_fixup("camera1", true);
+			return 0;
+		} else {
+			pr_info("Assume camera OV5640 is used.\n");
+			of_register_set_status_fixup("camera0", true);
 			return 0;
 		}
 	}
