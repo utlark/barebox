@@ -718,9 +718,6 @@
 };
 
 &pcie2x1 {
-	/* Deprecated */
-	/delete-property/ num-ib-windows;
-	/delete-property/ num-ob-windows;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pcie20_pins>;
 	reset-gpios = <&gpio1 RK_PB1 GPIO_ACTIVE_HIGH>;
@@ -729,9 +726,6 @@
 };
 
 &pcie3x2 {
-	/* Deprecated */
-	/delete-property/ num-ib-windows;
-	/delete-property/ num-ob-windows;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pcie30_pins>;
 	reset-gpios = <&gpio4 RK_PC4 GPIO_ACTIVE_HIGH>;
