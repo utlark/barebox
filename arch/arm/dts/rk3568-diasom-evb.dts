@@ -125,20 +125,6 @@
 		//TODO:
 	};
 
-#if 0
-	/* Should be added in 6.5 */
-	rga@fdeb0000 {
-		compatible = "rockchip,rk3568-rga", "rockchip,rk3288-rga";
-		reg = <0x0 0xfdeb0000 0x0 0x180>;
-		interrupts = <GIC_SPI 90 IRQ_TYPE_LEVEL_HIGH>;
-		clocks = <&cru ACLK_RGA>, <&cru HCLK_RGA>, <&cru CLK_RGA_CORE>;
-		clock-names = "aclk", "hclk", "sclk";
-		power-domains = <&power RK3568_PD_RGA>;
-		resets = <&cru SRST_RGA_CORE>, <&cru SRST_A_RGA>, <&cru SRST_H_RGA>;
-		reset-names = "core", "axi", "ahb";
-	};
-#endif
-
 	es8388-sound {
 		compatible = "simple-audio-card";
 		simple-audio-card,name = "ES8388";
