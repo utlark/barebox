@@ -13,6 +13,7 @@
 #include <linux/stat.h>
 #include <magicvar.h>
 #include <uncompress.h>
+#include <zero_page.h>
 
 static LIST_HEAD(handler_list);
 
@@ -70,6 +71,11 @@ enum bootm_verify bootm_get_verify_mode(void)
 	return bootm_verify_mode;
 }
 
+void bootm_set_verify_mode(enum bootm_verify mode)
+{
+	bootm_verify_mode = mode;
+}
+
 static const char * const bootm_verify_names[] = {
 #ifndef CONFIG_BOOTM_FORCE_SIGNED_IMAGES
 	[BOOTM_VERIFY_NONE] = "none",
@@ -119,7 +125,7 @@ int bootm_load_os(struct image_data *data, unsigned long load_address)
 				(unsigned long long)load_address + kernel_size - 1);
 			return -ENOMEM;
 		}
-		memcpy((void *)load_address, kernel, kernel_size);
+		zero_page_memcpy((void *)load_address, kernel, kernel_size);
 		return 0;
 	}
 
@@ -244,12 +250,10 @@ int bootm_load_initrd(struct image_data *data, unsigned long load_address)
 		goto done1;
 	}
 
-	type = file_name_detect_type(data->initrd_file);
-
-	if ((int)type < 0) {
-		pr_err("could not open %s: %s\n", data->initrd_file,
-				strerror(-type));
-		return (int)type;
+	ret = file_name_detect_type(data->initrd_file, &type);
+	if (ret) {
+		pr_err("could not open initrd \"%s\": %s\n", data->initrd_file, strerror(-ret));
+		return ret;
 	}
 
 	if (type == filetype_uimage) {
@@ -366,12 +370,11 @@ void *bootm_get_devicetree(struct image_data *data)
 	} else if (data->oftree_file) {
 		size_t size;
 
-		type = file_name_detect_type(data->oftree_file);
-
-		if ((int)type < 0) {
-			pr_err("could not open %s: %s\n", data->oftree_file,
-			       strerror(-type));
-			return ERR_PTR((int)type);
+		ret = file_name_detect_type(data->oftree_file, &type);
+		if (ret) {
+			pr_err("could not open device tree \"%s\": %s\n", data->oftree_file,
+			       strerror(-ret));
+			return ERR_PTR(ret);
 		}
 
 		switch (type) {
@@ -401,9 +404,12 @@ void *bootm_get_devicetree(struct image_data *data)
 		}
 
 	} else {
-		data->of_root_node = of_get_root_node();
-		if (!data->of_root_node)
+		struct device_node *root = of_get_root_node();
+
+		if (!root)
 			return NULL;
+
+		data->of_root_node = of_dup(root);
 
 		if (bootm_verbose(data) > 1 && data->of_root_node)
 			printf("using internal devicetree\n");
@@ -415,7 +421,9 @@ void *bootm_get_devicetree(struct image_data *data)
 		of_add_reserve_entry(data->initrd_res->start, data->initrd_res->end);
 	}
 
-	oftree = of_get_fixed_tree(data->of_root_node);
+	of_fix_tree(data->of_root_node);
+
+	oftree = of_flatten_dtb(data->of_root_node);
 	if (!oftree)
 		return ERR_PTR(-EINVAL);
 
@@ -835,7 +843,7 @@ err_out:
 		elf_close(data->elf);
 	if (IS_ENABLED(CONFIG_FITIMAGE) && data->os_fit)
 		fit_close(data->os_fit);
-	if (data->of_root_node && data->of_root_node != of_get_root_node())
+	if (data->of_root_node)
 		of_delete_node(data->of_root_node);
 
 	globalvar_remove("linux.bootargs.bootm.earlycon");

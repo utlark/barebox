@@ -564,6 +564,47 @@ static void fit_uncompress_error_fn(char *x)
 	pr_err("%s\n", x);
 }
 
+static int fit_handle_decompression(struct device_node *image,
+				    const char *type,
+				    const void **data,
+				    int *data_len)
+{
+	const char *compression = NULL;
+	void *uc_data;
+	int ret;
+
+	of_property_read_string(image, "compression", &compression);
+	if (!compression || !strcmp(compression, "none"))
+		return 0;
+
+	if (!strcmp(type, "ramdisk")) {
+		pr_warn("compression != \"none\" for ramdisks is deprecated,"
+			" please fix your .its file!\n");
+		return 0;
+	}
+
+	if (!IS_ENABLED(CONFIG_UNCOMPRESS)) {
+		pr_err("image has compression = \"%s\", but support not compiled in\n",
+		       compression);
+		return -ENOSYS;
+	}
+
+	ret = uncompress_buf_to_buf(*data, *data_len, &uc_data,
+				    fit_uncompress_error_fn);
+	if (ret < 0) {
+		pr_err("data couldn't be decompressed\n");
+		return ret;
+	}
+
+	*data = uc_data;
+	*data_len = ret;
+
+	/* associate buffer with FIT, so it's not leaked */
+	__of_new_property(image, "uncompressed-data", uc_data, *data_len);
+
+	return 0;
+}
+
 /**
  * fit_open_image - Open an image in a FIT image
  * @handle: The FIT image handle
@@ -586,8 +627,7 @@ int fit_open_image(struct fit_handle *handle, void *configuration,
 		   unsigned long *outsize)
 {
 	struct device_node *image;
-	const char *unit = name, *type = NULL, *compression = NULL,
-	      *desc= "(no description)";
+	const char *unit = name, *type = NULL, *desc= "(no description)";
 	const void *data;
 	int data_len;
 	int ret = 0;
@@ -619,28 +659,9 @@ int fit_open_image(struct fit_handle *handle, void *configuration,
 	if (ret < 0)
 		return ret;
 
-	of_property_read_string(image, "compression", &compression);
-	if (compression && strcmp(compression, "none") != 0) {
-		void *uc_data;
-
-		if (!IS_ENABLED(CONFIG_UNCOMPRESS)) {
-			pr_err("image has compression = \"%s\", but support not compiled in\n",
-			       compression);
-			return -ENOSYS;
-		}
-
-		data_len = uncompress_buf_to_buf(data, data_len, &uc_data,
-					    fit_uncompress_error_fn);
-		if (data_len < 0) {
-			pr_err("data couldn't be decompressed\n");
-			return data_len;
-		}
-
-		data = uc_data;
-
-		/* associate buffer with FIT, so it's not leaked */
-		__of_new_property(image, "uncompressed-data", uc_data, data_len);
-	}
+	ret = fit_handle_decompression(image, type, &data, &data_len);
+	if (ret)
+		return ret;
 
 	*outdata = data;
 	*outsize = data_len;
@@ -669,8 +690,12 @@ static int fit_config_verify_signature(struct fit_handle *handle, struct device_
 	}
 
 	for_each_child_of_node(conf_node, sig_node) {
+		if (!of_node_has_prefix(sig_node, "signature"))
+			continue;
+
 		if (handle->verbose)
 			of_print_nodes(sig_node, 0, ~0);
+
 		ret = fit_verify_signature(sig_node, handle->fit);
 		if (ret < 0)
 			return ret;
