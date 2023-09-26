@@ -176,6 +176,7 @@
 	spi@0 {
 		compatible = "rohm,dh2228fv";
 		reg = <0>;
+		spi-max-frequency = <20000000>;
 	};
 };
 
@@ -188,6 +189,7 @@
 	spi@0 {
 		compatible = "rohm,dh2228fv";
 		reg = <0>;
+		spi-max-frequency = <20000000>;
 	};
 };
 
