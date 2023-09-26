@@ -23,6 +23,7 @@
 		ethernet1 = &gmac1;
 		mmc0 = &sdmmc0;
 		mmc1 = &sdhci;
+		sound0 = &sound0;
 	};
 
 	chosen: chosen {
@@ -125,7 +126,7 @@
 		//TODO:
 	};
 
-	es8388-sound {
+	sound0: es8388-sound {
 		compatible = "simple-audio-card";
 		simple-audio-card,name = "ES8388";
 		simple-audio-card,format = "i2s";

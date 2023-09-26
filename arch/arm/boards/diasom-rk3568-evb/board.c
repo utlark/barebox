@@ -10,14 +10,6 @@
 #include <i2c/i2c.h>
 #include <mach/rockchip/bbu.h>
 
-static void diasom_rk3568_evb_disable_device(struct device_node *root,
-					     const char *label)
-{
-	struct device_node *np = of_find_node_by_name(root, label);
-	if (np)
-		of_device_disable(np);
-}
-
 static int diasom_rk3568_evb_probe_i2c(struct i2c_adapter *adapter, const int addr)
 {
 	u8 buf[1];
@@ -39,8 +31,8 @@ static int diasom_rk3568_evb_fixup(struct device_node *root, void *unused)
 
 	/* i2c4@0x10 */
 	if (diasom_rk3568_evb_probe_i2c(adapter, 0x10)) {
-		pr_warn("ES8388 not found, disabling codec.\n");
-		diasom_rk3568_evb_disable_device(root, "codec@10");
+		pr_warn("ES8388 codec not found, disabling soundcard.\n");
+		of_register_set_status_fixup("sound0", false);
 	}
 
 	return 0;
