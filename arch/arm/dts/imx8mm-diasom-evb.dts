@@ -16,15 +16,15 @@
 	chosen {
 		stdout-path = "serial1:115200n8";
 
-		environment-sd {
-			compatible = "barebox,environment";
-			device-path = &usdhc2, "partname:env";
-			status = "disabled";
-		};
-
 		environment-emmc {
 			compatible = "barebox,environment";
 			device-path = &usdhc1, "partname:env";
+			status = "disabled";
+		};
+
+		environment-sd {
+			compatible = "barebox,environment";
+			device-path = &usdhc2, "partname:env";
 			status = "disabled";
 		};
 	};

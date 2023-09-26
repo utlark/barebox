@@ -28,15 +28,15 @@
 	chosen: chosen {
 		stdout-path = "serial2:1500000n8";
 
-		environment-sd {
-			compatible = "barebox,environment";
-			device-path = &sdmmc0, "partname:env";
-			status = "disabled";
-		};
-
 		environment-emmc {
 			compatible = "barebox,environment";
 			device-path = &sdhci, "partname:env";
+			status = "disabled";
+		};
+
+		environment-sd {
+			compatible = "barebox,environment";
+			device-path = &sdmmc0, "partname:env";
 			status = "disabled";
 		};
 	};
