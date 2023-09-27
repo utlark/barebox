@@ -1,8 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0+ */
 /* SPDX-FileCopyrightText: Alexander Shiyan <shc_work@mail.ru> */
 
-/* CAN: https://github.com/ariaboard-com/rockchip_rk3568_kernel */
-
 /dts-v1/;
 
 #include <arm64/rockchip/rk3568.dtsi>
@@ -48,7 +46,9 @@
 	};
 
 	can@fe580000 {
-		compatible = "rockchip,canfd-1.0";
+		pinctrl-names = "default";
+		pinctrl-0 = <&can1m0_pins>;
+		compatible = "rockchip,rk3568-can-2.0";
 		reg = <0x0 0xfe580000 0x0 0x1000>;
 		interrupts = <GIC_SPI 2 IRQ_TYPE_LEVEL_HIGH>;
 		clocks = <&cru CLK_CAN1>, <&cru PCLK_CAN1>;
@@ -57,12 +57,12 @@
 		reset-names = "can", "can-apb";
 		tx-fifo-depth = <1>;
 		rx-fifo-depth = <6>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&can1m0_pins>;
 	};
 
 	can@fe590000 {
-		compatible = "rockchip,canfd-1.0";
+		pinctrl-names = "default";
+		pinctrl-0 = <&can2m0_pins>;
+		compatible = "rockchip,rk3568-can-2.0";
 		reg = <0x0 0xfe590000 0x0 0x1000>;
 		interrupts = <GIC_SPI 3 IRQ_TYPE_LEVEL_HIGH>;
 		clocks = <&cru CLK_CAN2>, <&cru PCLK_CAN2>;
@@ -71,8 +71,6 @@
 		reset-names = "can", "can-apb";
 		tx-fifo-depth = <1>;
 		rx-fifo-depth = <6>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&can2m0_pins>;
 	};
 
 	backlight {
