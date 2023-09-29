@@ -1,14 +1,16 @@
 #!/bin/sh
 
-DTBO=/mnt/mmc0.2/boot/rk3568-diasom-evb-test.dtbo
-[ -f $DTBO ] || DTBO=/mnt/mmc1.2/boot/rk3568-diasom-evb-test.dtbo
+DTBODIR=/mnt/mmc0.2/boot
+[ -d $DTBODIR ] || DTBODIR=/mnt/mmc1.2/boot
 
-if [ -f $DTBO ]; then
-	echo "Use devicetree overlay from $DTBO"
-	of_overlay $DTBO
+if [ -d $DTBODIR ]; then
+	echo "Use devicetree overlays from $DTBODIR"
+	global.of.overlay.dir="$DTBODIR"
+	global.of.overlay.filepattern="rk3568-diasom-evb-test*.dtbo"
+	global.of.overlay.filter="filepattern"
 	boot
 else
-	echo "Devicetree overlay not found!"
+	echo "Devicetree overlay directory not found!"
 fi
 
 exit 0
