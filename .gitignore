@@ -37,6 +37,8 @@
 Module.symvers
 *.dtb
 *.dtb.*
+*.dtbo
+*.dtbo.*
 
 #
 # Top-level generic files

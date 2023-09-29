@@ -1,0 +1,14 @@
+#!/bin/sh
+
+DTBO=/mnt/mmc0.2/boot/rk3568-diasom-evb-test.dtbo
+[ -f $DTBO ] || DTBO=/mnt/mmc1.2/boot/rk3568-diasom-evb-test.dtbo
+
+if [ -f $DTBO ]; then
+	echo "Use devicetree overlay from $DTBO"
+	of_overlay $DTBO
+	boot
+else
+	echo "Devicetree overlay not found!"
+fi
+
+exit 0

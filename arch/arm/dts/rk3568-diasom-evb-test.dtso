@@ -1,0 +1,16 @@
+/* SPDX-License-Identifier: GPL-2.0+ */
+/* SPDX-FileCopyrightText: Alexander Shiyan <shc_work@mail.ru> */
+
+/dts-v1/;
+/plugin/;
+
+&spi2 {
+	spi-slave;
+
+	/delete-node/ spi@0;
+	/delete-node/ spi@1;
+
+	slave {
+		compatible = "spi-slave-time";
+	};
+};
