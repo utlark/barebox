@@ -655,6 +655,10 @@
 
 			port@0 {
 				reg = <0>;
+
+//				fusb_role_sw: endpoint@0 {
+//					remote-endpoint = <&typec_role_sw>;
+//				};
 			};
 		};
 	};
@@ -885,7 +889,18 @@
 
 &usb_host0_xhci {
 	dr_mode = "host";
+//	usb-role-switch;
 	status = "okay";
+
+	port {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+//		typec_role_sw: endpoint@0 {
+//			reg = <0>;
+//			remote-endpoint = <&fusb_role_sw>;
+//		};
+	};
 
 	ports {
 		#address-cells = <1>;
