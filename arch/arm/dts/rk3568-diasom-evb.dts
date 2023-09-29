@@ -654,6 +654,7 @@
 			#size-cells = <0>;
 
 			port@0 {
+				/* Role Switch */
 				reg = <0>;
 
 //				fusb_role_sw: endpoint@0 {
@@ -897,6 +898,7 @@
 		#size-cells = <0>;
 
 //		typec_role_sw: endpoint@0 {
+//			/* Role Switch */
 //			reg = <0>;
 //			remote-endpoint = <&fusb_role_sw>;
 //		};
