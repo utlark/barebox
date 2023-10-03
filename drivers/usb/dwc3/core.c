@@ -9,6 +9,7 @@
  */
 
 #include <common.h>
+#include <environment.h>
 #include <linux/clk.h>
 #include <linux/phy/phy.h>
 #include <dma.h>
@@ -1412,6 +1413,18 @@ static int dwc3_probe(struct device *dev)
 	dwc->regs = dev_get_mem_region(dwc->dev, 0) + DWC3_GLOBALS_REGS_START;
 
 	dwc3_get_properties(dwc);
+
+	if (of_machine_is_compatible("diasom,ds-rk3568-evb")) {
+		int recovery = false;
+
+		if (!getenv_bool("global.board.recovery", &recovery)) {
+			if (recovery &&
+			    !strcmp(dev->name, "fcc00000.usb@fcc00000.of")) {
+				/* Force to gadget mode */
+				dwc->dr_mode = USB_DR_MODE_PERIPHERAL;
+			}
+		}
+	}
 
 	if (dev->of_node) {
 		ret = clk_bulk_get_all(dev, &dwc->clks);

@@ -1,0 +1,11 @@
+#!/bin/sh
+
+global.autoboot_timeout=2
+
+[ $global.board.recovery = true ] || exit 0
+
+global.autoboot_timeout=10
+global.fastboot.partitions=/dev/mmc1(rest)
+usbgadget -a -A
+
+exit 0
