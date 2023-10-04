@@ -1401,6 +1401,28 @@ static void dwc3_check_params(struct dwc3 *dwc)
 	}
 }
 
+static void dwc3_probe_recovery_mode(struct dwc3 *dwc)
+{
+	int recovery = 0;
+
+	if (!of_machine_is_compatible("diasom,ds-rk3568-evb"))
+		return;
+
+	if (getenv_bool("global.board.recovery", &recovery)) {
+		const char *bootsource = getenv("global.board.bootsource");
+
+		if (!strcmp(bootsource, "usb"))
+			recovery = 1;
+	}
+
+	if (!recovery)
+		return;
+
+	/* Force to gadget mode */
+	if (!strcmp(dwc->dev->name, "fcc00000.usb@fcc00000.of"))
+		dwc->dr_mode = USB_DR_MODE_PERIPHERAL;
+}
+
 static int dwc3_probe(struct device *dev)
 {
 	struct dwc3		*dwc;
@@ -1414,17 +1436,7 @@ static int dwc3_probe(struct device *dev)
 
 	dwc3_get_properties(dwc);
 
-	if (of_machine_is_compatible("diasom,ds-rk3568-evb")) {
-		int recovery = false;
-
-		if (!getenv_bool("global.board.recovery", &recovery)) {
-			if (recovery &&
-			    !strcmp(dev->name, "fcc00000.usb@fcc00000.of")) {
-				/* Force to gadget mode */
-				dwc->dr_mode = USB_DR_MODE_PERIPHERAL;
-			}
-		}
-	}
+	dwc3_probe_recovery_mode(dwc);
 
 	if (dev->of_node) {
 		ret = clk_bulk_get_all(dev, &dwc->clks);

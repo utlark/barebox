@@ -90,10 +90,17 @@ static int __init diasom_rk3568_evb_probe(struct device *dev)
 
 	barebox_set_hostname("diasom-evb");
 
-	if (bootsource == BOOTSOURCE_MMC && instance == 0)
+	if (bootsource != BOOTSOURCE_MMC || instance) {
+		if (bootsource != BOOTSOURCE_MMC) {
+			pr_info("Boot source: %s, instance %i\n",
+				bootsource_to_string(bootsource),
+				instance);
+			globalvar_add_simple("board.bootsource",
+					     bootsource_to_string(bootsource));
+		} else
+			of_device_enable_path("/chosen/environment-emmc");
+	} else
 		of_device_enable_path("/chosen/environment-sd");
-	else
-		of_device_enable_path("/chosen/environment-emmc");
 
 	rk3568_bbu_mmc_register("sd", 0, "/dev/mmc0");
 	rk3568_bbu_mmc_register("emmc", BBU_HANDLER_FLAG_DEFAULT,

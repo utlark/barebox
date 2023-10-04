@@ -2,10 +2,12 @@
 
 global.autoboot_timeout=2
 
-[ $global.board.recovery = true ] || exit 0
+[ $global.board.bootsource = "usb" ] && recover=1; global.autoboot="abort"
+[ $global.board.recovery = true ] && recover=1; global.autoboot_timeout=10
 
-global.autoboot_timeout=10
-global.fastboot.partitions=/dev/mmc1(rest)
+[ $recover = 1 ] || exit 0
+
+global.fastboot.partitions="/dev/mmc1(emmc)"
 usbgadget -a -A
 
 exit 0
