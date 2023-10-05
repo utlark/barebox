@@ -1412,7 +1412,7 @@ static bool dwc3_want_otg_mode(void)
 
 	bootsource = getenv("global.board.bootsource");
 
-	return !strcmp(bootsource, "usb");
+	return bootsource ? !strcmp(bootsource, "usb") : false;
 }
 
 static void dwc3_probe_recovery_mode(struct dwc3 *dwc)
