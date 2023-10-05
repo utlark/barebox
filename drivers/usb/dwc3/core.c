@@ -1401,24 +1401,29 @@ static void dwc3_check_params(struct dwc3 *dwc)
 	}
 }
 
-static void dwc3_probe_recovery_mode(struct dwc3 *dwc)
+static bool dwc3_want_otg_mode(void)
 {
+	const char *bootsource;
 	int recovery = 0;
 
+	if (!getenv_bool("global.board.recovery", &recovery))
+		if (recovery)
+			return true;
+
+	bootsource = getenv("global.board.bootsource");
+
+	return !strcmp(bootsource, "usb");
+}
+
+static void dwc3_probe_recovery_mode(struct dwc3 *dwc)
+{
 	if (!of_machine_is_compatible("diasom,ds-rk3568-evb"))
 		return;
 
-	if (getenv_bool("global.board.recovery", &recovery)) {
-		const char *bootsource = getenv("global.board.bootsource");
-
-		if (!strcmp(bootsource, "usb"))
-			recovery = 1;
-	}
-
-	if (!recovery)
+	if (!dwc3_want_otg_mode())
 		return;
 
-	/* Force to gadget mode */
+	/* Force to peripheral mode only for OTG port */
 	if (!strcmp(dwc->dev->name, "fcc00000.usb@fcc00000.of"))
 		dwc->dr_mode = USB_DR_MODE_PERIPHERAL;
 }
