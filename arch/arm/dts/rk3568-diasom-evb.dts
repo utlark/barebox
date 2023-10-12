@@ -41,11 +41,6 @@
 		};
 	};
 
-	memory@a00000 {
-		device_type = "memory";
-		reg = <0x0 0x00a00000 0x0 0x7f600000>;
-	};
-
 	adc-keys {
 		compatible = "adc-keys";
 		io-channels = <&saradc 0>;
