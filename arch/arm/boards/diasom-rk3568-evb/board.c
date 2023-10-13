@@ -9,6 +9,8 @@
 #include <envfs.h>
 #include <globalvar.h>
 #include <init.h>
+#include <machine_id.h>
+#include <mci.h>
 #include <i2c/i2c.h>
 #include <mach/rockchip/bbu.h>
 
@@ -82,6 +84,61 @@ static int __init diasom_rk3568_evb_check_recovery(void)
 	return 0;
 }
 device_initcall(diasom_rk3568_evb_check_recovery);
+
+#define UNSTUFF_BITS(resp,start,size)					\
+	({								\
+		const int __size = size;				\
+		const u32 __mask = (__size < 32 ? 1 << __size : 0) - 1;	\
+		const int __off = 3 - ((start) / 32);			\
+		const int __shft = (start) & 31;			\
+		u32 __res;						\
+									\
+		__res = resp[__off] >> __shft;				\
+		if (__size + __shft > 32)				\
+		__res |= resp[__off-1] << ((32 - __shft) % 32);		\
+		__res & __mask;						\
+	})
+
+static unsigned extract_psn(struct mci *mci)
+{
+	if (!IS_SD(mci)) {
+		if (mci->version > MMC_VERSION_1_4)
+			return UNSTUFF_BITS(mci->cid, 16, 32);
+		else
+			return UNSTUFF_BITS(mci->cid, 16, 24);
+	}
+
+	return UNSTUFF_BITS(mci->csd, 24, 32);
+}
+
+static int __init diasom_rk3568_evb_machine_id(void)
+{
+	struct mci *mci;
+	unsigned serial;
+
+	if (!of_machine_is_compatible("diasom,ds-rk3568-evb"))
+		return 0;
+
+	if (!IS_ENABLED(CONFIG_MACHINE_ID)) {
+		pr_warn("Machine ID is not set due to a disabled feature!\n");
+		return -ENOTSUPP;
+	}
+
+	mci = mci_get_device_by_name("mmc1");
+	if (!mci) {
+		pr_err("Unable to get MCI device!\n");
+		return -ENODEV;
+	}
+
+	serial = extract_psn(mci);
+
+	pr_info("Setup Machine ID from EMMC serial: %u\n", serial);
+
+	machine_id_set_hashable(&serial, sizeof(serial));
+
+	return 0;
+}
+of_populate_initcall(diasom_rk3568_evb_machine_id);
 
 static int __init diasom_rk3568_evb_probe(struct device *dev)
 {
