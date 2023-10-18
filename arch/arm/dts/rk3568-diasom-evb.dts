@@ -83,6 +83,48 @@
 		rx-fifo-depth = <6>;
 	};
 
+	csi2_dphy0: csi2-dphy0 {
+		compatible = "rockchip,rk3568-csi2-dphy";
+		rockchip,hw = <&csi2_dphy_hw>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				csi_in: endpoint@0 {
+					reg = <0>;
+					remote-endpoint = <&xc7160b_out>;
+					data-lanes = <1 2 3 4>;
+				};
+			};
+
+			port@1 {
+				reg = <1>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				csi_out: endpoint@0 {
+					reg = <0>;
+					remote-endpoint = <&isp_in>;
+					data-lanes = <1 2 3 4>;
+				};
+			};
+		};
+	};
+
+	csi2_dphy_hw: csi2-dphy-hw@fe870000 {
+		compatible = "rockchip,rk3568-csi2-dphy-hw";
+		reg = <0x0 0xfe870000 0x0 0x1000>;
+		clocks = <&cru PCLK_MIPICSIPHY>;
+		clock-names = "pclk";
+		rockchip,grf = <&grf>;
+	};
+
 	backlight: backlight {
 		compatible = "pwm-backlight";
 		pwms = <&pwm5 0 25000 0>;
@@ -99,6 +141,49 @@
 		port {
 			hdmi_connector_in: endpoint {
 				remote-endpoint = <&hdmi_connector_out>;
+			};
+		};
+	};
+
+	isp: rkisp@fdff0000 {
+		compatible = "rockchip,rk3568-rkisp";
+		reg = <0x0 0xfdff0000 0x0 0x10000>;
+		interrupts = <GIC_SPI 57 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 58 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 60 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "mipi_irq", "mi_irq", "isp_irq";
+		clocks = <&cru ACLK_ISP>, <&cru HCLK_ISP>, <&cru CLK_ISP>;
+		clock-names = "aclk_isp", "hclk_isp", "clk_isp";
+		resets = <&cru SRST_ISP>, <&cru SRST_H_ISP>;
+		reset-names = "isp", "isp-h";
+		rockchip,grf = <&grf>;
+		power-domains = <&power RK3568_PD_VI>;
+		iommus = <&isp_mmu>;
+		rockchip,iq-feature = /bits/ 64 <0x1BFBFFFE67FF>;
+	};
+
+	isp_mmu: iommu@fdff1a00 {
+		compatible = "rockchip,rk3568-iommu";
+		reg = <0x0 0xfdff1a00 0x0 0x100>;
+		interrupts = <GIC_SPI 59 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&cru ACLK_ISP>, <&cru HCLK_ISP>;
+		clock-names = "aclk", "iface";
+		power-domains = <&power RK3568_PD_VI>;
+		rockchip,disable-mmu-reset;
+		#iommu-cells = <0>;
+	};
+
+	isp_vir0: rkisp-vir0 {
+		compatible = "rockchip,rkisp-vir";
+		rockchip,hw = <&isp>;
+
+		port {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			isp_in: endpoint@0 {
+				reg = <0>;
+				remote-endpoint = <&csi_out>;
 			};
 		};
 	};
@@ -695,11 +780,24 @@
 	};
 
 	camera@1b {
-		/* xc7160b */
 		pinctrl-names = "default";
 		pinctrl-0 = <&cif_clk &csi0_pins>;
+		compatible = "firefly,xc7160";
 		reg = <0x1b>;
-		//TODO:
+		clocks = <&cru CLK_CIF_OUT>;
+		clock-names = "xvclk";
+		power-domains = <&power RK3568_PD_VI>;
+		reset-gpios = <&gpio3 RK_PB6 GPIO_ACTIVE_HIGH>;
+		avdd-supply = <&vcc5v0_sys>;
+		dovdd-supply = <&vcc5v0_sys>;
+		dvdd-supply = <&vcc5v0_sys>;
+
+		port {
+			xc7160b_out: endpoint {
+				data-lanes = <1 2 3 4>;
+				remote-endpoint = <&csi_in>;
+			};
+		};
 	};
 };
 
