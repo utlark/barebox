@@ -3,14 +3,17 @@
 DTBODIR=/mnt/mmc0.2/boot
 [ -d $DTBODIR ] || DTBODIR=/mnt/mmc1.2/boot
 
+global.linux.bootargs.console="$global.linux.bootargs.console printk.time=1"
+
 if [ -d $DTBODIR ]; then
 	echo "Use devicetree overlays from $DTBODIR"
 	global.of.overlay.dir="$DTBODIR"
 	global.of.overlay.filepattern="rk3568-diasom-evb-test*.dtbo"
 	global.of.overlay.filter="filepattern"
-	boot
 else
 	echo "Devicetree overlay directory not found!"
 fi
+
+boot
 
 exit 0
