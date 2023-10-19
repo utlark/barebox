@@ -10,10 +10,10 @@ if [ -d $DTBODIR ]; then
 	global.of.overlay.dir="$DTBODIR"
 	global.of.overlay.filepattern="rk3568-diasom-evb-test*.dtbo"
 	global.of.overlay.filter="filepattern"
+
+	boot
 else
 	echo "Devicetree overlay directory not found!"
 fi
-
-boot
 
 exit 0
