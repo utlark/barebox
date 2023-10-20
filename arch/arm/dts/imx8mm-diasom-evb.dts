@@ -888,7 +888,7 @@
 
 	pinctrl_usbconn: usbconn-grp {
 		fsl,pins = <
-			MX8MM_IOMUXC_GPIO1_IO10_GPIO1_IO10		0x41
+			MX8MM_IOMUXC_GPIO1_IO10_USB1_OTG_ID		0x400001c0
 		>;
 	};
 
