@@ -1,0 +1,5 @@
+#!/bin/sh
+
+global.autoboot_timeout=2
+
+exit 0
