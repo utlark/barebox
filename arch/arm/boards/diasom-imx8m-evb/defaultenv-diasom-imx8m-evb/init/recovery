@@ -2,4 +2,21 @@
 
 global.autoboot_timeout=2
 
+# Get OTG ID pin state
+gpio_get_value 10
+
+# Setup for host if zero
+if [ $? -eq 0 ]; then
+	otg.mode=host
+	exit 0
+fi
+
+# Disallow wrong values
+if [ $? -ne 1 ]; then
+	echo "USB OTG port is in unknown state!"
+	exit 1
+fi
+
+#TODO
+
 exit 0
