@@ -1,20 +1,29 @@
 #!/bin/sh
 
 if [ -f /mnt/mmc1.1/boot/Image.gz ]; then
-	echo "Booting from MMC"
+	echo "Booting from SD"
+
+	DTB=/mnt/mmc1.1/boot/imx8mm-diasom-evb.dtb
 
 	global.bootm.image=/mnt/mmc1.1/boot/Image.gz
 	global.linux.bootargs.dyn.root="root=/dev/mmcblk1p2 ro rootdelay=3"
+elif [ -f /mnt/mmc0.1/boot/Image.gz ]; then
+	echo "Booting from eMMC"
 
-	DTB=/boot/imx8mm-diasom-evb.dtb
-	if [ -f /mnt/mmc1.1$DTB ]; then
-		echo "Using external devicetree blob from $DTB"
-		global.bootm.oftree=/mnt/mmc1.1$DTB
-	else
-		echo "Using internal devicetree blob"
-	fi
+	DTB=/mnt/mmc0.1/boot/imx8mm-diasom-evb.dtb
 
-	exit 0
+	global.bootm.image=/mnt/mmc0.1/boot/Image.gz
+	global.linux.bootargs.dyn.root="root=/dev/mmcblk0p2 ro rootdelay=3"
+else
+	echo "Boot image bot found!"
+	exit 1
+fi
+
+if [ -f $DTB ]; then
+	echo "Using external devicetree blob from $DTB"
+	global.bootm.oftree=$DTB
+else
+	echo "Using internal devicetree blob"
 fi
 
 exit 0
