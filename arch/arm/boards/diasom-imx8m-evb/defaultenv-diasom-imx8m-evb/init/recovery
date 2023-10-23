@@ -26,12 +26,15 @@ if [ "$global.board.bootsource" = "serial" ]; then
 	global.autoboot=abort
 fi
 
-#if [ -d /mnt/mmc0.1 ]; then
-#	MS="-S"
-#	global.system.partitions="/dev/mmc0.root(rootfs)"
-#fi
+# Set user area for boot
+mmc0.boot=disabled
 
-#global.fastboot.partitions="/dev/mmc0(emmc)"
-#usbgadget -a -A $MS
+if [ -d /mnt/mmc0.1 ]; then
+	MS="-S"
+	global.system.partitions="/dev/mmc0.root(rootfs)"
+fi
+
+global.fastboot.partitions="/dev/mmc0(emmc)"
+usbgadget -a -A $MS
 
 exit 0
