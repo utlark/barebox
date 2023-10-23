@@ -1,5 +1,7 @@
 #!/bin/sh
 
+usbgadget -d
+
 global.autoboot_timeout=2
 
 if [ "$global.board.bootsource" = "usb" ]; then
