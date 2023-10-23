@@ -1,12 +1,12 @@
 #!/bin/sh
 
-DTBODIR=/mnt/mmc0.2/boot
-[ -d $DTBODIR ] || DTBODIR=/mnt/mmc1.2/boot
+DTBODIR=/mnt/mmc1.1/boot
+[ -d $DTBODIR ] || DTBODIR=/mnt/mmc0.1/boot
 
 if [ -d $DTBODIR ]; then
 	echo "Use devicetree overlays from $DTBODIR"
 	global.of.overlay.dir="$DTBODIR"
-	global.of.overlay.filepattern="rk3568-diasom-evb-test*.dtbo"
+	global.of.overlay.filepattern="imx8mm-diasom-evb-test*.dtbo"
 	global.of.overlay.filter="filepattern"
 	global.linux.bootargs.console="$global.linux.bootargs.console printk.time=1"
 
