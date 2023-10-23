@@ -4,6 +4,7 @@
 #include <common.h>
 #include <deep-probe.h>
 #include <envfs.h>
+#include <globalvar.h>
 #include <init.h>
 #include <i2c/i2c.h>
 #include <mach/imx/bbu.h>
@@ -45,26 +46,27 @@ static int diasom_imx8m_evb_fixup(struct device_node *, void *)
 
 static int diasom_imx8m_evb_probe(struct device *dev)
 {
+	enum bootsource bootsource = bootsource_get();
+	int instance = bootsource_get_instance();
 	int flag = BBU_HANDLER_FLAG_DEFAULT;
 
 	barebox_set_hostname("diasom-evb");
 
-	switch (bootsource_get()) {
-	case BOOTSOURCE_MMC:
-		if (bootsource_get_instance() == 1) {
-			pr_info("Boot from SD...\n");
-			of_device_enable_path("/chosen/environment-sd");
-			flag = 0;
-			break;
-		}
-		fallthrough;
-	default:
-		pr_info("Boot from eMMC...\n");
-		of_device_enable_path("/chosen/environment-emmc");
-		break;
+	if (bootsource != BOOTSOURCE_MMC || !instance) {
+		if (bootsource != BOOTSOURCE_MMC) {
+			pr_info("Boot source: %s, instance %i\n",
+				bootsource_to_string(bootsource),
+				instance);
+			globalvar_add_simple("board.bootsource",
+					     bootsource_to_string(bootsource));
+		} else
+			of_device_enable_path("/chosen/environment-emmc");
+	} else {
+		of_device_enable_path("/chosen/environment-sd");
+		flag = 0;
 	}
 
-	imx8m_bbu_internal_mmcboot_register_handler("eMMC", "/dev/mmc2", flag);
+	imx8m_bbu_internal_mmcboot_register_handler("eMMC", "/dev/mmc0", flag);
 
 	defaultenv_append_directory(defaultenv_diasom_imx8m_evb);
 
