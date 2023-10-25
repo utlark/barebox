@@ -4,5 +4,53 @@
 /dts-v1/;
 /plugin/;
 
-/ {
+#include <arm64/rockchip/rk3568.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/pinctrl/rockchip.h>
+#include <dt-bindings/soc/rockchip,vop2.h>
+#include <dt-bindings/usb/pd.h>
+
+// #include "rk356x.dtsi"
+
+&spi1 {
+	pinctrl-0 = <&spi1m1_pins_hs>;
+	num-cs = <1>;
+	status = "okay";
+
+	spi@0 {
+		compatible = "rohm,dh2228fv";
+		reg = <0>;
+	};
+};
+
+&spi2 {
+	pinctrl-0 = <&spi2m1_pins_hs>;
+	num-cs = <1>;
+	status = "okay";
+
+	spi@0 {
+		compatible = "rohm,dh2228fv";
+		reg = <0>;
+	};
+};
+
+
+&board_pins {
+    rockchip,pins =
+        <1 RK_PA4 RK_FUNC_GPIO &pcfg_pull_up>,		/* GPIO_1 */
+        <1 RK_PA6 RK_FUNC_GPIO &pcfg_pull_up>,		/* GPIO_2 */
+        <1 RK_PA7 RK_FUNC_GPIO &pcfg_pull_up>,		/* GPIO_3 */
+        <1 RK_PB0 RK_FUNC_GPIO &pcfg_pull_up>,		/* GPIO_4 */
+        <3 RK_PA1 RK_FUNC_GPIO &pcfg_pull_up>,		/* SPI1_CS0 */
+        <2 RK_PD5 RK_FUNC_GPIO &pcfg_pull_up>,		/* SPI2_CS0 */
+        <2 RK_PD4 RK_FUNC_GPIO &pcfg_pull_up>,		/* SPI3_CS1 */
+        <1 RK_PA3 RK_FUNC_GPIO &pcfg_pull_up>,		/* UART3 CTS */
+        <1 RK_PA2 RK_FUNC_GPIO &pcfg_pull_up>,		/* UART3 RTS */
+        <2 RK_PC2 RK_FUNC_GPIO &pcfg_pull_up>,      /* UART7_CTS */
+        <2 RK_PC1 RK_FUNC_GPIO &pcfg_pull_up>, 		/* UART7_RTS*/
+        <2 RK_PB2 RK_FUNC_GPIO &pcfg_pull_up>, 		/* UART8_CTS */
+        <2 RK_PB1 RK_FUNC_GPIO &pcfg_pull_up>; 		/* UART8_RTS */		
+		
 };
