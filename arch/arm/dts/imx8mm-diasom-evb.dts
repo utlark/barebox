@@ -638,8 +638,8 @@
 	no-1-8-v;
 	no-mmc;
 	no-sdio;
-	sd-uhs-sdr104;
 	sd-uhs-ddr50;
+	sd-uhs-sdr104;
 	vmmc-supply = <&vcc3v3>;
 	status = "okay";
 };
@@ -652,7 +652,6 @@
 &usbotg1 {
 	dr_mode = "otg";
 	disable-over-current;
-	adp-disable;
 	hnp-disable;
 	srp-disable;
 	samsung,picophy-pre-emp-curr-control = <3>;
