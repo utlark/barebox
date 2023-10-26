@@ -639,6 +639,9 @@
 	no-mmc;
 	no-sdio;
 	sd-uhs-ddr50;
+	sd-uhs-sdr12;
+	sd-uhs-sdr25;
+	sd-uhs-sdr50;
 	sd-uhs-sdr104;
 	vmmc-supply = <&vcc3v3>;
 	status = "okay";
