@@ -34,11 +34,6 @@
 		camera1 = &ar0234;
 	};
 
-	memory@40000000 {
-		device_type = "memory";
-		reg = <0x0 0x40000000 0 0x80000000>;
-	};
-
 	backlight {
 		compatible = "pwm-backlight";
 		pwms = <&pwm1 0 5000000 0>;
