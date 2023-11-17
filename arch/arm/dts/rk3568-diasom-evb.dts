@@ -19,6 +19,7 @@
 
 	aliases {
 		camera0 = &xc7160;
+		camera1 = &imx335;
 		ethernet0 = &gmac0;
 		ethernet1 = &gmac1;
 		mmc0 = &sdmmc0;
@@ -796,7 +797,7 @@
 		#sound-dai-cells = <0>;
 	};
 
-	camera@1a {
+	imx335: camera@1a {
 		compatible = "sony,imx335";
 		reg = <0x1a>;
 		clocks = <&xin24m>;
