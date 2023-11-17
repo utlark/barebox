@@ -18,6 +18,7 @@
 	compatible = "diasom,ds-rk3568-evb", "rockchip,rk3568";
 
 	aliases {
+		camera0 = &xc7160;
 		ethernet0 = &gmac0;
 		ethernet1 = &gmac1;
 		mmc0 = &sdmmc0;
@@ -811,7 +812,7 @@
 		};
 	};
 
-	camera@1b {
+	xc7160: camera@1b {
 		pinctrl-names = "default";
 		pinctrl-0 = <&cif_clk &csi0_rst>;
 		compatible = "firefly,xc7160";
