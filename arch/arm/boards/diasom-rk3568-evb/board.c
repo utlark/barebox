@@ -42,6 +42,8 @@ static int diasom_rk3568_evb_fixup(struct device_node *root, void *unused)
 		of_register_set_status_fixup("sound0", false);
 	}
 
+	pr_info("Probe i2c4@0x1a: %i\n", diasom_rk3568_evb_probe_i2c(adapter, 0x1a));
+
 	return 0;
 }
 
