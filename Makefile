@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0
 VERSION = 2023
-PATCHLEVEL = 09
+PATCHLEVEL = 10
 SUBLEVEL = 0
 EXTRAVERSION =
 NAME = None
@@ -470,6 +470,7 @@ LDFLAGS_common += $(call ld-option,--no-warn-rwx-segments)
 
 LDFLAGS_barebox += $(LDFLAGS_common)
 LDFLAGS_pbl += $(LDFLAGS_common)
+LDFLAGS_elf += $(LDFLAGS_common) --nmagic -s
 
 export ARCH SRCARCH CONFIG_SHELL BASH HOSTCC KBUILD_HOSTCFLAGS CROSS_COMPILE LD CC
 export CPP AR NM STRIP OBJCOPY OBJDUMP MAKE AWK GENKSYMS PERL PYTHON3 UTS_MACHINE
@@ -483,8 +484,7 @@ export KBUILD_CFLAGS CFLAGS_KERNEL CFLAGS_MODULE
 export KBUILD_AFLAGS AFLAGS_KERNEL AFLAGS_MODULE
 export KBUILD_AFLAGS_MODULE KBUILD_CFLAGS_MODULE
 export KBUILD_AFLAGS_KERNEL KBUILD_CFLAGS_KERNEL
-export LDFLAGS_barebox
-export LDFLAGS_pbl
+export LDFLAGS_barebox LDFLAGS_pbl LDFLAGS_elf
 
 export CFLAGS_UBSAN
 export CFLAGS_KASAN CFLAGS_KASAN_NOSANITIZE
@@ -655,9 +655,6 @@ ifdef CONFIG_FRAME_POINTER
 KBUILD_CFLAGS	+= -fno-omit-frame-pointer -fno-optimize-sibling-calls
 KBUILD_CFLAGS	+= $(call cc-disable-warning,frame-address,)
 endif
-
-# Force gcc to behave correct even for buggy distributions
-KBUILD_CFLAGS          += $(call cc-option, -fno-stack-protector)
 
 KBUILD_CFLAGS-$(CONFIG_WERROR) += -Werror
 

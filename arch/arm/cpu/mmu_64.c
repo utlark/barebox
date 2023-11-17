@@ -204,6 +204,20 @@ static void mmu_enable(void)
 	set_cr(get_cr() | CR_M | CR_C | CR_I);
 }
 
+static void create_guard_page(void)
+{
+	ulong guard_page;
+
+	if (!IS_ENABLED(CONFIG_STACK_GUARD_PAGE))
+		return;
+
+	guard_page = arm_mem_guard_page_get();
+	request_sdram_region("guard page", guard_page, PAGE_SIZE);
+	remap_range((void *)guard_page, PAGE_SIZE, MAP_FAULT);
+
+	pr_debug("Created guard page\n");
+}
+
 /*
  * Prepare MMU for usage enable it.
  */
@@ -241,6 +255,7 @@ void __mmu_init(bool mmu_on)
 
 	/* Make zero page faulting to catch NULL pointer derefs */
 	zero_page_faulting();
+	create_guard_page();
 }
 
 void mmu_disable(void)
@@ -289,6 +304,7 @@ void mmu_early_enable(unsigned long membase, unsigned long memsize)
 	early_remap_range(0, 1UL << (BITS_PER_VA - 1), MAP_UNCACHED);
 	early_remap_range(membase, memsize - OPTEE_SIZE, MAP_CACHED);
 	early_remap_range(membase + memsize - OPTEE_SIZE, OPTEE_SIZE, MAP_FAULT);
+	early_remap_range(PAGE_ALIGN_DOWN((uintptr_t)_stext), PAGE_ALIGN(_etext - _stext), MAP_CACHED);
 
 	mmu_enable();
 }
