@@ -82,7 +82,7 @@
 		};
 	};
 
-	spdif-sound {
+	spdif_sound: spdif-sound {
 		compatible = "fsl,imx-audio-spdif";
 		model = "SPDIF";
 		spdif-controller = <&spdif1>;
