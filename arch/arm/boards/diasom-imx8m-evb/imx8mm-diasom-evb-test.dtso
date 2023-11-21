@@ -22,6 +22,10 @@
 	status = "disabled";
 };
 
+//i2c4
+//uart3
+//spdif
+
 &iomuxc {
 	pinctrl-0 = <&pinctrl_esp32 &pinctrl_gpios &pinctrl_test>;
 
