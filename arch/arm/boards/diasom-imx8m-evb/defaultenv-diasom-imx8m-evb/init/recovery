@@ -29,7 +29,7 @@ fi
 # Set user area for boot
 mmc0.boot=disabled
 
-if [ -d /mnt/mmc0.1 ]; then
+if [ -e /dev/mmc0.root ]; then
 	MS="-S"
 	global.system.partitions="/dev/mmc0.root(rootfs)"
 fi

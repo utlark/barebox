@@ -16,7 +16,7 @@ fi
 
 [ "$recover" = "1" ] || exit 0
 
-if [ -d /mnt/mmc1.2 ]; then
+if [ -e /dev/mmc1.root ]; then
 	MS="-S"
 	global.system.partitions="/dev/mmc1.root(rootfs)"
 fi
