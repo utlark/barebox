@@ -20,7 +20,13 @@ case $SRCARCH in
 	sparc)          BCJ=--sparc ;;
 esac
 
+if grep -q '^CONFIG_THUMB2_BAREBOX=y$' include/config/auto.conf; then
+	BCJ=--armthumb
+fi
+
 # clear BCJ filter if unsupported
-xz -H | grep -q -- $BCJ || BCJ=
+if [ -n "${BCJ}" ]; then
+	xz -H | grep -q -- $BCJ || BCJ=
+fi
 
 exec xz --check=crc32 $BCJ --lzma2=$LZMA2OPTS,dict=32MiB

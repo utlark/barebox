@@ -243,9 +243,8 @@ void __mmu_init(bool mmu_on)
 
 		pos = bank->start;
 
+		/* Skip reserved regions */
 		for_each_reserved_region(bank, rsv) {
-			remap_range((void *)resource_first_page(rsv),
-				    resource_count_pages(rsv), MAP_UNCACHED);
 			remap_range((void *)pos, rsv->start - pos, MAP_CACHED);
 			pos = rsv->end + 1;
 		}
@@ -298,6 +297,8 @@ void mmu_early_enable(unsigned long membase, unsigned long memsize)
 
 	el = current_el();
 	set_ttbr_tcr_mair(el, ttb, calc_tcr(el, BITS_PER_VA), MEMORY_ATTRIBUTES);
+	if (el == 3)
+		set_ttbr_tcr_mair(2, ttb, calc_tcr(2, BITS_PER_VA), MEMORY_ATTRIBUTES);
 
 	memset((void *)ttb, 0, GRANULE_SIZE);
 
