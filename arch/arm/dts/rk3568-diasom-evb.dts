@@ -824,6 +824,7 @@
 		avdd-supply = <&vcc5v0_sys>;
 		dovdd-supply = <&vcc5v0_sys>;
 		dvdd-supply = <&vcc5v0_sys>;
+		status = "disabled";
 
 		port {
 			xc7160_out: endpoint {

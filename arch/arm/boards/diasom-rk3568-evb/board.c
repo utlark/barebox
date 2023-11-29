@@ -42,7 +42,14 @@ static int diasom_rk3568_evb_fixup(struct device_node *root, void *unused)
 		of_register_set_status_fixup("sound0", false);
 	}
 
-	pr_info("Probe i2c4@0x1a: %i\n", diasom_rk3568_evb_probe_i2c(adapter, 0x1a));
+	if (!diasom_rk3568_evb_probe_i2c(adapter, 0x1a)) {
+		pr_info("Camera IMX335 detected.\n");
+		of_register_set_status_fixup("camera1", true);
+		return 0;
+	}
+
+	pr_info("Assume camera XC7160 is used.\n");
+	of_register_set_status_fixup("camera0", true);
 
 	return 0;
 }
