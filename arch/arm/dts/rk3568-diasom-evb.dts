@@ -350,14 +350,15 @@
 		vin-supply = <&vcc5v0_sys>;
 	};
 
-	vcccam: vcc-cam-regulator {
+	vcc_cam: vcc-cam-regulator {
 		pinctrl-names = "default";
 		pinctrl-0 = <&csi0_pwr>;
 		compatible = "regulator-fixed";
 		enable-active-high;
 		gpio = <&gpio2 RK_PD2 GPIO_ACTIVE_HIGH>;
 		regulator-name = "vcc_cam";
-		regulator-always-on;
+		startup-delay-us = <250000>;
+		vin-supply = <&vcc5v0_sys>;
 	};
 };
 
@@ -801,6 +802,9 @@
 		reg = <0x1a>;
 		clocks = <&xin24m>;
 		power-domains = <&power RK3568_PD_VI>;
+		avdd-supply = <&vcc_cam>;
+		dvdd-supply = <&vcc_cam>;
+		dovdd-supply = <&vcc_cam>;
 		status = "disabled";
 
 		port {
