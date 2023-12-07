@@ -8,7 +8,6 @@
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/leds/common.h>
 #include <dt-bindings/soc/rockchip,vop2.h>
-#include <dt-bindings/usb/pd.h>
 
 #include "rk356x.dtsi"
 
@@ -243,6 +242,7 @@
 		enable-gpios = <&gpio3 RK_PA2 GPIO_ACTIVE_HIGH>;
 		select-gpios = <&gpio4 RK_PD2 GPIO_ACTIVE_LOW>;
 		orientation-switch;
+		mode-switch;
 
 		port {
 			typec_sbu: endpoint {
@@ -712,22 +712,11 @@
 
 		connector {
 			compatible = "usb-c-connector";
-			data-role = "host";
+			data-role = "host";	/* WIP */
 			label = "USB-C";
-			power-role = "dual";
-			try-power-role = "sink";
-			typec-power-opmode = "default";
-			op-sink-microwatt = <1000000>;
-			sink-pdos =
-				<
-					PDO_FIXED(5000, 2000,
-					PDO_FIXED_USB_COMM | PDO_FIXED_DUAL_ROLE | PDO_FIXED_DATA_SWAP)
-				>;
-			source-pdos =
-				<
-					PDO_FIXED(5000, 2000,
-					PDO_FIXED_USB_COMM | PDO_FIXED_DUAL_ROLE | PDO_FIXED_DATA_SWAP)
-				>;
+			pd-disable;
+			power-role = "source";
+			typec-power-opmode = "1.5A";
 
 			ports {
 				#address-cells = <1>;
@@ -763,16 +752,10 @@
 		};
 
 		port {
-			#address-cells = <1>;
-			#size-cells = <0>;
+			/* Role Switch */
 
-			port@0 {
-				/* Role Switch */
-				reg = <0>;
-
-//				fusb_role_sw: endpoint@0 {
-//					remote-endpoint = <&typec_role_sw>;
-//				};
+			fusb_role_sw: endpoint {
+				remote-endpoint = <&typec_role_sw>;
 			};
 		};
 	};
@@ -1038,19 +1021,16 @@
 };
 
 &usb_host0_xhci {
-	dr_mode = "host";
-//	usb-role-switch;
+	dr_mode = "host";	/* WIP */
+//	usb-role-switch;	/* WIP */
 	status = "okay";
 
 	port {
-		#address-cells = <1>;
-		#size-cells = <0>;
+		typec_role_sw: endpoint {
+			/* Role Switch */
 
-//		typec_role_sw: endpoint@0 {
-//			/* Role Switch */
-//			reg = <0>;
-//			remote-endpoint = <&fusb_role_sw>;
-//		};
+			remote-endpoint = <&fusb_role_sw>;
+		};
 	};
 
 	ports {
@@ -1091,7 +1071,7 @@
 };
 
 &usb2phy0_otg {
-	phy-supply = <&vcc5v0_usb3_otg0>;
+	phy-supply = <&vcc5v0_usb3_otg0>;	/* WIP */
 	status = "okay";
 };
 
