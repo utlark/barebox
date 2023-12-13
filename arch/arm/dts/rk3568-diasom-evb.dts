@@ -716,7 +716,7 @@
 			label = "USB-C";
 			pd-disable;
 			power-role = "source";
-			typec-power-opmode = "1.5A";
+			typec-power-opmode = "default";
 
 			ports {
 				#address-cells = <1>;
