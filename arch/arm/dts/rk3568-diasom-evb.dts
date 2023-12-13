@@ -362,6 +362,8 @@
 	};
 };
 
+/delete-node/ &xin32k;
+
 &combphy0 {
 	/* USB3.0 OTG0 */
 	status = "okay";
@@ -499,7 +501,7 @@
 
 	pmic@20 {
 		pinctrl-names = "default";
-		pinctrl-0 = <&pmic_pins &pmic_int_pins>;
+		pinctrl-0 = <&pmic_pins &pmic_int_pins &clk32k_in>;
 		compatible = "rockchip,rk809";
 		reg = <0x20>;
 		interrupt-parent = <&gpio0>;
@@ -514,8 +516,9 @@
 		vcc7-supply = <&vcc3v3_sys>;
 		vcc8-supply = <&vcc3v3_sys>;
 		vcc9-supply = <&vcc3v3_sys>;
+		clock-output-names = "xin32k";
 		wakeup-source;
-		#clock-cells = <0>;
+		#clock-cells = <1>;
 
 		regulators {
 			vdd_logic: DCDC_REG1 {
