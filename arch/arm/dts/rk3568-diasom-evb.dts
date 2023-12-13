@@ -11,6 +11,8 @@
 
 #include "rk356x.dtsi"
 
+#define USBOTG_HOST
+
 / {
 	model = "Diasom DS-RK3568-EVB";
 	compatible = "diasom,ds-rk3568-evb", "rockchip,rk3568";
@@ -715,7 +717,11 @@
 
 		connector {
 			compatible = "usb-c-connector";
-			data-role = "host";	/* WIP */
+#ifdef USBOTG_HOST
+			data-role = "host";
+#else
+			data-role = "dual";
+#endif
 			label = "USB-C";
 			pd-disable;
 			power-role = "source";
@@ -1024,8 +1030,11 @@
 };
 
 &usb_host0_xhci {
-	dr_mode = "host";	/* WIP */
-//	usb-role-switch;	/* WIP */
+#ifdef USBOTG_HOST
+	dr_mode = "host";
+#else
+	usb-role-switch;
+#endif
 	status = "okay";
 
 	port {
@@ -1074,7 +1083,9 @@
 };
 
 &usb2phy0_otg {
-	phy-supply = <&vcc5v0_usb3_otg0>;	/* WIP */
+#ifdef USBOTG_HOST
+	phy-supply = <&vcc5v0_usb3_otg0>;
+#endif
 	status = "okay";
 };
 
