@@ -18,7 +18,7 @@
 };
 
 &spi2 {
-	status = "disabled"
+	status = "disabled";
 	// pinctrl-0 = <&spi2m1_pins_hs>;
 	// num-cs = <1>;
 };
@@ -38,14 +38,14 @@
 				/* spi1_misom1 */
 				<3 RK_PC2 RK_FUNC_GPIO &pcfg_pull_up>,
 				/* spi1_mosim1 */
-				<3 RK_PC1 RK_FUNC_GPIO &pcfg_pull_up>;
+				<3 RK_PC1 RK_FUNC_GPIO &pcfg_pull_up>,
 
 				/* spi2_clkm1 */
 				<3 RK_PA0 RK_FUNC_GPIO &pcfg_pull_up>,
 				/* spi2_misom1 */
 				<2 RK_PD7 RK_FUNC_GPIO &pcfg_pull_up>,
 				/* spi2_mosim1 */
-				<2 RK_PD6 RK_FUNC_GPIO &pcfg_pull_up>;
+				<2 RK_PD6 RK_FUNC_GPIO &pcfg_pull_up>,
 
 				<3 RK_PA1 RK_FUNC_GPIO &pcfg_pull_up>,	/* SPI1_CS0 */
 				<2 RK_PD5 RK_FUNC_GPIO &pcfg_pull_up>,	/* SPI2_CS0 */
