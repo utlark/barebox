@@ -965,7 +965,7 @@
 		reg = <0>;
 	};
 
-	spidev2_1: spi@1 {
+	spi@1 {
 		compatible = "rohm,dh2228fv";
 		reg = <1>;
 	};
