@@ -218,6 +218,72 @@
 		};
 	};
 
+	lvds: lvds {
+		compatible = "rockchip,rk3568-lvds";
+		phys = <&dsi_dphy0>;
+		phy-names = "dphy";
+		power-domains = <&power RK3568_PD_VO>;
+		rockchip,grf = <&grf>;
+		rockchip,output = "lvds";
+		status = "disabled";
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+
+				lvds_in_vp2: endpoint {
+					remote-endpoint = <&vp2_out_lvds>;
+				};
+			};
+
+			port@1 {
+				reg = <1>;
+
+				lvds_out_panel: endpoint {
+					remote-endpoint = <&lvds_in_panel>;
+				};
+			};
+		};
+	};
+
+	lvds_panel: panel {
+		pinctrl-names = "default";
+		pinctrl-0 = <&lvds_pins>;
+		compatible = "panel-lvds";
+		backlight = <&backlight>;
+		data-mapping = "jeida-24";
+		enable-gpios = <&gpio0 RK_PC5 GPIO_ACTIVE_HIGH>;
+		width-mm = <210>;
+		height-mm = <158>;
+		status = "disabled";
+
+		panel-timing {
+			/* Raystar RFM1040G-AWW-LNN 1024x768@60 */
+			clock-frequency = <65000000>;
+			hactive = <1024>;
+			vactive = <768>;
+			hsync-len = <4>;
+			hfront-porch = <100>;
+			hback-porch = <216>;
+			vfront-porch = <30>;
+			vback-porch = <7>;
+			vsync-len = <1>;
+			hsync-active = <0>;
+			vsync-active = <0>;
+			de-active = <0>;
+			pixelclk-active = <0>;
+		};
+
+		port {
+			lvds_in_panel: endpoint {
+				remote-endpoint = <&lvds_out_panel>;
+			};
+		};
+	};
+
 	sound0: es8388-sound {
 		compatible = "simple-audio-card";
 		simple-audio-card,name = "ES8388";
@@ -418,8 +484,8 @@
 		vccio-supply = <&vcc1v8_sys>;
 
 		port {
-			mipi_in_panel: endpoint {
-				remote-endpoint = <&mipi_out_panel>;
+			dsi_in_panel: endpoint {
+				remote-endpoint = <&dsi_out_panel>;
 			};
 		};
 	};
@@ -436,8 +502,8 @@
 };
 
 &dsi0_out {
-	mipi_out_panel: endpoint {
-		remote-endpoint = <&mipi_in_panel>;
+	dsi_out_panel: endpoint {
+		remote-endpoint = <&dsi_in_panel>;
 	};
 };
 
@@ -584,6 +650,11 @@
 
 			vdda0v9_image: LDO_REG1 {
 				regulator-name = "vdda0v9_image";
+				/* Temporary hack regulator-always-on and regulator-boot-on
+				   properties until we have regulator handling for dsi & lvds nodes
+				*/
+				regulator-always-on;
+				regulator-boot-on;
 				regulator-min-microvolt = <900000>;
 				regulator-max-microvolt = <900000>;
 
@@ -667,6 +738,11 @@
 
 			vcca1v8_image: LDO_REG9 {
 				regulator-name = "vcca1v8_image";
+				/* Temporary hack regulator-always-on and regulator-boot-on
+				   properties until we have regulator handling for dsi & lvds nodes
+				*/
+				regulator-always-on;
+				regulator-boot-on;
 				regulator-min-microvolt = <1800000>;
 				regulator-max-microvolt = <1800000>;
 
@@ -1002,6 +1078,15 @@
 	};
 };
 
+&vp2 {
+	status = "disbled";
+
+	vp2_out_lvds: endpoint@ROCKCHIP_VOP2_EP_LVDS0 {
+		reg = <ROCKCHIP_VOP2_EP_LVDS0>;
+		remote-endpoint = <&lvds_in_vp2>;
+	};
+};
+
 &uart2 {
 	status = "okay";
 };
@@ -1115,7 +1200,6 @@
 
 		/* csi1 clkout = refclk_pins */
 
-		/omit-if-no-ref/
 		csi1_pins: csi1-pins {
 			rockchip,pins =
 				<0 RK_PD4 RK_FUNC_GPIO &pcfg_pull_up>,		/* CSI_PWREN1 */
@@ -1143,6 +1227,13 @@
 			rockchip,pins =
 				<0 RK_PA6 RK_FUNC_GPIO &pcfg_pull_none>,	/* LED1 */
 				<0 RK_PC0 RK_FUNC_GPIO &pcfg_pull_none>;	/* LED2 */
+		};
+	};
+
+	lvds {
+		lvds_pins: lvds-pins {
+			rockchip,pins =
+				<0 RK_PC5 RK_FUNC_GPIO &pcfg_pull_up>;		/* LVDS_PWREN */
 		};
 	};
 

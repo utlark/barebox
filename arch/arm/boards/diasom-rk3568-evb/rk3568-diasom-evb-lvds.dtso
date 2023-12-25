@@ -1,0 +1,25 @@
+/* SPDX-License-Identifier: GPL-2.0+ */
+/* SPDX-FileCopyrightText: Alexander Shiyan <shc_work@mail.ru> */
+
+/dts-v1/;
+/plugin/;
+
+&dsi0 {
+	status = "disabled";
+};
+
+&lvds {
+	status = "okay";
+};
+
+&lvds_panel {
+	status = "okay";
+};
+
+&vp1 {
+	status = "disabled";
+};
+
+&vp2 {
+	status = "okay";
+};

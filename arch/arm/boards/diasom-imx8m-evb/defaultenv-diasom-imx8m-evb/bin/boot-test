@@ -4,7 +4,7 @@ DTBODIR=/mnt/mmc1.1/boot
 [ -d $DTBODIR ] || DTBODIR=/mnt/mmc0.1/boot
 
 if [ -d $DTBODIR ]; then
-	echo "Use devicetree overlays from $DTBODIR"
+	echo "Use TEST devicetree overlays from $DTBODIR"
 	global.of.overlay.dir="$DTBODIR"
 	global.of.overlay.filepattern="imx8mm-diasom-evb-test*.dtbo"
 	global.of.overlay.filter="filepattern"
