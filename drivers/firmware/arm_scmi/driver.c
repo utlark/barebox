@@ -988,11 +988,11 @@ static void scmi_create_protocol_devices(struct device_node *np,
  */
 int scmi_protocol_device_request(const struct scmi_device_id *id_table)
 {
-	int ret = 0;
+	int id, ret = 0;
 	struct list_head *phead = NULL;
+	struct list_head *head;
 	struct scmi_requested_dev *rdev;
 	struct scmi_info *info;
-	struct idr *idr;
 
 	pr_debug("Requesting SCMI device (%s) for protocol 0x%x\n",
 		 id_table->name, id_table->protocol_id);
@@ -1001,8 +1001,7 @@ int scmi_protocol_device_request(const struct scmi_device_id *id_table)
 	 * Search for the matching protocol rdev list and then search
 	 * of any existent equally named device...fails if any duplicate found.
 	 */
-	__idr_for_each_entry(&scmi_requested_devices, idr) {
-		struct list_head *head = idr->ptr;
+	idr_for_each_entry(&scmi_requested_devices, head, id) {
 		if (!phead) {
 			/* A list found registered in the IDR is never empty */
 			rdev = list_first_entry(head, struct scmi_requested_dev,

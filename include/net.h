@@ -236,9 +236,9 @@ struct icmphdr {
  * Maximum packet size; used to allocate packet storage.
  * TFTP packets can be 524 bytes + IP header + ethernet header.
  * Lets be conservative, and go for 38 * 16.  (Must also be
- * a multiple of 32 bytes).
+ * a multiple of 64 bytes).
  */
-#define PKTSIZE			1518
+#define PKTSIZE			1536
 
 /**********************************************************************/
 /*
@@ -417,6 +417,8 @@ static inline int is_broadcast_ether_addr(const u8 *addr)
 
 #define ETH_ALEN	6	/* Octets in an Ethernet address */
 #define ETH_HLEN	14	/* Total octets in header.*/
+
+int generate_ether_addr(u8 *addr, int ethid);
 
 /**
  * random_ether_addr - Generate software assigned random Ethernet address

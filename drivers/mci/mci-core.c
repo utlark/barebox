@@ -298,7 +298,8 @@ static int mci_read_block(struct mci *mci, void *dst, int blocknum,
 	ret = mci_send_cmd(mci, &cmd, &data);
 
 	if (ret || blocks > 1) {
-		mci_setup_cmd(&cmd, MMC_CMD_STOP_TRANSMISSION, 0, MMC_RSP_R1b);
+		mci_setup_cmd(&cmd, MMC_CMD_STOP_TRANSMISSION, 0,
+			      IS_SD(mci) ? MMC_RSP_R1b : MMC_RSP_R1);
 		mci_send_cmd(mci, &cmd, NULL);
 	}
 	return ret;
@@ -450,7 +451,7 @@ static int mmc_send_op_cond(struct mci *mci)
 	mci->ocr = cmd.response[0];
 
 	mci->high_capacity = ((mci->ocr & OCR_HCS) == OCR_HCS);
-	mci->rca = 0;
+	mci->rca = 2;
 
 	return 0;
 }
@@ -494,7 +495,9 @@ int mci_send_ext_csd(struct mci *mci, char *ext_csd)
  */
 int mci_switch(struct mci *mci, unsigned index, unsigned value)
 {
+	unsigned int status;
 	struct mci_cmd cmd;
+	int ret;
 
 	mci_setup_cmd(&cmd, MMC_CMD_SWITCH,
 		(MMC_SWITCH_MODE_WRITE_BYTE << 24) |
@@ -502,7 +505,35 @@ int mci_switch(struct mci *mci, unsigned index, unsigned value)
 		(value << 8),
 		 MMC_RSP_R1b);
 
-	return mci_send_cmd(mci, &cmd, NULL);
+	ret = mci_send_cmd(mci, &cmd, NULL);
+	if (ret)
+		return ret;
+
+	ret = mci_send_status(mci, &status);
+	if (ret)
+		return ret;
+
+	if (status & R1_SWITCH_ERROR)
+		return -EIO;
+
+	return 0;
+}
+
+u8 *mci_get_ext_csd(struct mci *mci)
+{
+	u8 *ext_csd;
+	int ret;
+
+	ext_csd = xmalloc(512);
+
+	ret = mci_send_ext_csd(mci, ext_csd);
+	if (ret) {
+		printf("Failure to read EXT_CSD register\n");
+		free(ext_csd);
+		return ERR_PTR(-EIO);
+	}
+
+	return ext_csd;
 }
 
 static blkcnt_t mci_calc_blk_cnt(blkcnt_t cap, unsigned shift)
@@ -1193,9 +1224,6 @@ static int mci_mmc_try_bus_width(struct mci *mci, enum mci_bus_width bus_width,
 	u32 ext_csd_bits;
 	int err;
 
-	dev_dbg(&mci->dev, "attempting buswidth %u%s\n", 1 << bus_width,
-		mci_timing_is_ddr(timing) ? " (DDR)" : "");
-
 	ext_csd_bits = mci_bus_width_ext_csd_bits(bus_width);
 
 	if (mci_timing_is_ddr(timing))
@@ -1203,16 +1231,20 @@ static int mci_mmc_try_bus_width(struct mci *mci, enum mci_bus_width bus_width,
 
 	err = mci_switch(mci, EXT_CSD_BUS_WIDTH, ext_csd_bits);
 	if (err < 0)
-		return err;
+		goto out;
 
 	mci->host->timing = timing;
 	mci_set_bus_width(mci, bus_width);
 
 	err = mmc_compare_ext_csds(mci, bus_width);
 	if (err < 0)
-		return err;
+		goto out;
 
-	return bus_width;
+out:
+	dev_dbg(&mci->dev, "Tried buswidth %u%s: %s\n", 1 << bus_width,
+		mci_timing_is_ddr(timing) ? " (DDR)" : "", err ? "failed" : "OK");
+
+	return err ?: bus_width;
 }
 
 static int mci_mmc_select_bus_width(struct mci *mci)
@@ -1258,7 +1290,13 @@ static int mci_mmc_select_hs_ddr(struct mci *mci)
 	struct mci_host *host = mci->host;
 	int ret;
 
-	if (!(mci_caps(mci) & MMC_CAP_MMC_1_8V_DDR))
+	/*
+	 * barebox MCI core does not change voltage, so we don't know here
+	 * if we should check for the 1.8v or 3.3v mode. Until we support
+	 * higher speed modes that require voltage switching like HS200/HS400,
+	 * let's just check for either bit.
+	 */
+	if (!(mci_caps(mci) & (MMC_CAP_MMC_1_8V_DDR | MMC_CAP_MMC_3_3V_DDR)))
 		return 0;
 
 	ret = mci_mmc_try_bus_width(mci, host->bus_width, MMC_TIMING_MMC_DDR52);
@@ -1938,6 +1976,22 @@ static int of_broken_cd_fixup(struct device_node *root, void *ctx)
 	return 0;
 }
 
+static int mci_get_partition_setting_completed(struct mci *mci)
+{
+	u8 *ext_csd;
+	int ret;
+
+	ext_csd = mci_get_ext_csd(mci);
+	if (IS_ERR(ext_csd))
+		return PTR_ERR(ext_csd);
+
+	ret = ext_csd[EXT_CSD_PARTITION_SETTING_COMPLETED];
+
+	free(ext_csd);
+
+	return ret;
+}
+
 /**
  * Probe an MCI card at the given host interface
  * @param mci MCI device instance
@@ -2049,6 +2103,13 @@ static int mci_card_probe(struct mci *mci)
 			dev_add_param_bool(&mci->dev, "boot_ack",
 					   mci_set_boot_ack, NULL,
 					   &mci->boot_ack_enable, mci);
+
+		ret = mci_get_partition_setting_completed(mci);
+		if (ret < 0)
+			dev_dbg(&mci->dev,
+				"Failed to determine EXT_CSD_PARTITION_SETTING_COMPLETED\n");
+		else
+			dev_add_param_bool_fixed(&mci->dev, "partitioning_completed", ret);
 	}
 
 	dev_dbg(&mci->dev, "SD Card successfully added\n");
@@ -2128,7 +2189,7 @@ int mci_register(struct mci_host *host)
 {
 	struct mci *mci;
 	struct device *hw_dev;
-	struct param_d *param_probe, *param_broken_cd;
+	struct param_d *param;
 	int ret;
 
 	mci = xzalloc(sizeof(*mci));
@@ -2173,20 +2234,20 @@ int mci_register(struct mci_host *host)
 
 	dev_info(hw_dev, "registered as %s\n", dev_name(&mci->dev));
 
-	param_probe = dev_add_param_bool(&mci->dev, "probe",
-			mci_set_probe, NULL, &mci->probe, mci);
+	param = dev_add_param_bool(&mci->dev, "probe", mci_set_probe, NULL,
+				   &mci->probe, mci);
 
-	if (IS_ERR(param_probe) && PTR_ERR(param_probe) != -ENOSYS) {
-		ret = PTR_ERR(param_probe);
+	if (IS_ERR(param) && PTR_ERR(param) != -ENOSYS) {
+		ret = PTR_ERR(param);
 		dev_dbg(&mci->dev, "Failed to add 'probe' parameter to the MCI device\n");
 		goto err_unregister;
 	}
 
-	param_broken_cd = dev_add_param_bool(&mci->dev, "broken_cd",
-					     NULL, NULL, &host->broken_cd, mci);
+	param = dev_add_param_bool(&mci->dev, "broken_cd", NULL, NULL,
+				   &host->broken_cd, mci);
 
-	if (IS_ERR(param_broken_cd) && PTR_ERR(param_broken_cd) != -ENOSYS) {
-		ret = PTR_ERR(param_broken_cd);
+	if (IS_ERR(param) && PTR_ERR(param) != -ENOSYS) {
+		ret = PTR_ERR(param);
 		dev_dbg(&mci->dev, "Failed to add 'broken_cd' parameter to the MCI device\n");
 		goto err_unregister;
 	}

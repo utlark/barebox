@@ -3,6 +3,9 @@
 #ifndef _PM_DOMAIN_H
 #define _PM_DOMAIN_H
 
+#include <linux/list.h>
+#include <of.h>
+
 enum gpd_status {
 	GPD_STATE_ACTIVE = 0,	/* PM domain is active */
 	GPD_STATE_POWER_OFF,	/* PM domain is off */
@@ -55,6 +58,15 @@ int pm_genpd_init(struct generic_pm_domain *genpd, void *gov, bool is_off);
 
 int of_genpd_add_provider_simple(struct device_node *np,
 				 struct generic_pm_domain *genpd);
+
+struct genpd_onecell_data {
+	struct generic_pm_domain **domains;
+	unsigned int num_domains;
+	genpd_xlate_t xlate;
+};
+
+int of_genpd_add_provider_onecell(struct device_node *np,
+				  struct genpd_onecell_data *data);
 
 void pm_genpd_print(void);
 

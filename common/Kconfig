@@ -1365,6 +1365,11 @@ config DEBUG_IMX8M_UART
 	  Say Y here if you want barebox low-level debugging support
 	  on i.MX8M*.
 
+config DEBUG_IMX9_UART
+	bool "i.MX9 Debug UART"
+	depends on ARCH_IMX93
+	select DEBUG_IMX_UART
+
 config DEBUG_VEXPRESS_UART
 	bool "Vexpress Debug UART"
 	depends on ARCH_VEXPRESS
@@ -1548,6 +1553,10 @@ config DEBUG_SUN20I
 	depends on SOC_ALLWINNER_SUN20I
 	select DEBUG_LL_NS16550
 
+config DEBUG_AM62X_UART
+	bool "Texas Instruments AM62X debug UART"
+	depends on ARCH_K3
+
 config DEBUG_QEMU_ARM64_VIRT
 	bool "QEMU ARM64 Virt PL011 console"
 	depends on ARCH_ARM64_VIRT
@@ -1571,6 +1580,7 @@ config DEBUG_IMX_UART_PORT
 						DEBUG_IMX6Q_UART || \
 						DEBUG_IMX7D_UART || \
 						DEBUG_IMX8M_UART || \
+						DEBUG_IMX9_UART || \
 						DEBUG_VF610_UART
 	default 1
 	depends on ARCH_IMX
@@ -1578,10 +1588,20 @@ config DEBUG_IMX_UART_PORT
 	  Choose UART port on which kernel low-level debug messages
 	  should be output.
 
+config DEBUG_K3_UART_PORT
+	int "K3 Debug UART Port Selection" if DEBUG_AM62X_UART
+	default 0
+	depends on ARCH_K3
+	help
+	  Choose UART port on which kernel low-level debug messages
+	  should be output. Possible values are:
+	  AM62x: 0 - 6
+
 config DEBUG_OMAP_UART_PORT
 	int "OMAP Debug UART Port Selection" if DEBUG_OMAP3_UART || \
 						DEBUG_OMAP4_UART || \
-						DEBUG_AM33XX_UART
+						DEBUG_AM33XX_UART || \
+						DEBUG_AM62X_UART
 	default 1
 	depends on ARCH_OMAP
 	help

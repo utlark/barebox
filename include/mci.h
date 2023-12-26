@@ -54,8 +54,8 @@
 #define MMC_CAP_MMC_3_3V_DDR		(1 << 7)	/* Host supports eMMC DDR 3.3V */
 #define MMC_CAP_MMC_1_8V_DDR		(1 << 8)	/* Host supports eMMC DDR 1.8V */
 #define MMC_CAP_MMC_1_2V_DDR		(1 << 9)	/* Host supports eMMC DDR 1.2V */
-#define MMC_CAP_DDR			(MMC_CAP_3_3V_DDR | MMC_CAP_1_8V_DDR | \
-					 MMC_CAP_1_2V_DDR)
+#define MMC_CAP_DDR			(MMC_CAP_MMC_3_3V_DDR | MMC_CAP_MMC_1_8V_DDR | \
+					 MMC_CAP_MMC_1_2V_DDR)
 /* Mask of all caps for bus width */
 #define MMC_CAP_BIT_DATA_MASK		(MMC_CAP_4_BIT_DATA | MMC_CAP_8_BIT_DATA)
 
@@ -305,7 +305,11 @@
 #define EXT_CSD_ENH_USR_MASK		(1 << 0)
 
 /* register PARTITIONING_SUPPORT [160] */
-#define EXT_CSD_ENH_ATTRIBUTE_EN_MASK	(1 << 0)
+#define EXT_CSD_ENH_ATTRIBUTE_EN_MASK	(1 << 1)
+
+/* register EXT_CSD_WR_REL_PARAM [166] */
+#define EXT_CSD_HS_CTRL_REL		(1 << 0)
+#define EXT_CSD_EN_REL_WR		(1 << 2)
 
 /* register BUS_WIDTH [183], field Bus Mode Selection [4:0] */
 #define EXT_CSD_BUS_WIDTH_1	0	/* Card is in 1 bit mode */
@@ -319,6 +323,7 @@
 #define R1_STATUS(x)			(x & 0xFFF9A000)
 #define R1_CURRENT_STATE(x)		((x & 0x00001E00) >> 9)	/* sx, b (4 bits) */
 #define R1_READY_FOR_DATA 		(1 << 8)		/* sx, a */
+#define R1_SWITCH_ERROR			(1 << 7)
 #define R1_APP_CMD			(1 << 5)
 
 #define R1_STATUS_MASK			(~0x0206BF7F)
@@ -540,6 +545,7 @@ void mci_of_parse_node(struct mci_host *host, struct device_node *np);
 int mci_detect_card(struct mci_host *);
 int mci_send_ext_csd(struct mci *mci, char *ext_csd);
 int mci_switch(struct mci *mci, unsigned index, unsigned value);
+u8 *mci_get_ext_csd(struct mci *mci);
 
 static inline int mmc_host_is_spi(struct mci_host *host)
 {

@@ -27,6 +27,7 @@ config ARM_SCMI_PROTOCOL
 	tristate "ARM System Control and Management Interface (SCMI) Message Protocol"
 	depends on ARM || COMPILE_TEST
 	depends on ARM_SMCCC
+	select IDR
 	help
 	  ARM System Control and Management Interface (SCMI) protocol is a
 	  set of operating system-independent software interfaces that are
@@ -41,5 +42,21 @@ config QEMU_FW_CFG
 	  The selector key can be set via ioctl or device parameter
 	  and read/writes are translated to the MMIO/IO port appropriate
 	  for the platform.
+
+config TI_SCI_PROTOCOL
+	bool "TI System Control Interface (TISCI) Message Protocol"
+	depends on TI_MESSAGE_MANAGER
+	default ARCH_K3
+	help
+	  TI System Control Interface (TISCI) Message Protocol is used to manage
+	  compute systems such as ARM, DSP etc with the system controller in
+	  complex System on Chip(SoC) such as those found on certain keystone
+	  generation SoC from TI.
+
+	  System controller provides various facilities including power
+	  management function support.
+
+	  This protocol library is used by client drivers to use the features
+	  provided by the system controller.
 
 endmenu

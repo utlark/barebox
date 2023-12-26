@@ -212,7 +212,34 @@ like a Linux kernel that is passed an external device tree. For example:
 
   U-Boot: tftp $kernel_addr barebox-dt-2nd.img
   U-Boot: tftp $fdt_addr my-board.dtb
-  U-Boot: booti $kernel_addr - $fdt_addr
+  U-Boot: bootz $kernel_addr - $fdt_addr # On 32-bit ARM
+  U-Boot: booti $kernel_addr - $fdt_addr # for other platforms
+
+Another option is to generate a FIT image containing the generic DT image and a
+matching device tree with ``mkimage``:
+
+.. code-block:: console
+  sh: mkimage --architecture arm \
+      --os linux \
+      --type kernel \
+      --fit auto \
+      --load-address $kernel_addr_r \
+      --compression none \
+      --image images/barebox-dt-2nd.img \
+      --device-tree arch/${ARCH}/dts/my-board.dtb \
+      barebox-dt-2nd.fit
+
+This FIT image can then be loaded by U-Boot and executed just like a regular
+Linux kernel:
+
+.. code-block:: console
+  U-Boot: tftp $fit_addr barebox-dt-2nd.fit
+  U-Boot: bootm $fit_addr
+
+Make sure that the address in ``$fit_addr`` is different from the
+``$kernel_addr_r`` passed to ``mkimage`` as the load address of the Kernel
+image. Otherwise U-Boot may attempt to overwrite the FIT image with the barebox
+image contained within.
 
 For non-DT enabled-bootloaders or other architectures, often the normal barebox
 binaries can also be used as they are designed to be startable second stage
@@ -224,7 +251,7 @@ converted to uImage format using the mkimage tool provided with U-Boot:
 .. code-block:: console
 
   sh: mkimage -n barebox -A arm -T kernel -C none -a 0x80000000 -d \
-      build/images/barebox-freescale-imx53-loco.img image
+      build/images/barebox-freescale-imx53-loco.img barebox.uImage
 
 U-Boot expects the start address of the binary to be given in the image using the
 ``-a`` option. The address depends on the board and must be an address which isn't
@@ -233,7 +260,7 @@ image for that board. The image can then be started with ``bootm``:
 
 .. code-block:: console
 
-  U-Boot: tftp $load_addr barebox.bin
+  U-Boot: tftp $load_addr barebox.uImage
   U-Boot: bootm $load_addr
 
 With barebox already running on your board, this can be used to chainload
