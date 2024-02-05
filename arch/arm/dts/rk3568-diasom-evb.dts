@@ -16,6 +16,7 @@
 / {
 	model = "Diasom DS-RK3568-EVB";
 	compatible = "diasom,ds-rk3568-evb", "rockchip,rk3568";
+	chassis-type = "embedded";
 
 	aliases {
 		camera0 = &xc7160;

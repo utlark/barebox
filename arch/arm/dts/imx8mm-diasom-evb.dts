@@ -12,6 +12,7 @@
 / {
 	model = "Diasom DS-IMX8M-EVB";
 	compatible = "diasom,ds-imx8m-evb", "fsl,imx8mm";
+	chassis-type = "embedded";
 
 	chosen {
 		stdout-path = "serial1:115200n8";
