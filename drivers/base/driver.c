@@ -273,6 +273,7 @@ int unregister_device(struct device *old_dev)
 	struct device_alias *alias, *at;
 	struct cdev *cdev, *ct;
 	struct device *child, *dt;
+	struct device_node *np;
 
 	dev_dbg(old_dev, "unregister\n");
 
@@ -294,7 +295,7 @@ int unregister_device(struct device *old_dev)
 	list_for_each_entry_safe(cdev, ct, &old_dev->cdevs, devices_list) {
 		if (cdev_is_partition(cdev)) {
 			dev_dbg(old_dev, "unregister part %s\n", cdev->name);
-			devfs_del_partition(cdev->name);
+			cdevfs_del_partition(cdev);
 		}
 	}
 
@@ -305,8 +306,10 @@ int unregister_device(struct device *old_dev)
 	/* remove device from parents child list */
 	if (old_dev->parent)
 		list_del(&old_dev->sibling);
-	if (dev_of_node(old_dev))
-		old_dev->of_node->dev = NULL;
+
+	np = dev_of_node(old_dev);
+	if (np && np->dev == old_dev)
+		np->dev = NULL;
 
 	return 0;
 }
@@ -538,7 +541,7 @@ void __iomem *dev_request_mem_region_err_null(struct device *dev, int num)
 	struct resource *res;
 
 	res = dev_request_mem_resource(dev, num);
-	if (IS_ERR(res))
+	if (IS_ERR(res) || WARN_ON(!res->start))
 		return NULL;
 
 	return IOMEM(res->start);

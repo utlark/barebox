@@ -201,10 +201,6 @@ struct pci_driver {
 
 #define	to_pci_driver(drv) container_of(drv, struct pci_driver, driver)
 
-/* these helpers provide future and backwards compatibility
- * for accessing popular PCI BAR info */
-#define pci_resource_start(dev, bar)    ((dev)->resource[(bar)].start)
-
 /**
  * DEFINE_PCI_DEVICE_TABLE - macro used to describe a pci device table
  * @_table: device table name
@@ -333,6 +329,8 @@ u8 pci_find_capability(struct pci_dev *dev, int cap);
 
 extern void __iomem *pci_iomap(struct pci_dev *dev, int bar);
 
+int pci_flr(struct pci_dev *pdev);
+
 /*
  * The world is not perfect and supplies us with broken PCI devices.
  * For at least a part of these bugs we need a work-around, so both
@@ -357,8 +355,8 @@ enum pci_fixup_pass {
 /* Anonymous variables would be nice... */
 #define DECLARE_PCI_FIXUP_SECTION(section, name, vendor, device, class,	\
 				  class_shift, hook)			\
-	static const struct pci_fixup __PASTE(__pci_fixup_##name,__LINE__) __used	\
-	__attribute__((__section__(#section), aligned((sizeof(void *)))))    \
+	static const struct pci_fixup __PASTE(__pci_fixup_##name,__LINE__) \
+	__ll_elem(section) __aligned(sizeof(void *))			\
 		= { vendor, device, class, class_shift, hook };
 
 #define DECLARE_PCI_FIXUP_CLASS_EARLY(vendor, device, class,		\

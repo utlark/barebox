@@ -19,10 +19,6 @@
 #define PROG_NAME "OMAP Loader"
 #define VERSION "1.0.0"
 
-#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
-#define OMAP_IS_BIG_ENDIAN
-#endif
-
 #include <unistd.h>		/* for usleep and friends */
 #include <getopt.h>
 #include <errno.h>
@@ -45,15 +41,6 @@
 #define OMAP_USB_BULK_IN 0x81
 #define OMAP_USB_BULK_OUT 0x01
 #define OMAP_ASIC_ID_LEN 69
-
-#ifdef OMAP_IS_BIG_ENDIAN
-#define cpu_to_le32(v) (((v & 0xff) << 24) | ((v & 0xff00) << 8) | \
-    ((v & 0xff0000) >> 8) | ((v & 0xff000000) >> 24))
-#define le32_to_cpu(v) cpu_to_le32(v)
-#else
-#define cpu_to_le32(v) (v)
-#define le32_to_cpu(v) (v)
-#endif
 
 /*
  * taken from x-loader/drivers/usb/usb.c
@@ -343,7 +330,7 @@ static int transfer_first_stage(libusb_device_handle * handle, struct arg_state 
 
 	/* TODO determine buffer size based on endpoint */
 	buffer = calloc(bufsize, sizeof (unsigned char));
-	filelen = cpu_to_le32(file->size);
+	filelen = file->size;
 
 	data = file->data;
 	dbuf = data;
@@ -410,6 +397,8 @@ static int transfer_first_stage(libusb_device_handle * handle, struct arg_state 
 		goto fail;
 	}
 
+	filelen = cpu_to_le32(filelen);
+
 	/* send the length of the first file (little endian) */
 	if (!omap_usb_write
 	    (handle, (unsigned char *) &filelen, sizeof (filelen))) {
@@ -419,9 +408,9 @@ static int transfer_first_stage(libusb_device_handle * handle, struct arg_state 
 	}
 
 	/* send the file! */
-	if (!omap_usb_write(handle, data, filelen)) {
+	if (!omap_usb_write(handle, data, file->size)) {
 		log_error("failed to send file \'%s\' (size %u)\n",
-			  file->basename, filelen);
+			  file->basename, file->size);
 		goto fail;
 	}
 

@@ -20,6 +20,7 @@
 #include <memory.h>
 #include <asm/system_info.h>
 #include <linux/pagemap.h>
+#include <tee/optee.h>
 
 #include "mmu_64.h"
 
@@ -294,9 +295,23 @@ void dma_flush_range(void *ptr, size_t size)
 	v8_flush_dcache_range(start, end);
 }
 
+static void init_range(size_t total_level0_tables)
+{
+	uint64_t *ttb = get_ttb();
+	uint64_t addr = 0;
+
+	while (total_level0_tables--) {
+		early_remap_range(addr, L0_XLAT_SIZE, MAP_UNCACHED);
+		split_block(ttb, 0);
+		addr += L0_XLAT_SIZE;
+		ttb++;
+	}
+}
+
 void mmu_early_enable(unsigned long membase, unsigned long memsize)
 {
 	int el;
+	u64 optee_membase;
 	unsigned long ttb = arm_mem_ttb(membase + memsize);
 
 	pr_debug("enabling MMU, ttb @ 0x%08lx\n", ttb);
@@ -308,9 +323,19 @@ void mmu_early_enable(unsigned long membase, unsigned long memsize)
 
 	memset((void *)ttb, 0, GRANULE_SIZE);
 
-	early_remap_range(0, 1UL << (BITS_PER_VA - 1), MAP_UNCACHED);
-	early_remap_range(membase, memsize - OPTEE_SIZE, MAP_CACHED);
-	early_remap_range(membase + memsize - OPTEE_SIZE, OPTEE_SIZE, MAP_FAULT);
+	/*
+	 * Assume maximum BITS_PER_PA set to 40 bits.
+	 * Set 1:1 mapping of VA->PA. So to cover the full 1TB range we need 2 tables.
+	 */
+	init_range(2);
+
+	early_remap_range(membase, memsize, MAP_CACHED);
+
+	if (optee_get_membase(&optee_membase))
+                optee_membase = membase + memsize - OPTEE_SIZE;
+
+	early_remap_range(optee_membase, OPTEE_SIZE, MAP_FAULT);
+
 	early_remap_range(PAGE_ALIGN_DOWN((uintptr_t)_stext), PAGE_ALIGN(_etext - _stext), MAP_CACHED);
 
 	mmu_enable();

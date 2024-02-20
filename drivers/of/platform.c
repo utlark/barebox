@@ -101,15 +101,17 @@ static struct device_node *of_get_next_dma_parent(const struct device_node *np)
  */
 bool of_dma_is_coherent(struct device_node *node)
 {
-	while (node) {
-		if (of_property_read_bool(node, "dma-coherent"))
-			return true;
-		if (of_property_read_bool(node, "dma-noncoherent"))
-			return false;
-		node = of_get_next_dma_parent(node);
+	if (IS_ENABLED(CONFIG_OF_DMA_COHERENCY)) {
+		while (node) {
+			if (of_property_read_bool(node, "dma-coherent"))
+				return true;
+			if (of_property_read_bool(node, "dma-noncoherent"))
+				return false;
+			node = of_get_next_dma_parent(node);
+		}
 	}
 
-	return IS_ENABLED(CONFIG_OF_DMA_DEFAULT_COHERENT);
+	return IS_ENABLED(CONFIG_ARCH_DMA_DEFAULT_COHERENT);
 }
 EXPORT_SYMBOL_GPL(of_dma_is_coherent);
 
@@ -127,6 +129,7 @@ static void of_dma_configure(struct device *dev, struct device_node *np)
 	}
 
 	dev->dma_offset = offset;
+	dev->dma_coherent = of_dma_is_coherent(np);
 }
 
 /**
@@ -442,9 +445,6 @@ static struct device *of_device_create_on_demand(struct device_node *np)
 	if (!np->dev && parent->dev)
 		device_rescan(parent->dev);
 
-	if (!np->dev)
-		pr_debug("Creating device for %pOF\n", np);
-
 	/* Create all parent devices needed for the requested device */
 	parent_dev = parent->dev ? : of_device_create_on_demand(parent);
 	if (IS_ERR(parent_dev))
@@ -457,6 +457,11 @@ static struct device *of_device_create_on_demand(struct device_node *np)
 	 */
 	if (np->dev)
 		return np->dev;
+
+	if (!of_property_present(np, "compatible"))
+		return NULL;
+
+	pr_debug("Creating device for %pOF\n", np);
 
 	if (of_device_is_compatible(np, "arm,primecell"))
 		dev = of_amba_device_create(np);
@@ -486,11 +491,10 @@ int of_device_ensure_probed(struct device_node *np)
 		return 0;
 
 	dev = of_device_create_on_demand(np);
+	if (!dev)
+		return -ENODEV;
 	if (IS_ERR(dev))
 		return PTR_ERR(dev);
-
-	if (!dev)
-		panic("deep-probe: device for '%pOF' couldn't be created\n", np);
 
 	/*
 	 * The deep-probe mechanism relies on the fact that all necessary

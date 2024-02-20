@@ -68,9 +68,6 @@ static inline int _alt_fpga2sdram_enable_set(struct alt_fpga2sdram_data *priv,
 	else
 		val = 0;
 
-	/* The kernel driver expects this value in this register :-( */
-	writel(priv->mask, SOCFPGA_SYSMGR_ADDR + SYSMGR_ISWGRP_HANDOFF3);
-
 	dev_dbg(priv->dev, "setting fpgaportrst to 0x%08x\n", val);
 
 	return writel(val, SOCFPGA_SDRCTL_ADDR + ALT_SDR_CTL_FPGAPORTRST_OFST);
@@ -106,8 +103,14 @@ static int alt_fpga_bridge_probe(struct device *dev)
 	if (!priv)
 		return -ENOMEM;
 
-	/* enable all ports for now */
-	priv->mask = ALT_SDR_CTL_FPGAPORTRST_PORTRSTN_MSK;
+	priv->mask = readl(SOCFPGA_SYSMGR_ADDR + SYSMGR_ISWGRP_HANDOFF3);
+	if (!priv->mask) {
+		/* enable all ports if we don't know better */
+		priv->mask = ALT_SDR_CTL_FPGAPORTRST_PORTRSTN_MSK;
+		/* The kernel driver expects this value in this register :-( */
+		writel(priv->mask, SOCFPGA_SYSMGR_ADDR + SYSMGR_ISWGRP_HANDOFF3);
+
+	}
 
 	priv->dev = dev;
 

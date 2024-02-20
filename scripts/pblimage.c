@@ -14,8 +14,13 @@
 #include <getopt.h>
 #include <endian.h>
 #include <byteswap.h>
+#include <stdbool.h>
+#include <linux/kernel.h>
 
-#define roundup(x, y)		((((x) + ((y) - 1)) / (y)) * (y))
+#include "common.h"
+#include "common.c"
+#include "../crypto/crc32.c"
+
 #define PBL_ACS_CONT_CMD	0x81000000
 #define PBL_ADDR_24BIT_MASK	0x00ffffff
 
@@ -36,10 +41,6 @@
 #define BAREBOX_START	(128 * 1024)
 
 /*
- * Initialize to an invalid value.
- */
-static uint32_t next_pbl_cmd = 0x82000000;
-/*
  * need to store all bytes in memory for calculating crc32, then write the
  * bytes to image file for PBL boot.
  */
@@ -52,68 +53,42 @@ static int out_fd;
 static int in_fd;
 static int spiimage;
 
-static uint32_t pbl_cmd_initaddr;
 static uint32_t pbi_crc_cmd1;
 static uint32_t pbi_crc_cmd2;
 
-enum arch {
-	ARCH_ARM,
-	ARCH_POWERPC,
+enum soc_type {
+	SOC_TYPE_INVALID = -1,
+	SOC_TYPE_LS1046A,
+	SOC_TYPE_LS1028A,
 };
 
-enum arch architecture = ARCH_ARM;
+struct soc_type_entry {
+	const char *name;
+	bool big_endian;
+};
+
+static struct soc_type_entry socs[] = {
+	[SOC_TYPE_LS1046A] = {
+		.name = "ls1046a",
+		.big_endian = true,
+	},
+	[SOC_TYPE_LS1028A] = {
+		.name = "ls1028a",
+		.big_endian = false,
+	},
+};
+
+static enum soc_type soc_type = SOC_TYPE_INVALID;
+
 static char *rcwfile;
 static char *pbifile;
 static char *outfile;
 static unsigned long loadaddr = 0x10000000;
 static char *infile;
 
-static uint32_t crc_table[256];
-static int crc_table_valid;
-
-static void make_crc_table(void)
-{
-	uint32_t mask;
-	int i, j;
-	uint32_t poly; /* polynomial exclusive-or pattern */
-
-	if (crc_table_valid)
-		return;
-
-	/*
-	 * the polynomial used by PBL is 1 + x1 + x2 + x4 + x5 + x7 + x8 + x10
-	 * + x11 + x12 + x16 + x22 + x23 + x26 + x32.
-	 */
-	poly = 0x04c11db7;
-
-	for (i = 0; i < 256; i++) {
-		mask = i << 24;
-		for (j = 0; j < 8; j++) {
-			if (mask & 0x80000000)
-				mask = (mask << 1) ^ poly;
-			else
-				mask <<= 1;
-		}
-		crc_table[i] = mask;
-	}
-
-	crc_table_valid = 1;
-}
-
 static uint32_t pbl_crc32(uint32_t in_crc, const char *buf, uint32_t len)
 {
-	uint32_t crc32_val;
-	int i;
-
-	make_crc_table();
-
-	crc32_val = ~in_crc;
-
-	for (i = 0; i < len; i++)
-		crc32_val = (crc32_val << 8) ^
-			crc_table[(crc32_val >> 24) ^ (*buf++ & 0xff)];
-
-	return crc32_val;
+	return crc32_be(~in_crc, buf, len);
 }
 
 /*
@@ -122,10 +97,8 @@ static uint32_t pbl_crc32(uint32_t in_crc, const char *buf, uint32_t len)
  * "xxxxxx" is the offset. Calculate the start offset by subtracting the size of
  * the image from the top of the allowable 24-bit range.
  */
-static void generate_pbl_cmd(void)
+static void generate_pbl_cmd(uint32_t val)
 {
-	uint32_t val = next_pbl_cmd;
-	next_pbl_cmd += 0x40;
 	int i;
 
 	for (i = 3; i >= 0; i--) {
@@ -165,9 +138,16 @@ static void check_get_hexval(const char *filename, int lineno, char *token)
 		exit(EXIT_FAILURE);
 	}
 
-	for (i = 3; i >= 0; i--) {
-		*pmem_buf++ = (hexval >> (i * 8)) & 0xff;
-		pbl_size++;
+	if (socs[soc_type].big_endian) {
+		for (i = 3; i >= 0; i--) {
+			*pmem_buf++ = (hexval >> (i * 8)) & 0xff;
+			pbl_size++;
+		}
+	} else {
+		for (i = 0; i < 4; i++) {
+			*pmem_buf++ = (hexval >> (i * 8)) & 0xff;
+			pbl_size++;
+		}
 	}
 }
 
@@ -231,22 +211,57 @@ static void add_end_cmd(void)
 static void pbl_load_image(void)
 {
 	int size;
+	unsigned int n;
 	uint64_t *buf64 = (void *)mem_buf;
+	uint32_t *buf32 = (void *)mem_buf;
 
 	/* parse the rcw.cfg file. */
 	pbl_parser(rcwfile);
+
+	if (soc_type == SOC_TYPE_LS1028A) {
+		uint32_t chksum = 0;
+		int i;
+
+		for (i = 0; i < 34; i++)
+			chksum += buf32[i];
+
+		buf32[0x22] = chksum;
+		pbl_size += 4;
+		pmem_buf += 4;
+	}
 
 	/* parse the pbi.cfg file. */
 	if (pbifile)
 		pbl_parser(pbifile);
 
-	next_pbl_cmd = pbl_cmd_initaddr - image_size;
-	while (next_pbl_cmd < pbl_cmd_initaddr) {
-		generate_pbl_cmd();
-		pbl_fget(64, in_fd);
-	}
+	if (soc_type == SOC_TYPE_LS1046A) {
+		for (n = 0; n < image_size; n += 0x40) {
+			uint32_t pbl_cmd;
 
-	add_end_cmd();
+			pbl_cmd = (loadaddr & PBL_ADDR_24BIT_MASK) | PBL_ACS_CONT_CMD;
+			pbl_cmd += n;
+			generate_pbl_cmd(pbl_cmd);
+			pbl_fget(64, in_fd);
+		}
+
+		add_end_cmd();
+	} else if (soc_type == SOC_TYPE_LS1028A) {
+		buf32 = (void *)pmem_buf;
+
+		buf32[0] = 0x80000008;
+		buf32[1] = 0x2000;
+		buf32[2] = 0x18010000;
+		buf32[3] = image_size;
+		buf32[4] = 0x80ff0000;
+		pbl_size += 20;
+		pmem_buf += 20;
+
+		read(in_fd, mem_buf + 0x1000, image_size);
+		pbl_size = 0x1000 + image_size;
+		printf("%s imagesize: %d\n", rcwfile, image_size);
+	} else {
+		exit(EXIT_FAILURE);
+	}
 
 	if (spiimage) {
 		int i;
@@ -284,7 +299,12 @@ static int pblimage_check_params(void)
 	}
 
 	/* For the variable size, pad it to 64 byte boundary */
-	image_size = roundup(pbl_end, 64);
+	if (soc_type == SOC_TYPE_LS1046A)
+		image_size = roundup(pbl_end, 64);
+	else if (soc_type == SOC_TYPE_LS1028A)
+		image_size = roundup(pbl_end, 512);
+	else
+		exit(EXIT_FAILURE);
 
 	if (image_size > MAX_PBL_SIZE) {
 		fprintf(stderr, "Error: pbl size %d in %s exceeds maximum size %d\n",
@@ -292,19 +312,9 @@ static int pblimage_check_params(void)
 		exit(EXIT_FAILURE);
 	}
 
-	if (architecture == ARCH_ARM) {
-		pbi_crc_cmd1 = 0x61;
-		pbi_crc_cmd2 = 0;
-		pbl_cmd_initaddr = loadaddr & PBL_ADDR_24BIT_MASK;
-		pbl_cmd_initaddr |= PBL_ACS_CONT_CMD;
-		pbl_cmd_initaddr += image_size;
-	} else {
-		pbi_crc_cmd1 = 0x13;
-		pbi_crc_cmd2 = 0x80;
-		pbl_cmd_initaddr = 0x82000000;
-	}
+	pbi_crc_cmd1 = 0x61;
+	pbi_crc_cmd2 = 0;
 
-	next_pbl_cmd = pbl_cmd_initaddr;
 	return 0;
 };
 
@@ -347,10 +357,11 @@ static int copy_fd(int in, int out)
 
 int main(int argc, char *argv[])
 {
-	int opt, ret;
+	int opt, ret, i;
 	off_t pos;
+	char *cputypestr = NULL;
 
-	while ((opt = getopt(argc, argv, "i:r:p:o:m:s")) != -1) {
+	while ((opt = getopt(argc, argv, "i:r:p:o:m:sc:")) != -1) {
 		switch (opt) {
 		case 'i':
 			infile = optarg;
@@ -370,6 +381,9 @@ int main(int argc, char *argv[])
 		case 's':
 			spiimage = 1;
 			break;
+		case 'c':
+			cputypestr = optarg;
+			break;
 		default:
 			exit(EXIT_FAILURE);
 		}
@@ -387,6 +401,26 @@ int main(int argc, char *argv[])
 
 	if (!rcwfile) {
 		fprintf(stderr, "No rcwfile given\n");
+		exit(EXIT_FAILURE);
+	}
+
+	if (!cputypestr) {
+		fprintf(stderr, "No CPU type given\n");
+		exit(EXIT_FAILURE);
+	}
+
+	for (i = 0; i < ARRAY_SIZE(socs); i++) {
+		if (!strcmp(socs[i].name, cputypestr)) {
+			soc_type = i;
+			break;
+		}
+	}
+
+	if (soc_type == SOC_TYPE_INVALID) {
+		fprintf(stderr, "Invalid CPU type %s. Valid types are:\n", cputypestr);
+		for (i = 0; i < ARRAY_SIZE(socs); i++)
+			printf("  %s\n", socs[i].name);
+
 		exit(EXIT_FAILURE);
 	}
 

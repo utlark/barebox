@@ -3,6 +3,7 @@
 #define __LINUX_REGMAP_H
 
 #include <linux/compiler.h>
+#include <linux/iopoll.h>
 #include <linux/types.h>
 
 enum regmap_endian {
@@ -31,6 +32,9 @@ enum regmap_endian {
  *         data.
  *
  * @max_register: Optional, specifies the maximum valid register index.
+ *		  This must be a valid register address and thus a multiple
+ *		  of the register stride returned by regmap_get_reg_stride()
+ *		  after registration.
  *
  * @read_flag_mask: Mask to be set in the top byte of the register when doing
  *                  a read.

@@ -42,6 +42,10 @@ config ARCH_IMX_ROMAPI
 	def_bool y
 	depends on ARCH_IMX8M || ARCH_IMX9
 
+config ARCH_IMX_SCRATCHMEM
+	def_bool y
+	depends on ARCH_IMX8M || ARCH_IMX9
+
 #
 # PMIC configuration found on i.MX51 Babbadge board
 #
@@ -550,6 +554,14 @@ config MACH_PHYTEC_PHYCORE_IMX7
 	bool "Phytec phyCORE i.MX7"
 	select ARCH_IMX7
 
+config MACH_VARISCITE_SOM_MX7
+	bool "Variscite VAR-SOM-MX7"
+	select ARCH_IMX7
+	select ARM_USE_COMPRESSED_DTB
+	help
+	  Support for boards that use a Variscite SOM-MX7, like:
+	  - Gossen Metrawatt e143_01
+
 config MACH_ZII_IMX7D_DEV
 	bool "ZII i.MX7D based devices"
 	select ARCH_IMX7
@@ -569,7 +581,6 @@ config MACH_VF610_TWR
 config MACH_ZII_VF610_DEV
 	bool "ZII VF610 Dev Family"
 	select ARCH_VF610
-	select CLKDEV_LOOKUP
 	select MACH_ZII_COMMON
 	select ARM_USE_COMPRESSED_DTB
 

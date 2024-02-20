@@ -533,12 +533,11 @@ config TIMESTAMP
 	bool
 	default y
 	select GREGORIAN_CALENDER
-	prompt "print timestamp information from images"
+	prompt "print timestamp information from uImages"
 	help
 	  When CONFIG_TIMESTAMP is selected, the timestamp
-	  (date and time) of an image is printed by image
-	  commands like bootm or iminfo. This option is
-	  automatically enabled when you select CFG_CMD_DATE .
+	  (date and time) of an uImage is printed by image
+	  commands like bootm or uimage.
 
 menuconfig BOOTM
 	select UIMAGE
@@ -1125,6 +1124,11 @@ menu "OP-TEE loading"
 
 config HAVE_OPTEE
 	bool
+	help
+	  This symbol is selected by configuration where barebox either
+	  starts OP-TEE or runs while OP-TEE is running. Actual
+	  bidirectional communication with OP-TEE is enabled via
+	  CONFIG_OPTEE.
 
 config OPTEE_SIZE
 	hex
@@ -1136,10 +1140,19 @@ config OPTEE_SIZE
 	  Can be smaller than the actual size used by OP-TEE, this is used to prevent
 	  barebox from allocating memory in this area.
 
+config OPTEE_SHM_SIZE
+	hex
+	default 0x400000
+	prompt "OP-TEE Shared Memory Size"
+	depends on HAVE_OPTEE
+	help
+	  Size to reserve in main memory for OP-TEE shared memory communication.
+	  Can be used for fixing up the OP-TEE OF node.
+
 config BOOTM_OPTEE
 	bool
 	prompt "support booting OP-TEE"
-	depends on BOOTM && ARM
+	depends on BOOTM && ARM && 32BIT
 	select HAVE_OPTEE
 	help
 	  OP-TEE is a trusted execution environment (TEE). With this option
@@ -1684,6 +1697,28 @@ config DEBUG_PROBES
 	  Removes are written to the log and will be printed as long as consoles exist.
 	  Most consoles do not implement a remove callback to remain operable until
 	  the very end. Consoles using DMA, however, must be removed.
+
+config DMA_API_DEBUG
+	bool "Enable debugging of DMA-API usage"
+	depends on HAS_DMA
+	help
+	  Enable this option to debug the use of the DMA API by device drivers.
+	  With this option you will be able to detect common bugs in device
+	  drivers like double-freeing of DMA mappings or freeing mappings that
+	  were never allocated.
+
+	  This option causes a performance degradation.  Use only if you want to
+	  debug device drivers and dma interactions.
+
+	  If unsure, say N.
+
+config DEBUG_LIST
+	bool "Debug linked list manipulation"
+	help
+	  Enable this to turn on extended checks in the linked-list
+	  walking routines.
+
+	  If unsure, say N.
 
 config PBL_BREAK
 	bool "Execute software break on pbl start"

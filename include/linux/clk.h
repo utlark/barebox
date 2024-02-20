@@ -129,6 +129,7 @@ int clk_hw_set_rate(struct clk_hw *hw, unsigned long rate);
  */
 int clk_set_parent(struct clk *clk, struct clk *parent);
 int clk_hw_set_parent(struct clk_hw *hw, struct clk_hw *hwp);
+struct clk_hw *clk_hw_get_parent_by_index(const struct clk_hw *hw, unsigned int idx);
 
 /**
  * clk_get_parent - get the parent clock source for this clock
@@ -139,6 +140,7 @@ int clk_hw_set_parent(struct clk_hw *hw, struct clk_hw *hwp);
  */
 struct clk *clk_get_parent(struct clk *clk);
 struct clk_hw *clk_hw_get_parent(struct clk_hw *hw);
+int clk_hw_get_parent_index(struct clk_hw *hw);
 
 int clk_set_phase(struct clk *clk, int degrees);
 int clk_get_phase(struct clk *clk);
@@ -183,6 +185,11 @@ static inline struct clk *clk_get(struct device *dev, const char *id)
 static inline struct clk *clk_get_parent(struct clk *clk)
 {
 	return NULL;
+}
+
+static inline int clk_hw_get_parent_index(struct clk_hw *hw)
+{
+	return -EINVAL;
 }
 
 static inline int clk_enable(struct clk *clk)
@@ -322,6 +329,8 @@ struct clk_ops {
  * @name: clock name
  * @ops: operations this clock supports
  * @parent_names: array of string names for all possible parents
+ * @parent_hws: array of pointers to all possible parents (when all parents
+ *              are internal to the clk controller)
  * @num_parents: number of possible parents
  * @flags: framework-level hints and quirks
  */
@@ -329,6 +338,7 @@ struct clk_init_data {
 	const char		*name;
 	const struct clk_ops	*ops;
 	const char		* const *parent_names;
+	const struct clk_hw	**parent_hws;
 	unsigned int		num_parents;
 	unsigned long		flags;
 };
@@ -411,6 +421,7 @@ struct clk_divider {
 #define clk_div_mask(width)	((1 << (width)) - 1)
 
 #define CLK_DIVIDER_POWER_OF_TWO	(1 << 1)
+#define CLK_DIVIDER_ALLOW_ZERO		(1 << 2)
 #define CLK_DIVIDER_HIWORD_MASK		(1 << 3)
 #define CLK_DIVIDER_READ_ONLY		(1 << 5)
 
@@ -419,6 +430,16 @@ struct clk_divider {
 
 extern const struct clk_ops clk_divider_ops;
 extern const struct clk_ops clk_divider_ro_ops;
+
+static inline void clk_hw_reparent(struct clk_hw *hw, struct clk_hw *new_parent)
+{
+	/* clk_get_parent always reads from HW, so nothing to update here */
+}
+
+static inline int __clk_get_enable_count(struct clk *clk)
+{
+	return !clk ? 0 : clk->enable_count;
+}
 
 unsigned long divider_recalc_rate(struct clk *clk, unsigned long parent_rate,
 		unsigned int val,
@@ -741,7 +762,7 @@ struct clk_hw_onecell_data {
 
 #define CLK_OF_DECLARE(name, compat, fn)				\
 const struct of_device_id __clk_of_table_##name				\
-__attribute__ ((unused,section (".__clk_of_table"))) \
+	__ll_elem(.__clk_of_table) \
 	= { .compatible = compat, .data = fn }
 
 void of_clk_del_provider(struct device_node *np);
@@ -797,7 +818,7 @@ of_clk_src_simple_get(struct of_phandle_args *clkspec, void *data)
 {
 	return ERR_PTR(-ENOENT);
 }
-static inline struct clk *
+static inline struct clk_hw *
 of_clk_hw_simple_get(struct of_phandle_args *clkspec, void *data)
 {
 	return ERR_PTR(-ENOENT);
@@ -997,6 +1018,9 @@ static inline void clk_bulk_disable(int num_clks,
 				    struct clk_bulk_data *clks) {}
 
 #endif
+
+#define clk_bulk_prepare_enable clk_bulk_enable
+#define clk_bulk_disable_unprepare clk_bulk_disable
 
 /**
  * clk_get_optional - lookup and obtain a reference to an optional clock

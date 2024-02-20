@@ -11,6 +11,7 @@
 #include <linux/uuid.h>
 #include <linux/printk.h>
 #include <of.h>
+#include <init.h>
 #include <filetype.h>
 
 #define FORMAT_DRIVER_NAME_ID	"%s%d"
@@ -19,10 +20,17 @@
 
 struct filep;
 struct bus_type;
+struct generic_pm_domain;
 
 struct platform_device_id {
 	const char *name;
 	unsigned long driver_data;
+};
+
+enum dev_dma_coherence {
+	DEV_DMA_COHERENCE_DEFAULT = 0,
+	DEV_DMA_COHERENT,
+	DEV_DMA_NON_COHERENT,
 };
 
 /** @brief Describes a particular device present in the system */
@@ -45,6 +53,8 @@ struct device {
 	 * something like eth0 or nor0. */
 	int id;
 
+	enum dev_dma_coherence dma_coherent;
+
 	struct resource *resource;
 	int num_resources;
 
@@ -66,6 +76,8 @@ struct device {
 	struct list_head active;   /* The list of all devices which have a driver */
 
 	struct device *parent;   /* our parent, NULL if not present */
+
+	struct generic_pm_domain *pm_domain;	/* attached power domain */
 
 	struct bus_type *bus;
 
@@ -631,10 +643,6 @@ cdev_find_child_by_gpt_typeuuid(struct cdev *cdev, guid_t *typeuuid)
 	return ERR_PTR(-ENOENT);
 }
 
-struct cdev *devfs_add_partition(const char *devname, loff_t offset,
-		loff_t size, unsigned int flags, const char *name);
-int devfs_del_partition(const char *name);
-
 #ifdef CONFIG_FS_AUTOMOUNT
 void cdev_create_default_automount(struct cdev *cdev);
 #else
@@ -681,6 +689,14 @@ struct devfs_partition {
 int devfs_create_partitions(const char *devname,
 		const struct devfs_partition partinfo[]);
 
+struct cdev *devfs_add_partition(const char *devname, loff_t offset,
+		loff_t size, unsigned int flags, const char *name);
+int devfs_del_partition(const char *name);
+
+struct cdev *cdevfs_add_partition(struct cdev *cdev,
+		const struct devfs_partition *partinfo);
+int cdevfs_del_partition(struct cdev *cdev);
+
 #define of_match_ptr(compat) \
 	IS_ENABLED(CONFIG_OFDEVICE) ? (compat) : NULL
 
@@ -714,6 +730,22 @@ struct device *device_find_child(struct device *parent, void *data,
 static inline struct device_node *dev_of_node(struct device *dev)
 {
 	return IS_ENABLED(CONFIG_OFDEVICE) ? dev->of_node : NULL;
+}
+
+static inline bool dev_is_dma_coherent(struct device *dev)
+{
+	if (dev) {
+		switch (dev->dma_coherent) {
+		case DEV_DMA_NON_COHERENT:
+			return false;
+		case DEV_DMA_COHERENT:
+			return true;
+		case DEV_DMA_COHERENCE_DEFAULT:
+			break;
+		}
+	}
+
+	return IS_ENABLED(CONFIG_ARCH_DMA_DEFAULT_COHERENT);
 }
 
 static inline void *dev_get_priv(const struct device *dev)

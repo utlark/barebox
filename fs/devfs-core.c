@@ -87,9 +87,10 @@ struct cdev *cdev_by_device_node(struct device_node *node)
 {
 	struct cdev *cdev;
 
+	if (!node)
+		return NULL;
+
 	for_each_cdev(cdev) {
-		if (!cdev->device_node)
-			continue;
 		if (cdev->device_node == node)
 			return cdev_readlink(cdev);
 	}
@@ -323,6 +324,16 @@ int cdev_truncate(struct cdev *cdev, size_t size)
 	return -EPERM;
 }
 
+static struct cdev *cdev_alloc(const char *name)
+{
+	struct cdev *new;
+
+	new = xzalloc(sizeof(*new));
+	new->name = xstrdup(name);
+
+	return new;
+}
+
 int devfs_create(struct cdev *new)
 {
 	struct cdev *cdev;
@@ -357,8 +368,7 @@ int devfs_create_link(struct cdev *cdev, const char *name)
 	 */
 	cdev = cdev_readlink(cdev);
 
-	new = xzalloc(sizeof(*new));
-	new->name = xstrdup(name);
+	new = cdev_alloc(name);
 	new->link = cdev;
 
 	if (cdev->partname) {
@@ -375,6 +385,7 @@ int devfs_create_link(struct cdev *cdev, const char *name)
 	}
 
 	INIT_LIST_HEAD(&new->links);
+	INIT_LIST_HEAD(&new->partitions);
 	list_add_tail(&new->list, &cdev_list);
 	list_add_tail(&new->link_entry, &cdev->links);
 
@@ -395,6 +406,9 @@ int devfs_remove(struct cdev *cdev)
 
 	list_for_each_entry_safe(c, tmp, &cdev->links, link_entry)
 		devfs_remove(c);
+
+	list_for_each_entry_safe(c, tmp, &cdev->partitions, partition_entry)
+		cdevfs_del_partition(c);
 
 	if (cdev_is_partition(cdev))
 		list_del(&cdev->partition_entry);
@@ -478,6 +492,7 @@ static struct cdev *__devfs_add_partition(struct cdev *cdev,
 		const struct devfs_partition *partinfo, loff_t *end)
 {
 	loff_t offset, size;
+	loff_t _end = end ? *end : 0;
 	static struct cdev *new;
 	struct cdev *overlap;
 
@@ -488,7 +503,7 @@ static struct cdev *__devfs_add_partition(struct cdev *cdev,
 		offset = partinfo->offset;
 	else if (partinfo->offset == 0)
 		/* append to previous partition */
-		offset = *end;
+		offset = _end;
 	else
 		/* relative to end of cdev */
 		offset = cdev->size + partinfo->offset;
@@ -498,13 +513,15 @@ static struct cdev *__devfs_add_partition(struct cdev *cdev,
 	else
 		size = cdev->size + partinfo->size - offset;
 
-	if (offset >= 0 && offset < *end)
+	if (offset >= 0 && offset < _end)
 		pr_debug("partition %s not after previous partition\n",
 				partinfo->name);
 
-	*end = offset + size;
+	_end = offset + size;
+	if (end)
+		*end = _end;
 
-	if (offset < 0 || *end > cdev->size) {
+	if (offset < 0 || _end > cdev->size) {
 		pr_warn("partition %s not completely inside device %s\n",
 				partinfo->name, cdev->name);
 		return ERR_PTR(-EINVAL);
@@ -532,8 +549,7 @@ static struct cdev *__devfs_add_partition(struct cdev *cdev,
 		return &mtd->cdev;
 	}
 
-	new = xzalloc(sizeof(*new));
-	new->name = strdup(partinfo->name);
+	new = cdev_alloc(partinfo->name);
 	if (!strncmp(cdev->name, partinfo->name, strlen(cdev->name)))
 		new->partname = xstrdup(partinfo->name + strlen(cdev->name) + 1);
 
@@ -554,11 +570,16 @@ static struct cdev *__devfs_add_partition(struct cdev *cdev,
 	return new;
 }
 
+struct cdev *cdevfs_add_partition(struct cdev *cdev,
+				  const struct devfs_partition *partinfo)
+{
+	return __devfs_add_partition(cdev, partinfo, NULL);
+}
+
 struct cdev *devfs_add_partition(const char *devname, loff_t offset,
 		loff_t size, unsigned int flags, const char *name)
 {
 	struct cdev *cdev;
-	loff_t end = 0;
 	const struct devfs_partition partinfo = {
 		.offset = offset,
 		.size = size,
@@ -570,20 +591,13 @@ struct cdev *devfs_add_partition(const char *devname, loff_t offset,
 	if (!cdev)
 		return ERR_PTR(-ENOENT);
 
-	return __devfs_add_partition(cdev, &partinfo, &end);
+	return cdevfs_add_partition(cdev, &partinfo);
 }
 
-int devfs_del_partition(const char *name)
+int cdevfs_del_partition(struct cdev *cdev)
 {
-	struct cdev *cdev;
 	int ret;
 
-	cdev = cdev_by_name(name);
-	if (!cdev)
-		return -ENOENT;
-
-	if (!cdev_is_partition(cdev))
-		return -EINVAL;
 	if (cdev->flags & DEVFS_PARTITION_FIXED)
 		return -EPERM;
 
@@ -601,6 +615,20 @@ int devfs_del_partition(const char *name)
 	free(cdev);
 
 	return 0;
+}
+
+int devfs_del_partition(const char *name)
+{
+	struct cdev *cdev;
+
+	cdev = cdev_by_name(name);
+	if (!cdev)
+		return -ENOENT;
+
+	if (!cdev_is_partition(cdev))
+		return -EINVAL;
+
+	return cdevfs_del_partition(cdev);
 }
 
 int devfs_create_partitions(const char *devname,
@@ -665,6 +693,7 @@ static const struct cdev_operations loop_ops = {
 
 struct cdev *cdev_create_loop(const char *path, ulong flags, loff_t offset)
 {
+	char str[16];
 	struct cdev *new;
 	struct loop_priv *priv;
 	static int loopno;
@@ -678,10 +707,10 @@ struct cdev *cdev_create_loop(const char *path, ulong flags, loff_t offset)
 		return NULL;
 	}
 
-	new = xzalloc(sizeof(*new));
+	snprintf(str, sizeof(str), "loop%u", loopno++);
 
+	new = cdev_alloc(str);
 	new->ops = &loop_ops;
-	new->name = basprintf("loop%u", loopno++);
 	new->priv = priv;
 
 	ofs = lseek(priv->fd, 0, SEEK_END);
