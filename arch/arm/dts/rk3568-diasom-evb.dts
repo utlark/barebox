@@ -12,7 +12,7 @@
 #include "rk356x.dtsi"
 
 #define USBOTG_HOST
-#define VERSION2
+//#define VERSION2
 
 / {
 	model = "Diasom DS-RK3568-EVB";
