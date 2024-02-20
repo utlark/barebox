@@ -14,6 +14,18 @@
 	status = "disabled";
 };
 
+&uart3 {
+	pinctrl-0 = <&uart3m1_xfer>;
+};
+
+&uart7 {
+	pinctrl-0 = <&uart7m1_xfer>;
+};
+
+&uart8 {
+	pinctrl-0 = <&uart8m0_xfer>;
+};
+
 &pinctrl {
 	pinctrl-0 = <&board_pins &test_pins>;
 
