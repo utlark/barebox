@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Boards with memory more than 4G are works unstable
-# Temporary fix this by reduce memory size to 4G minus 0x010a0000
-[ -e /dev/ram1 ] && global.linux.bootargs.base="mem=0xfef60000"
+# Temporary fix this by reduce memory size to fit 32 bit space
+[ -e /dev/ram1 ] && global.linux.bootargs.base="mem=0xef600000"
 
 exit 0
