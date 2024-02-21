@@ -4,7 +4,7 @@
 gpio_direction_output 90 1
 
 # Fixup DTB for used SOM version
-if [ ! -z $global.board.overlay ]; then
+if [ ! -z "$global.board.overlay" ]; then
 	DTBODIR=/mnt/mmc0.2/boot
 	[ -d $DTBODIR ] || DTBODIR=/mnt/mmc1.2/boot
 
