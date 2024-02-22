@@ -913,9 +913,7 @@
 &i2s1_8ch {
 	/* I2S Sound */
 	pinctrl-0 = <
-		&i2s1m1_mclk		/* I2S1_MCLK */
-		&i2s1m1_sclktx		/* I2S1_TX_SCLK */
-		&i2s1m1_lrcktx		/* I2S1_TX_LRCK */
+		&i2s1_pins
 		&i2s1m1_sdo0		/* I2S1_SDO0 */
 		&i2s1m1_sdi0		/* I2S1_SDI0 */
 	>;
@@ -1220,6 +1218,15 @@
 		fusb302_pins: fusb302-pins {
 			rockchip,pins =
 				<0 RK_PC1 RK_FUNC_GPIO &pcfg_pull_up>;		/* USB3_OTG_INT */
+		};
+	};
+
+	i2s {
+		i2s1_pins: i2s1-pins {
+			rockchip,pins =
+				<3 RK_PC6 4 &pcfg_pull_none_smt>,		/* I2S1_MCLK */
+				<3 RK_PC7 4 &pcfg_pull_none_smt>,		/* I2S1_TX_SCLK */
+				<3 RK_PD0 4 &pcfg_pull_none_smt>;		/* I2S1_TX_LRCK */
 		};
 	};
 
