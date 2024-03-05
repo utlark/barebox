@@ -1138,21 +1138,29 @@
 
 &uart3 {
 	pinctrl-0 = <&uart3m1_xfer &uart3m0_ctsn &uart3m0_rtsn>;
+	/* Should be added in 6.8+ */
+	dma-names = "tx", "rx";
 	status = "okay";
 };
 
 &uart7 {
 	pinctrl-0 = <&uart7m1_xfer &uart7m0_ctsn &uart7m0_rtsn>;
+	/* Should be added in 6.8+ */
+	dma-names = "tx", "rx";
 	status = "okay";
 };
 
 &uart8 {
 	pinctrl-0 = <&uart8m0_xfer &uart8m0_ctsn &uart8m0_rtsn>;
+	/* Should be added in 6.8+ */
+	dma-names = "tx", "rx";
 	status = "okay";
 };
 
 &uart9 {
 	pinctrl-0 = <&uart9m1_xfer>;
+	/* Should be added in 6.8+ */
+	dma-names = "tx", "rx";
 	status = "okay";
 };
 
