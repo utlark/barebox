@@ -512,6 +512,11 @@
 	/delete-node/ opp-1608000000;
 	/delete-node/ opp-1800000000;
 	/delete-node/ opp-1992000000;
+
+	opp-1008000000 {
+		opp-hz = /bits/ 64 <1008000000>;
+		opp-microvolt = <900000 900000 1150000>;
+	};
 };
 
 &dsi0 {
