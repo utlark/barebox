@@ -1,0 +1,46 @@
+// SPDX-License-Identifier: (GPL-2.0-or-later OR MIT)
+
+/{
+	chosen {
+		environment-spi-nor {
+			compatible = "barebox,environment";
+			device-path = &environment_spi_nor;
+		};
+	};
+};
+
+&lpi2c1 {
+	pca9451a: pmic@25 {
+		compatible = "nxp,pca9451a";
+		reg = <0x25>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_pca9451>;
+	};
+};
+
+&usbotg1 {
+	status = "okay";
+};
+
+&usbotg2 {
+	status = "okay";
+	dr_mode = "host";
+};
+
+&{flexspi1/flash@0} {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "barebox";
+			reg = <0x0 0x400000>;
+		};
+
+		environment_spi_nor: partition@400000 {
+			label = "barebox-environment";
+			reg = <0x400000 0x100000>;
+		};
+	};
+};

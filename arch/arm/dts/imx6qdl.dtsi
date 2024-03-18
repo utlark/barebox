@@ -8,6 +8,13 @@
 		ipu0 = &ipu1;
 		gpr.reboot_mode = &reboot_mode_gpr;
 	};
+
+	chosen {
+		barebox,bootsource-mmc0 = &usdhc1;
+		barebox,bootsource-mmc1 = &usdhc2;
+		barebox,bootsource-mmc2 = &usdhc3;
+		barebox,bootsource-mmc3 = &usdhc4;
+	};
 };
 
 &src {
