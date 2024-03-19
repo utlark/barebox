@@ -4,6 +4,7 @@
 /dts-v1/;
 
 #include <arm64/freescale/imx8mm.dtsi>
+#include <arm64/freescale/imx8mm-overdrive.dtsi>
 #include <dt-bindings/net/ti-dp83867.h>
 #include <dt-bindings/phy/phy-imx8-pcie.h>
 
