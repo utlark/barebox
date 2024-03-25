@@ -1170,6 +1170,8 @@
 };
 
 &usb_host0_xhci {
+	hnp-disable;
+	srp-disable;
 #ifdef USBOTG_HOST
 	dr_mode = "host";
 #else
@@ -1223,9 +1225,6 @@
 };
 
 &usb2phy0_otg {
-#ifdef USBOTG_HOST
-	phy-supply = <&vcc5v0_usb3_otg0>;
-#endif
 	status = "okay";
 };
 
