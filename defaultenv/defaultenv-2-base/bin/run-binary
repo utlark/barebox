@@ -1,0 +1,35 @@
+#!/bin/sh
+
+binfile=
+address=
+
+while getopt "f:a:" opt; do
+	if [ ${opt} = f ]; then
+		binfile=${OPTARG}
+	elif [ ${opt} = a ]; then
+		address=${OPTARG}
+	else
+		echo "Usage: run-binary -f <filename> -a <address>"
+		exit 1
+	fi
+done
+
+if [ -z "${binfile}" ]; then
+	echo "$0: no binary filename given"
+	exit 1
+fi
+
+if [ -z "${address}" ]; then
+	echo "$0: no load address given"
+	exit 1
+fi
+
+if [ ! -e "${binfile}" ]; then
+	echo "$0: binary file does not exists"
+	exit 1
+fi
+
+memcpy -s ${binfile} 0 ${address}
+go ${address}
+
+exit 0
