@@ -58,7 +58,7 @@
 		};
 	};
 
-	can@fe580000 {
+	can1: can@fe580000 {
 		pinctrl-names = "default";
 		pinctrl-0 = <&can1m0_pins>;
 		compatible = "rockchip,rk3568-can-2.0";
@@ -72,7 +72,7 @@
 		rx-fifo-depth = <6>;
 	};
 
-	can@fe590000 {
+	can2: can@fe590000 {
 		pinctrl-names = "default";
 		pinctrl-0 = <&can2m0_pins>;
 		compatible = "rockchip,rk3568-can-2.0";
