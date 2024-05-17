@@ -151,6 +151,9 @@ of_populate_initcall(diasom_rk3568_evb_machine_id);
 
 static int __init diasom_rk3568_evb_late_init(void)
 {
+	if (!of_machine_is_compatible("diasom,ds-rk3568-evb"))
+		return 0;
+
 	struct i2c_adapter *adapter = i2c_get_adapter(0);
 	if (!adapter) {
 		pr_err("Cannot determine board version.\n");
