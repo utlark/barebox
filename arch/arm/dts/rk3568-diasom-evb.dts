@@ -21,6 +21,8 @@
 	aliases {
 		camera0 = &xc7160;
 		camera1 = &imx335;
+		can0 = &can1;
+		can1 = &can2;
 		ethernet0 = &gmac0;
 		ethernet1 = &gmac1;
 		mmc0 = &sdmmc0;
