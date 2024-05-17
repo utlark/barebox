@@ -151,20 +151,21 @@ of_populate_initcall(diasom_rk3568_evb_machine_id);
 
 static int __init diasom_rk3568_evb_late_init(void)
 {
-	if (!of_machine_is_compatible("diasom,ds-rk3568-evb"))
-		return 0;
+	if (of_machine_is_compatible("diasom,ds-rk3568-evb")) {
+		struct i2c_adapter *adapter = i2c_get_adapter(0);
 
-	struct i2c_adapter *adapter = i2c_get_adapter(0);
-	if (!adapter) {
-		pr_err("Cannot determine board version.\n");
-		return 0;
+		if (!adapter) {
+			pr_err("Cannot determine board version.\n");
+			return 0;
+		}
+
+		if (!diasom_rk3568_evb_probe_i2c(adapter, 0x1c)) {
+			pr_info("Board version 2 detected.\n");
+			globalvar_add_simple("board.overlay",
+					     "rk3568-diasom-evb-ver2.dtbo");
+		} else
+			pr_info("Board version 1 detected.\n");
 	}
-
-	if (!diasom_rk3568_evb_probe_i2c(adapter, 0x1c)) {
-		pr_info("Board version 2 detected.\n");
-		globalvar_add_simple("board.overlay", "rk3568-diasom-evb-ver2.dtbo");
-	} else
-		pr_info("Board version 1 detected.\n");
 
 	return 0;
 }
