@@ -15,7 +15,7 @@ elif [ -f /mnt/mmc0.1/boot/Image.gz ]; then
 	global.bootm.image=/mnt/mmc0.1/boot/Image.gz
 	global.linux.bootargs.dyn.root="root=/dev/mmcblk0p2 ro rootdelay=3"
 else
-	echo "Boot image bot found!"
+	echo "Boot image not found!"
 	exit 1
 fi
 
