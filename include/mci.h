@@ -82,6 +82,8 @@
 #define MMC_CMD_SET_BLOCKLEN		16
 #define MMC_CMD_READ_SINGLE_BLOCK	17
 #define MMC_CMD_READ_MULTIPLE_BLOCK	18
+#define MMC_SEND_TUNING_BLOCK		19   /* adtc R1  */
+#define MMC_SEND_TUNING_BLOCK_HS200	21   /* adtc R1  */
 #define MMC_CMD_WRITE_SINGLE_BLOCK	24
 #define MMC_CMD_WRITE_MULTIPLE_BLOCK	25
 #define MMC_CMD_APP_CMD			55
@@ -293,13 +295,24 @@
 #define EXT_CSD_CARD_TYPE_MASK		0x3f
 #define EXT_CSD_CARD_TYPE_26		(1<<0)	/* Card can run at 26MHz */
 #define EXT_CSD_CARD_TYPE_52		(1<<1)	/* Card can run at 52MHz */
+#define EXT_CSD_CARD_TYPE_HS		(EXT_CSD_CARD_TYPE_26 |	\
+					 EXT_CSD_CARD_TYPE_52)
 #define EXT_CSD_CARD_TYPE_DDR_1_8V	(1<<2)	/* Card can run at 52MHz */
 						/* DDR mode @1.8V or 3V I/O */
 #define EXT_CSD_CARD_TYPE_DDR_1_2V	(1<<3)	/* Card can run at 52MHz */
 						/* DDR mode @1.2V I/O */
-#define EXT_CSD_CARD_TYPE_SDR_1_8V	(1<<4)	/* Card can run at 200MHz */
-#define EXT_CSD_CARD_TYPE_SDR_1_2V	(1<<5)	/* Card can run at 200MHz */
+#define EXT_CSD_CARD_TYPE_DDR_52	(EXT_CSD_CARD_TYPE_DDR_1_8V  \
+					 | EXT_CSD_CARD_TYPE_DDR_1_2V)
+#define EXT_CSD_CARD_TYPE_HS200_1_8V	(1<<4)	/* Card can run at 200MHz */
+#define EXT_CSD_CARD_TYPE_HS200_1_2V	(1<<5)	/* Card can run at 200MHz */
 						/* SDR mode @1.2V I/O */
+#define EXT_CSD_CARD_TYPE_HS200		(EXT_CSD_CARD_TYPE_HS200_1_8V | \
+					 EXT_CSD_CARD_TYPE_HS200_1_2V)
+#define EXT_CSD_CARD_TYPE_HS400_1_8V	(1<<6)	/* Card can run at 200MHz DDR, 1.8V */
+#define EXT_CSD_CARD_TYPE_HS400_1_2V	(1<<7)	/* Card can run at 200MHz DDR, 1.2V */
+#define EXT_CSD_CARD_TYPE_HS400		(EXT_CSD_CARD_TYPE_HS400_1_8V | \
+					 EXT_CSD_CARD_TYPE_HS400_1_2V)
+#define EXT_CSD_CARD_TYPE_HS400ES	(1<<8)	/* Card can run at HS400ES */
 
 /* register PARTITIONS_ATTRIBUTE [156] */
 #define EXT_CSD_ENH_USR_MASK		(1 << 0)
@@ -318,6 +331,12 @@
 #define EXT_CSD_DDR_BUS_WIDTH_4	5	/* Card is in 4 bit DDR mode */
 #define EXT_CSD_DDR_BUS_WIDTH_8	6	/* Card is in 8 bit DDR mode */
 #define EXT_CSD_DDR_FLAG	BIT(2)	/* Flag for DDR mode */
+
+#define EXT_CSD_TIMING_BC	0	/* Backwards compatility */
+#define EXT_CSD_TIMING_HS	1	/* High speed */
+#define EXT_CSD_TIMING_HS200	2	/* HS200 */
+#define EXT_CSD_TIMING_HS400	3	/* HS400 */
+#define EXT_CSD_DRV_STR_SHIFT	4	/* Driver Strength shift */
 
 #define R1_ILLEGAL_COMMAND		(1 << 22)
 #define R1_STATUS(x)			(x & 0xFFF9A000)
@@ -411,14 +430,16 @@ enum mci_timing {
 	MMC_TIMING_LEGACY	= 0,
 	MMC_TIMING_MMC_HS	= 1,
 	MMC_TIMING_SD_HS	= 2,
-	MMC_TIMING_UHS_SDR12	= MMC_TIMING_LEGACY,
-	MMC_TIMING_UHS_SDR25	= MMC_TIMING_SD_HS,
-	MMC_TIMING_UHS_SDR50	= 3,
-	MMC_TIMING_UHS_SDR104	= 4,
-	MMC_TIMING_UHS_DDR50	= 5,
-	MMC_TIMING_MMC_HS200	= 6,
-	MMC_TIMING_MMC_DDR52	= 7,
-	MMC_TIMING_MMC_HS400	= 8,
+	MMC_TIMING_UHS_SDR12	= 3,
+	MMC_TIMING_UHS_SDR25	= 4,
+	MMC_TIMING_UHS_SDR50	= 5,
+	MMC_TIMING_UHS_SDR104	= 6,
+	MMC_TIMING_UHS_DDR50	= 7,
+	MMC_TIMING_MMC_DDR52	= 8,
+	MMC_TIMING_MMC_HS200	= 9,
+	MMC_TIMING_MMC_HS400	= 10,
+	MMC_TIMING_SD_EXP	= 11,
+	MMC_TIMING_SD_EXP_1_2V	= 12,
 };
 
 static inline bool mci_timing_is_ddr(enum mci_timing timing)
@@ -455,18 +476,49 @@ struct mci_host {
 	const char *devname;		/**< the devicename for the card, defaults to disk%d */
 	unsigned voltages;
 	unsigned host_caps;	/**< Host's interface capabilities, refer MMC_VDD_* */
+	unsigned caps2;		/* More host capabilities */
+#define MMC_CAP2_BOOTPART_NOACC	(1 << 0)	/* Boot partition no access */
+#define MMC_CAP2_FULL_PWR_CYCLE	(1 << 2)	/* Can do full power cycle */
+#define MMC_CAP2_FULL_PWR_CYCLE_IN_SUSPEND (1 << 3) /* Can do full power cycle in suspend */
+#define MMC_CAP2_HS200_1_8V_SDR	(1 << 5)        /* can support */
+#define MMC_CAP2_HS200_1_2V_SDR	(1 << 6)        /* can support */
+#define MMC_CAP2_HS200		(MMC_CAP2_HS200_1_8V_SDR | \
+				 MMC_CAP2_HS200_1_2V_SDR)
+#define MMC_CAP2_SD_EXP		(1 << 7)	/* SD express via PCIe */
+#define MMC_CAP2_SD_EXP_1_2V	(1 << 8)	/* SD express 1.2V */
+#define MMC_CAP2_CD_ACTIVE_HIGH	(1 << 10)	/* Card-detect signal active high */
+#define MMC_CAP2_RO_ACTIVE_HIGH	(1 << 11)	/* Write-protect signal active high */
+#define MMC_CAP2_NO_PRESCAN_POWERUP (1 << 14)	/* Don't power up before scan */
+#define MMC_CAP2_HS400_1_8V	(1 << 15)	/* Can support HS400 1.8V */
+#define MMC_CAP2_HS400_1_2V	(1 << 16)	/* Can support HS400 1.2V */
+#define MMC_CAP2_HS400		(MMC_CAP2_HS400_1_8V | \
+				 MMC_CAP2_HS400_1_2V)
+#define MMC_CAP2_HSX00_1_8V	(MMC_CAP2_HS200_1_8V_SDR | MMC_CAP2_HS400_1_8V)
+#define MMC_CAP2_HSX00_1_2V	(MMC_CAP2_HS200_1_2V_SDR | MMC_CAP2_HS400_1_2V)
+#define MMC_CAP2_SDIO_IRQ_NOTHREAD (1 << 17)
+#define MMC_CAP2_NO_WRITE_PROTECT (1 << 18)	/* No physical write protect pin, assume that card is always read-write */
+#define MMC_CAP2_NO_SDIO	(1 << 19)	/* Do not send SDIO commands during initialization */
+#define MMC_CAP2_HS400_ES	(1 << 20)	/* Host supports enhanced strobe */
+#define MMC_CAP2_NO_SD		(1 << 21)	/* Do not send SD commands during initialization */
+#define MMC_CAP2_NO_MMC		(1 << 22)	/* Do not send (e)MMC commands during initialization */
+#define MMC_CAP2_CQE		(1 << 23)	/* Has eMMC command queue engine */
+#define MMC_CAP2_CQE_DCMD	(1 << 24)	/* CQE can issue a direct command */
+#define MMC_CAP2_AVOID_3_3V	(1 << 25)	/* Host must negotiate down from 3.3V */
+#define MMC_CAP2_MERGE_CAPABLE	(1 << 26)	/* Host can merge a segment over the segment size */
+#define MMC_CAP2_CRYPTO		0
 	unsigned f_min;		/**< host interface lower limit */
 	unsigned f_max;		/**< host interface upper limit */
 	unsigned clock;		/**< Current clock used to talk to the card */
+	unsigned actual_clock;
 	enum mci_bus_width bus_width;	/**< used data bus width to the card */
 	enum mci_timing timing;	/**< used timing specification to the card */
+	unsigned hs_max_dtr;
+	unsigned hs200_max_dtr;
 	unsigned max_req_size;
 	unsigned dsr_val;	/**< optional dsr value */
 	int use_dsr;		/**< optional dsr usage flag */
 	int broken_cd;		/**< card detect is broken */
 	bool non_removable;	/**< device is non removable */
-	bool no_sd;		/**< do not send SD commands during initialization */
-	bool no_sdio;		/**< do not send SDIO commands during initialization */
 	bool disable_wp;	/**< ignore write-protect detection logic */
 	struct regulator *supply;
 
@@ -480,6 +532,8 @@ struct mci_host {
 	int (*card_present)(struct mci_host *);
 	/** check if a card is write protected */
 	int (*card_write_protected)(struct mci_host *);
+	/* The tuning command opcode value is different for SD and eMMC cards */
+	int (*execute_tuning)(struct mci_host *, u32);
 };
 
 #define MMC_NUM_BOOT_PARTITION	2
@@ -545,6 +599,7 @@ void mci_of_parse_node(struct mci_host *host, struct device_node *np);
 int mci_detect_card(struct mci_host *);
 int mci_send_ext_csd(struct mci *mci, char *ext_csd);
 int mci_switch(struct mci *mci, unsigned index, unsigned value);
+int mci_switch_status(struct mci *mci, bool crc_err_fatal);
 u8 *mci_get_ext_csd(struct mci *mci);
 
 static inline int mmc_host_is_spi(struct mci_host *host)
@@ -560,6 +615,31 @@ struct mci *mci_get_device_by_name(const char *name);
 static inline struct mci *mci_get_device_by_devpath(const char *devpath)
 {
 	return mci_get_device_by_name(devpath_to_name(devpath));
+}
+
+#define MMC_HIGH_26_MAX_DTR	26000000
+#define MMC_HIGH_52_MAX_DTR	52000000
+#define MMC_HIGH_DDR_MAX_DTR	52000000
+#define MMC_HS200_MAX_DTR	200000000
+
+static inline int mmc_card_hs(struct mci *mci)
+{
+	return mci->host->timing == MMC_TIMING_SD_HS ||
+		mci->host->timing == MMC_TIMING_MMC_HS;
+}
+
+/*
+ * Execute tuning sequence to seek the proper bus operating
+ * conditions for HS200 and HS400, which sends CMD21 to the device.
+ */
+int mmc_hs200_tuning(struct mci *mci);
+int mci_execute_tuning(struct mci *mci);
+int mci_send_abort_tuning(struct mci *mci, u32 opcode);
+int mmc_select_timing(struct mci *mci);
+
+static inline bool mmc_card_hs200(struct mci *mci)
+{
+	return mci->host->timing == MMC_TIMING_MMC_HS200;
 }
 
 #endif /* _MCI_H_ */

@@ -149,7 +149,7 @@ static struct device *acpi_add_device(struct bus_type *bus,
 
 static int acpi_register_devices(struct bus_type *bus)
 {
-	efi_config_table_t *table = bus->dev->priv;
+	struct efi_config_table *table = bus->dev->priv;
 	struct acpi_rsdp *rsdp;
 	struct acpi_rsdt *root;
 	size_t entry_count;
@@ -205,20 +205,14 @@ static int acpi_bus_match(struct device *dev, struct driver *drv)
 	return acpi_sigcmp(acpidrv->signature, sdt->signature);
 }
 
-static int acpi_bus_probe(struct device *dev)
-{
-	return dev->driver->probe(dev);
-}
-
 struct bus_type acpi_bus = {
 	.name = "acpi",
 	.match = acpi_bus_match,
-	.probe = acpi_bus_probe,
 };
 
 static int efi_acpi_probe(void)
 {
-	efi_config_table_t *ect, *table = NULL;
+	struct efi_config_table *ect, *table = NULL;
 
 	for_each_efi_config_table(ect) {
 		/* take ACPI < 2 table only if no ACPI 2.0 is available */
@@ -239,4 +233,4 @@ static int efi_acpi_probe(void)
 	acpi_bus.dev->priv = table;
 	return acpi_register_devices(&acpi_bus);
 }
-postcore_initcall(efi_acpi_probe);
+postcore_efi_initcall(efi_acpi_probe);

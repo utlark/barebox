@@ -289,6 +289,10 @@ struct resource *dev_request_mem_resource(struct device *dev, int num);
 struct resource *dev_request_mem_resource_by_name(struct device *dev,
 						  const char *name);
 
+void __iomem *dev_platform_get_and_ioremap_resource(struct device *dev,
+						    int num,
+						    struct resource **out_res);
+
 /*
  * exlusively request register base 'num' for a device
  * will return NULL on error
@@ -565,6 +569,7 @@ struct cdev {
 	loff_t offset;
 	loff_t size;
 	unsigned int flags;
+	u16 typeflags; /* GPT type-specific attributes */
 	int open;
 	struct mtd_info *mtd;
 	struct cdev *link;
@@ -577,6 +582,22 @@ struct cdev {
 		guid_t typeuuid;
 	};
 };
+
+static inline struct device_node *cdev_of_node(const struct cdev *cdev)
+{
+	return IS_ENABLED(CONFIG_OFDEVICE) ? cdev->device_node : NULL;
+}
+
+static inline void cdev_set_of_node(struct cdev *cdev, struct device_node *np)
+{
+	if (IS_ENABLED(CONFIG_OFDEVICE))
+		cdev->device_node = np;
+}
+
+static inline const char *cdev_name(struct cdev *cdev)
+{
+	return cdev ? cdev->name : NULL;
+}
 
 int devfs_create(struct cdev *);
 int devfs_create_link(struct cdev *, const char *name);
@@ -626,6 +647,11 @@ extern struct list_head cdev_list;
 #define DEVFS_PARTITION_FROM_TABLE	(1U << 6)
 #define DEVFS_IS_MBR_PARTITIONED	(1U << 7)
 #define DEVFS_IS_GPT_PARTITIONED	(1U << 8)
+#define DEVFS_PARTITION_REQUIRED	(1U << 9)
+#define DEVFS_PARTITION_NO_EXPORT	(1U << 10)
+#define DEVFS_PARTITION_BOOTABLE_LEGACY	(1U << 11)
+#define DEVFS_PARTITION_BOOTABLE_ESP	(1U << 12)
+#define DEVFS_PARTITION_FOR_FIXUP	(1U << 13)
 
 static inline bool cdev_is_mbr_partitioned(const struct cdev *master)
 {

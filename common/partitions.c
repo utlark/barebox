@@ -50,8 +50,8 @@ static int register_one_partition(struct block_device *blk, struct partition *pa
 		goto out;
 	}
 
-	cdev->flags |= DEVFS_PARTITION_FROM_TABLE;
-
+	cdev->flags |= DEVFS_PARTITION_FROM_TABLE | part->flags;
+	cdev->typeflags |= part->typeflags;
 	cdev->typeuuid = part->typeuuid;
 	strcpy(cdev->partuuid, part->partuuid);
 
@@ -146,6 +146,9 @@ struct partition_desc *partition_table_read(struct block_device *blk)
 		goto err;
 
 	pdesc = parser->parse(buf, blk);
+	if (!pdesc)
+		goto err;
+
 	pdesc->parser = parser;
 err:
 	free(buf);

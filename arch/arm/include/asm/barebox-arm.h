@@ -23,40 +23,24 @@
 #include <asm/sections.h>
 #include <asm/reloc.h>
 #include <linux/stringify.h>
+#include <boarddata.h>
 
 #define ARM_EARLY_PAGETABLE_SIZE	SZ_64K
 
 void __noreturn barebox_arm_entry(unsigned long membase, unsigned long memsize, void *boarddata);
 
-struct barebox_arm_boarddata {
-#define BAREBOX_ARM_BOARDDATA_MAGIC	0xabe742c3
-	u32 magic;
-	u32 machine; /* machine number to pass to barebox. This may or may
-		      * not be a ARM machine number registered on arm.linux.org.uk.
-		      * It must only be unique across barebox. Please use a number
-		      * that do not potientially clashes with registered machines,
-		      * i.e. use a number > 0x10000.
-		      */
-};
-
-/*
- * Create a boarddata struct at given address. Suitable to be passed
- * as boarddata to barebox_arm_entry(). The machine can be retrieved
- * later with barebox_arm_machine().
- */
-static inline void boarddata_create(void *adr, u32 machine)
-{
-	struct barebox_arm_boarddata *bd = adr;
-
-	bd->magic = BAREBOX_ARM_BOARDDATA_MAGIC;
-	bd->machine = machine;
-}
+#define barebox_arm_boarddata		barebox_boarddata
+#define BAREBOX_ARM_BOARDDATA_MAGIC	BAREBOX_BOARDDATA_MAGIC
 
 u32 barebox_arm_machine(void);
 
 unsigned long arm_mem_ramoops_get(void);
 unsigned long arm_mem_membase_get(void);
 unsigned long arm_mem_endmem_get(void);
+
+struct barebox_arm_boarddata *barebox_arm_get_boarddata(void);
+
+#define barebox_arm_get_boarddata barebox_get_boarddata
 
 #if defined(CONFIG_RELOCATABLE) && defined(CONFIG_ARM_EXCEPTIONS)
 void arm_fixup_vectors(void);
@@ -165,7 +149,7 @@ static inline unsigned long arm_mem_barebox_image(unsigned long membase,
 
 void __barebox_arm64_head(ulong x0, ulong x1, ulong x2);
 
-#define ENTRY_FUNCTION_WITHSTACK(name, stack_top, arg0, arg1, arg2)	\
+#define ENTRY_FUNCTION_WITHSTACK_HEAD(name, stack_top, head, arg0, arg1, arg2)	\
 	void name(ulong r0, ulong r1, ulong r2);			\
 									\
 	static void __##name(ulong, ulong, ulong);			\
@@ -175,20 +159,24 @@ void __barebox_arm64_head(ulong x0, ulong x1, ulong x2);
 		{							\
 			static __section(.pbl_board_stack_top_##name)	\
 				const ulong __stack_top = (stack_top);	\
-			__keep_symbolref(__barebox_arm64_head);		\
+			__keep_symbolref(head);				\
 			__keep_symbolref(__stack_top);			\
 			__##name(r0, r1, r2);				\
 		}							\
 		static void noinline __##name				\
 			(ulong arg0, ulong arg1, ulong arg2)
 
+#define ENTRY_FUNCTION_WITHSTACK(name, stack_top, arg0, arg1, arg2)	\
+	ENTRY_FUNCTION_WITHSTACK_HEAD(name, stack_top,			\
+			      __barebox_arm64_head, arg0, arg1, arg2)
+
 #define ENTRY_FUNCTION(name, arg0, arg1, arg2)				\
 	ENTRY_FUNCTION_WITHSTACK(name, 0, arg0, arg1, arg2)
 
 #else
-#define ENTRY_FUNCTION_WITHSTACK(name, stack_top, arg0, arg1, arg2)	\
+#define ENTRY_FUNCTION_WITHSTACK_HEAD(name, stack_top, head, arg0, arg1, arg2)	\
 	static void ____##name(ulong, ulong, ulong);			\
-	ENTRY_FUNCTION(name, arg0, arg1, arg2)				\
+	__ENTRY_FUNCTION_HEAD(name, head, arg0, arg1, arg2)		\
 	{								\
 		if (stack_top)						\
 			arm_setup_stack(stack_top);			\
@@ -197,7 +185,7 @@ void __barebox_arm64_head(ulong x0, ulong x1, ulong x2);
 	static void noinline ____##name					\
 		(ulong arg0, ulong arg1, ulong arg2)
 
-#define ENTRY_FUNCTION_HEAD(name, head, arg0, arg1, arg2)		\
+#define __ENTRY_FUNCTION_HEAD(name, head, arg0, arg1, arg2)		\
 	void name(ulong r0, ulong r1, ulong r2);			\
 									\
 	static void __##name(ulong, ulong, ulong);			\
@@ -212,7 +200,11 @@ void __barebox_arm64_head(ulong x0, ulong x1, ulong x2);
 		(ulong arg0, ulong arg1, ulong arg2)
 
 #define ENTRY_FUNCTION(name, arg0, arg1, arg2)		\
-		ENTRY_FUNCTION_HEAD(name, __barebox_arm_head, arg0, arg1, arg2)
+	__ENTRY_FUNCTION_HEAD(name, __barebox_arm_head, arg0, arg1, arg2)
+
+#define ENTRY_FUNCTION_WITHSTACK(name, stack_top, arg0, arg1, arg2)	\
+	ENTRY_FUNCTION_WITHSTACK_HEAD(name, stack_top, \
+			      __barebox_arm_head, arg0, arg1, arg2)
 #endif
 
 /*

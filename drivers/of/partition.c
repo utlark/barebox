@@ -74,7 +74,7 @@ struct cdev *of_parse_partition(struct cdev *cdev, struct device_node *node)
 	}
 
 	new->device_node = node;
-	new->flags |= DEVFS_PARTITION_FROM_OF;
+	new->flags |= DEVFS_PARTITION_FROM_OF | DEVFS_PARTITION_FOR_FIXUP;
 
 	if (IS_ENABLED(CONFIG_NVMEM) && of_device_is_compatible(node, "nvmem-cells")) {
 		struct nvmem_device *nvmem = nvmem_partition_register(new);
@@ -95,7 +95,7 @@ int of_parse_partitions(struct cdev *cdev, struct device_node *node)
 	if (!node)
 		return -EINVAL;
 
-	cdev->device_node = node;
+	cdev_set_of_node(cdev, node);
 
 	subnode = of_get_child_by_name(node, "partitions");
 	if (subnode) {
@@ -178,7 +178,7 @@ int of_fixup_partitions(struct device_node *np, struct cdev *cdev)
 		return 0;
 
 	list_for_each_entry(partcdev, &cdev->partitions, partition_entry) {
-		if (!(partcdev->flags & DEVFS_PARTITION_FROM_OF))
+		if (!(partcdev->flags & DEVFS_PARTITION_FOR_FIXUP))
 			continue;
 		n_parts++;
 	}
@@ -229,7 +229,7 @@ int of_fixup_partitions(struct device_node *np, struct cdev *cdev)
 		u8 tmp[16 * 16]; /* Up to 64-bit address + 64-bit size */
 		loff_t partoffset;
 
-		if (!(partcdev->flags & DEVFS_PARTITION_FROM_OF))
+		if (!(partcdev->flags & DEVFS_PARTITION_FOR_FIXUP))
 			continue;
 
 		if (partcdev->mtd)
@@ -276,21 +276,21 @@ int of_fixup_partitions(struct device_node *np, struct cdev *cdev)
 static int of_partition_fixup(struct device_node *root, void *ctx)
 {
 	struct cdev *cdev = ctx;
-	struct device_node *np;
+	struct device_node *cdev_np, *np;
 	char *name;
 
-	if (!cdev->device_node)
+	cdev_np = cdev_of_node(cdev);
+	if (!cdev_np)
 		return -EINVAL;
 
 	if (list_empty(&cdev->partitions))
 		return 0;
 
-	name = of_get_reproducible_name(cdev->device_node);
+	name = of_get_reproducible_name(cdev_np);
 	np = of_find_node_by_reproducible_name(root, name);
 	free(name);
 	if (!np) {
-		dev_err(cdev->dev, "Cannot find nodepath %pOF, cannot fixup\n",
-				cdev->device_node);
+		dev_err(cdev->dev, "Cannot find nodepath %pOF, cannot fixup\n", cdev_np);
 		return -EINVAL;
 	}
 

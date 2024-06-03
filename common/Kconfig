@@ -353,16 +353,40 @@ config RELOCATABLE
 	  allowing it to relocate to the end of the available RAM. This
 	  way you have the whole memory in a single piece.
 
-config PANIC_HANG
-	bool "hang the system in case of a fatal error"
-	help
-	  This option enables stop of the system in case of a
-	  fatal error, so that you have to reset it manually.
-	  This is probably NOT a good idea for an embedded
-	  system where you want the system to reboot
-	  automatically as fast as possible, but it may be
-	  useful during development since you can try to debug
-	  the conditions that lead to the situation.
+choice
+	prompt "Configure action on fatal error"
+	default PANIC_RESET
+
+	config PANIC_POWEROFF
+		bool "power off the system"
+		help
+		  This option shuts down the system in case of a
+		  fatal error, so that you have to power it on manually.
+		  This is probably NOT a good idea for an embedded
+		  system where you want the system to reboot
+		  automatically as fast as possible, but it may be
+		  useful in emulation, because the system returns
+		  to parent shell immediately.
+
+	config PANIC_HANG
+		bool "hang the system"
+		help
+		  This option enables stop of the system in case of a
+		  fatal error, so that you have to reset it manually.
+		  This is probably NOT a good idea for an embedded
+		  system where you want the system to reboot
+		  automatically as fast as possible, but it may be
+		  useful during development since you can try to debug
+		  the conditions that lead to the situation.
+
+	config PANIC_RESET
+		bool "reset the system"
+		help
+		  This option enables reset of the system in case of a
+		  fatal error, so you don't have to reset it manually.
+		  This is the recommended configuration in production.
+
+endchoice
 
 config PROMPT
 	string
@@ -599,6 +623,9 @@ config BOOTM_AIMAGE
 	help
 	  Support using Android Images.
 
+config PE
+	bool "PE/COFF Support" if COMPILE_TEST
+
 config ELF
 	bool "ELF Support" if COMPILE_TEST
 
@@ -812,6 +839,16 @@ config CONSOLE_ALLOW_COLOR
 	  If enabled, colored output is allowed during boot. This is the
 	  compile time default for colored console output. After boot it
 	  can be controlled using global.allow_color.
+
+config CONSOLE_FLUSH_LINE_BREAK
+	bool "Flush consoles on new line" if COMPILE_TEST
+	help
+	  Many serial drivers configure and use hardware FIFOs as not to
+	  delay the boot. When debuging some king of bugs, such as clock
+	  issues that hang the SoC, this can falsify debugging output,
+	  because the UART doesn't output a submitted message fully, before
+	  the SoC hangs. This option will flush serial FIFOs when processing
+	  the new line feed characters.
 
 config CONSOLE_DISABLE_INPUT
 	prompt "Disable input on all consoles by default (non-interactive)"
@@ -1678,6 +1715,7 @@ config DEBUG_AT91_UART_BASE
 
 config DEBUG_INITCALLS
 	bool "Trace initcalls"
+	select CONSOLE_FLUSH_LINE_BREAK
 	help
 	  If enabled this will print initcall traces.
 
@@ -1692,6 +1730,7 @@ config DEBUG_PBL
 
 config DEBUG_PROBES
 	bool "Trace driver probes/removes"
+	select CONSOLE_FLUSH_LINE_BREAK
 	help
 	  If enabled this will log driver probe and remove traces. If DEBUG_LL is enabled,
 	  probes will be printed even before registering consoles. If it's disabled, they
@@ -1775,8 +1814,6 @@ config WERROR
 	  If in doubt, say Y.
 
 endmenu
-
-source "common/efi/Kconfig"
 
 config HAS_DEBUG_LL
 	bool

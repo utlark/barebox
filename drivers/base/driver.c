@@ -137,7 +137,12 @@ int device_probe(struct device *dev)
 
 	list_add(&dev->active, &active_device_list);
 
-	ret = dev->bus->probe(dev);
+	if (dev->bus->probe)
+		ret = dev->bus->probe(dev);
+	else if (dev->driver->probe)
+		ret = dev->driver->probe(dev);
+	else
+		ret = 0;
 
 	depth--;
 
@@ -221,7 +226,7 @@ static int match(struct driver *drv, struct device *dev)
 
 	dev->driver = drv;
 
-	if (dev->bus->match(dev, drv))
+	if (dev->bus->match && dev->bus->match(dev, drv))
 		goto err_out;
 	ret = device_probe(dev);
 	if (ret)
@@ -532,6 +537,25 @@ void __iomem *dev_request_mem_region_by_name(struct device *dev,
 	return IOMEM(res->start);
 }
 EXPORT_SYMBOL(dev_request_mem_region_by_name);
+
+void __iomem *dev_platform_get_and_ioremap_resource(struct device *dev,
+						    int num,
+						    struct resource **out_res)
+{
+	struct resource *res;
+
+	res = dev_request_mem_resource(dev, num);
+	if (IS_ERR(res))
+		return IOMEM_ERR_PTR(PTR_ERR(res));
+	else if (WARN_ON(IS_ERR_VALUE(res->start)))
+		return IOMEM_ERR_PTR(-EINVAL);
+
+	if (out_res)
+		*out_res = res;
+
+	return IOMEM(res->start);
+}
+EXPORT_SYMBOL(dev_platform_get_and_ioremap_resource);
 
 struct resource *dev_request_mem_resource(struct device *dev, int num)
 {

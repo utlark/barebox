@@ -853,7 +853,7 @@ int of_property_count_elems_of_size(const struct device_node *np,
 
 	if (!prop)
 		return -EINVAL;
-	if (!prop->value)
+	if (!of_property_get_value(prop))
 		return -ENODATA;
 
 	if (prop->length % elem_size != 0) {
@@ -2009,9 +2009,9 @@ int of_property_read_string_helper(const struct device_node *np,
 
 	if (!prop)
 		return -EINVAL;
-	if (!prop->value)
+	p = of_property_get_value(prop);
+	if (!p)
 		return -ENODATA;
-	p = prop->value;
 	end = p + prop->length;
 
 	for (i = 0; p < end && (!out_strs || i < skip + sz); i++, p += l) {
@@ -2345,6 +2345,9 @@ struct property *of_copy_property(const struct device_node *src,
 	prop = of_find_property(src, propname, NULL);
 	if (!prop)
 		return NULL;
+
+	if (of_property_present(dst, propname))
+		return ERR_PTR(-EEXIST);
 
 	return of_new_property(dst, propname,
 			       of_property_get_value(prop), prop->length);

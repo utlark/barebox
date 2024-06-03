@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0
 VERSION = 2024
-PATCHLEVEL = 03
+PATCHLEVEL = 04
 SUBLEVEL = 0
 EXTRAVERSION =
 NAME = None
@@ -601,6 +601,7 @@ common-y		:= common/ drivers/ commands/ lib/ crypto/ net/ fs/ firmware/
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
 
+common-$(CONFIG_EFI)	+= efi/
 common-y		+= test/
 
 ifdef need-config
@@ -733,7 +734,11 @@ images: barebox.bin FORCE
 images/%.s: barebox.bin FORCE
 	$(Q)$(MAKE) $(build)=images $@
 
-ifdef CONFIG_PBL_IMAGE
+ifdef CONFIG_EFI_STUB
+all: barebox.bin images barebox.efi
+barebox.efi: FORCE
+	$(Q)ln -fsn images/barebox-dt-2nd.img $@
+else ifdef CONFIG_PBL_IMAGE
 all: barebox.bin images
 else
 all: barebox-flash-image barebox-flash-images

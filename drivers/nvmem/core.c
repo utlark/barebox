@@ -213,7 +213,7 @@ struct nvmem_device *nvmem_register(const struct nvmem_config *config)
 	nvmem->dev.parent = config->dev;
 	nvmem->reg_read = config->reg_read;
 	nvmem->reg_write = config->reg_write;
-	np = config->cdev ? config->cdev->device_node : config->dev->of_node;
+	np = config->cdev ? cdev_of_node(config->cdev) : config->dev->of_node;
 	nvmem->dev.of_node = np;
 	nvmem->priv = config->priv;
 	nvmem->cell_post_process = config->cell_post_process;
@@ -858,3 +858,9 @@ int nvmem_cell_read_variable_le_u32(struct device *dev, const char *cell_id,
 	return 0;
 }
 EXPORT_SYMBOL_GPL(nvmem_cell_read_variable_le_u32);
+
+struct device *nvmem_device_get_device(struct nvmem_device *nvmem)
+{
+	return &nvmem->dev;
+}
+EXPORT_SYMBOL_GPL(nvmem_device_get_device);
