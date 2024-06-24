@@ -366,7 +366,7 @@ static int rk808_probe(struct device *dev)
 	rk808->poweroff.poweroff = rk808_poweroff;
 	rk808->poweroff.priority = 200;
 
-	if (of_property_read_bool(np, "rockchip,system-power-controller"))
+	if (of_property_read_bool(np, "system-power-controller"))
 		rk808->poweroff.priority += 100;
 
 	poweroff_handler_register(&rk808->poweroff);
