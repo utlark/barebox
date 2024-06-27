@@ -160,11 +160,16 @@ static int __init diasom_rk3568_evb_late_init(void)
 		}
 
 		if (!diasom_rk3568_evb_probe_i2c(adapter, 0x1c)) {
-			pr_info("Board version 2 detected.\n");
-			globalvar_add_simple("board.overlay",
-					     "rk3568-diasom-evb-ver2.dtbo");
+			extern char __dtbo_rk3568_diasom_evb_ver2_start[];
+			struct device_node *overlay;
+
+			pr_info("SOM version 2 detected.\n");
+
+			overlay = of_unflatten_dtb(__dtbo_rk3568_diasom_evb_ver2_start, INT_MAX);
+			of_overlay_apply_tree(of_get_root_node(), overlay);
+			of_probe();
 		} else
-			pr_info("Board version 1 detected.\n");
+			pr_info("SOM version 1 detected.\n");
 	}
 
 	return 0;
