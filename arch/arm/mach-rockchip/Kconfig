@@ -99,6 +99,12 @@ config MACH_PINE64_QUARTZ64
 	help
 	  Say Y here if you are using a Pine64 Quartz64
 
+config MACH_PROTONIC_MECSBC
+	select ARCH_RK3568
+	bool "Protonic MECSBC"
+	help
+	  Say Y here if you are using a Protonic MECSBC
+
 config MACH_RADXA_ROCK3
 	select ARCH_RK3568
 	bool "Radxa ROCK3"
@@ -116,6 +122,13 @@ config MACH_RADXA_CM3
 	bool "Radxa CM3"
 	help
 	  Say Y here if you are using a Radxa CM3
+
+config MACH_WOLFVISION_PF5
+	select ARCH_RK3568
+	select BOARD_WOLFVISION
+	bool "WolfVision PF5 mainboard"
+	help
+	  Say Y here if you are using a WolfVision PF5 mainboard
 
 endif
 

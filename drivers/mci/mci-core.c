@@ -1349,8 +1349,14 @@ int mci_execute_tuning(struct mci *mci)
 	struct mci_host *host = mci->host;
 	u32 opcode;
 
-	if (!host->execute_tuning)
-		return 0;
+	if (!host->execute_tuning) {
+		/*
+		 * For us, implementing ->execute_tuning is mandatory to
+		 * support higher speed modes
+		 */
+		dev_warn(&mci->dev, "tuning failed: no host diver support\n");
+		return -EOPNOTSUPP;
+	}
 
 	/* Tuning is only supported for MMC / HS200 */
 	if (mmc_card_hs200(mci))
@@ -1551,6 +1557,11 @@ static int mci_startup_mmc(struct mci *mci)
 
 		if (mmc_card_hs200(mci))
 			ret = mmc_hs200_tuning(mci);
+
+		if (ret) {
+			host->timing = MMC_TIMING_MMC_HS;
+			mci_switch(mci, EXT_CSD_HS_TIMING, EXT_CSD_TIMING_HS);
+		}
 	}
 
 	if (ret || !IS_ENABLED(CONFIG_MCI_TUNING)) {
@@ -1566,7 +1577,7 @@ static int mci_startup_mmc(struct mci *mci)
 		}
 	}
 
-	return ret;
+	return ret >= MMC_BUS_WIDTH_1 ? 0 : ret;
 }
 
 /**
@@ -2058,8 +2069,8 @@ static void mci_info(struct device *dev)
 		mci->csd[2], mci->csd[3]);
 	printf("  Max. transfer speed: %u Hz\n", mci->tran_speed);
 	mci_print_caps(mci->card_caps);
-	printf("  Manufacturer ID: %02X\n", extract_mid(mci));
-	printf("  OEM/Application ID: %04X\n", extract_oid(mci));
+	printf("  Manufacturer ID: 0x%02X\n", extract_mid(mci));
+	printf("  OEM/Application ID: 0x%04X\n", extract_oid(mci));
 	printf("  Product name: '%c%c%c%c%c'\n", mci->cid[0] & 0xff,
 		(mci->cid[1] >> 24), (mci->cid[1] >> 16) & 0xff,
 		(mci->cid[1] >> 8) & 0xff, mci->cid[1] & 0xff);
@@ -2352,6 +2363,7 @@ on_error:
 		host->clock = 0;	/* disable the MCI clock */
 		mci_set_ios(mci);
 		regulator_disable(host->supply);
+		mci->nr_parts = 0;
 	}
 
 	return rc;

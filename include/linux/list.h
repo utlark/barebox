@@ -36,7 +36,7 @@ static inline void INIT_LIST_HEAD(struct list_head *list)
 	list->prev = list;
 }
 
-#ifdef CONFIG_DEBUG_LIST
+#if defined(CONFIG_DEBUG_LIST) && !defined(__PBL__)
 extern bool __list_add_valid_or_report(struct list_head *new,
 				       struct list_head *prev,
 				       struct list_head *next);
@@ -590,6 +590,21 @@ static inline void list_splice_tail_init(struct list_head *list,
 	for (pos = (head)->prev, n = pos->prev; \
 	     pos != (head); \
 	     pos = n, n = pos->prev)
+
+/**
+ * list_count_nodes - count nodes in the list
+ * @head:	the head for your list.
+ */
+static inline size_t list_count_nodes(struct list_head *head)
+{
+	struct list_head *pos;
+	size_t count = 0;
+
+	list_for_each(pos, head)
+		count++;
+
+	return count;
+}
 
 /**
  * list_for_each_entry	-	iterate over list of given type

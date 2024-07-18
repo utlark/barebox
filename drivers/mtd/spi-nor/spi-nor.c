@@ -546,12 +546,12 @@ erase_err:
 	return ret;
 }
 
-static int spi_nor_lock(struct mtd_info *mtd, loff_t ofs, size_t len)
+static int spi_nor_lock(struct mtd_info *mtd, loff_t ofs, uint64_t len)
 {
 	return 0;
 }
 
-static int spi_nor_unlock(struct mtd_info *mtd, loff_t ofs, size_t len)
+static int spi_nor_unlock(struct mtd_info *mtd, loff_t ofs, uint64_t len)
 {
 	struct spi_nor *nor = mtd_to_spi_nor(mtd);
 	uint8_t status;
@@ -657,9 +657,6 @@ static const struct spi_device_id spi_nor_ids[] = {
 	{ "mr25h256", CAT25_INFO( 32 * 1024, 1, 256, 2, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
 	{ "mr25h10",  CAT25_INFO(128 * 1024, 1, 256, 3, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
 	{ "mr25h40",  CAT25_INFO(512 * 1024, 1, 256, 3, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
-
-	/* Fujitsu */
-	{ "mb85rs1mt", INFO(0x047f27, 0, 128 * 1024, 1, SPI_NOR_NO_ERASE) },
 
 	/* GigaDevice */
 	{ "gd25q16", INFO(0xc84015, 0, 64 * 1024,  32, SECT_4K) },

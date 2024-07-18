@@ -52,6 +52,44 @@ static inline void arm_fixup_vectors(void)
 
 void *barebox_arm_boot_dtb(void);
 
+/*
+ *  ----------------------------- endmem ------------------------------
+ *                                   ↑
+ *	        OPTEE_SIZE (depends on CONFIG_OPTEE_SIZE)
+ *                                   ↓
+ *  ------------------------- arm_mem_optee() -------------------------
+ *                                   ↑
+ *                                 SZ_32K
+ *                                   ↓
+ *  ------------------------ arm_mem_scratch() ------------------------
+ *                                   ↑
+ *                               STACK_SIZE
+ *                                   ↓
+ *  ------------------------- arm_mem_stack() -------------------------
+ *                                   ↑
+ *            PAGE_SIZE (depends on CONFIG_STACK_GUARD_PAGE)
+ *                                   ↓
+ *  ----------------------- arm_mem_guard_page() ----------------------
+ *                                   ↑
+ *                       ARM_EARLY_PAGETABLE_SIZE
+ *                                   ↓
+ *  --------------------------- arm_mem_ttb() -------------------------
+ *                                   ↑
+ *                     CONFIG_FS_PSTORE_RAMOOPS_SIZE
+ *                     (depends on FS_PSTORE_RAMOOPS)
+ *                                   ↓
+ *  ------------------------- arm_mem_ramoops() ------------------------
+ *                                   ↑
+ *                   (barebox uncompressed image size
+ *                       + BSS) rounded to SZ_1M
+ *                                   ↓
+ *  ---------------------- arm_mem_barebox_image() ---------------------
+ *                                   ↑
+ *                                SZ_128K
+ *                                   ↓
+ *  ------------------------ arm_mem_early_malloc ----------------------
+ */
+
 static inline unsigned long arm_mem_optee(unsigned long endmem)
 {
 	return endmem - OPTEE_SIZE;
@@ -85,15 +123,7 @@ static inline unsigned long arm_mem_ttb(unsigned long endmem)
 	return endmem;
 }
 
-static inline unsigned long arm_mem_early_malloc(unsigned long endmem)
-{
-	return arm_mem_ttb(endmem) - SZ_128K;
-}
-
-static inline unsigned long arm_mem_early_malloc_end(unsigned long endmem)
-{
-	return arm_mem_ttb(endmem);
-}
+#define ARM_MEM_EARLY_MALLOC_SIZE	SZ_128K
 
 static inline unsigned long arm_mem_ramoops(unsigned long endmem)
 {

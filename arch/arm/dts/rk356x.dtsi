@@ -1,6 +1,28 @@
 // SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 
+#include <dt-bindings/soc/rockchip,boot-mode.h>
+
 / {
+	aliases {
+		pmugrf.reboot_mode = &reboot_mode_pmugrf;
+		pwm0 = &pwm0;
+		pwm1 = &pwm1;
+		pwm2 = &pwm2;
+		pwm3 = &pwm3;
+		pwm4 = &pwm4;
+		pwm5 = &pwm5;
+		pwm6 = &pwm6;
+		pwm7 = &pwm7;
+		pwm8 = &pwm8;
+		pwm9 = &pwm9;
+		pwm10 = &pwm10;
+		pwm11 = &pwm11;
+		pwm12 = &pwm12;
+		pwm13 = &pwm13;
+		pwm14 = &pwm14;
+		pwm15 = &pwm15;
+	};
+
 	chosen {
 		barebox,bootsource-mmc0 = &sdhci;
 		barebox,bootsource-mmc1 = &sdmmc0;
@@ -29,5 +51,14 @@
 		clocks = <&cru CLK_TRNG_NS>, <&cru HCLK_TRNG_NS>;
 		clock-names = "trng_clk", "trng_hclk";
 		resets = <&cru SRST_TRNG_NS>;
+	};
+};
+
+&pmugrf {
+	reboot_mode_pmugrf: reboot-mode {
+		compatible = "syscon-reboot-mode";
+		offset = <0x200>;
+		mode-normal = <BOOT_NORMAL>;
+		mode-serial = <0xef08a53c>; /* rk-usb-loader */
 	};
 };
