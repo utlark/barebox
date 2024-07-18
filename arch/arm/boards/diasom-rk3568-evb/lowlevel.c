@@ -7,10 +7,10 @@
 #include <mach/rockchip/atf.h>
 #include <debug_ll.h>
 
-extern char __dtb_rk3568_diasom_evb_start[];
-
-ENTRY_FUNCTION(start_rk3568_diasom_evb, r0, r1, r2)
+ENTRY_FUNCTION(start_rk3568_diasom, r0, r1, r2)
 {
+	extern char __dtb_rk3568_diasom_evb_start[];
+
 	/*
 	 * Enable vccio4 1.8V and vccio6 1.8V
 	 * Needed for GMAC to work.

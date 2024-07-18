@@ -17,7 +17,7 @@
 #define KEY_DOWN_MIN_VAL	0
 #define KEY_DOWN_MAX_VAL	40
 
-static int diasom_rk3568_evb_probe_i2c(struct i2c_adapter *adapter, const int addr)
+static int diasom_rk3568_probe_i2c(struct i2c_adapter *adapter, const int addr)
 {
 	u8 buf[1];
 	struct i2c_msg msg = {
@@ -37,12 +37,12 @@ static int diasom_rk3568_evb_fixup(struct device_node *root, void *unused)
 		return -ENODEV;
 
 	/* i2c4@0x10 */
-	if (diasom_rk3568_evb_probe_i2c(adapter, 0x10)) {
+	if (diasom_rk3568_probe_i2c(adapter, 0x10)) {
 		pr_warn("ES8388 codec not found, disabling soundcard.\n");
 		of_register_set_status_fixup("sound0", false);
 	}
 
-	if (!diasom_rk3568_evb_probe_i2c(adapter, 0x1a)) {
+	if (!diasom_rk3568_probe_i2c(adapter, 0x1a)) {
 		pr_info("Camera IMX335 detected.\n");
 		of_register_set_status_fixup("camera1", true);
 		return 0;
@@ -54,7 +54,7 @@ static int diasom_rk3568_evb_fixup(struct device_node *root, void *unused)
 	return 0;
 }
 
-static int __init diasom_rk3568_evb_check_recovery(void)
+static int __init diasom_rk3568_check_recovery(void)
 {
 	struct aiochannel *aio_ch0;
 	struct device *aio_dev;
@@ -63,7 +63,7 @@ static int __init diasom_rk3568_evb_check_recovery(void)
 	if (!IS_ENABLED(CONFIG_AIODEV))
 		return 0;
 
-	if (!of_machine_is_compatible("diasom,ds-rk3568-evb"))
+	if (!of_machine_is_compatible("diasom,ds-rk3568-som"))
 		return 0;
 
 	aio_dev = of_device_enable_and_register_by_name("saradc@fe720000");
@@ -92,7 +92,7 @@ static int __init diasom_rk3568_evb_check_recovery(void)
 
 	return 0;
 }
-device_initcall(diasom_rk3568_evb_check_recovery);
+device_initcall(diasom_rk3568_check_recovery);
 
 #define UNSTUFF_BITS(resp,start,size)					\
 	({								\
@@ -120,12 +120,12 @@ static unsigned extract_psn(struct mci *mci)
 	return UNSTUFF_BITS(mci->csd, 24, 32);
 }
 
-static int __init diasom_rk3568_evb_machine_id(void)
+static int __init diasom_rk3568_machine_id(void)
 {
 	struct mci *mci;
 	unsigned serial;
 
-	if (!of_machine_is_compatible("diasom,ds-rk3568-evb"))
+	if (!of_machine_is_compatible("diasom,ds-rk3568-som"))
 		return 0;
 
 	if (!IS_ENABLED(CONFIG_MACHINE_ID)) {
@@ -147,11 +147,11 @@ static int __init diasom_rk3568_evb_machine_id(void)
 
 	return 0;
 }
-of_populate_initcall(diasom_rk3568_evb_machine_id);
+of_populate_initcall(diasom_rk3568_machine_id);
 
-static int __init diasom_rk3568_evb_late_init(void)
+static int __init diasom_rk3568_late_init(void)
 {
-	if (of_machine_is_compatible("diasom,ds-rk3568-evb")) {
+	if (of_machine_is_compatible("diasom,ds-rk3568-som")) {
 		struct i2c_adapter *adapter = i2c_get_adapter(0);
 
 		if (!adapter) {
@@ -159,13 +159,13 @@ static int __init diasom_rk3568_evb_late_init(void)
 			return 0;
 		}
 
-		if (!diasom_rk3568_evb_probe_i2c(adapter, 0x1c)) {
-			extern char __dtbo_rk3568_diasom_evb_ver2_start[];
+		if (!diasom_rk3568_probe_i2c(adapter, 0x1c)) {
+			extern char __dtbo_rk3568_diasom_som_ver2_start[];
 			struct device_node *overlay;
 
 			pr_info("SOM version 2 detected.\n");
 
-			overlay = of_unflatten_dtb(__dtbo_rk3568_diasom_evb_ver2_start, INT_MAX);
+			overlay = of_unflatten_dtb(__dtbo_rk3568_diasom_som_ver2_start, INT_MAX);
 			of_overlay_apply_tree(of_get_root_node(), overlay);
 			of_probe();
 		} else
@@ -174,14 +174,14 @@ static int __init diasom_rk3568_evb_late_init(void)
 
 	return 0;
 }
-late_initcall(diasom_rk3568_evb_late_init);
+late_initcall(diasom_rk3568_late_init);
 
-static int __init diasom_rk3568_evb_probe(struct device *dev)
+static int __init diasom_rk3568_probe(struct device *dev)
 {
 	enum bootsource bootsource = bootsource_get();
 	int instance = bootsource_get_instance();
 
-	barebox_set_hostname("diasom-evb");
+	barebox_set_hostname("diasom");
 
 	if (bootsource != BOOTSOURCE_MMC || instance) {
 		if (bootsource != BOOTSOURCE_MMC) {
@@ -199,22 +199,23 @@ static int __init diasom_rk3568_evb_probe(struct device *dev)
 	rk3568_bbu_mmc_register("emmc", BBU_HANDLER_FLAG_DEFAULT,
 				"/dev/mmc1");
 
-	defaultenv_append_directory(defaultenv_diasom_rk3568_evb);
+	defaultenv_append_directory(defaultenv_diasom_rk3568);
 
-	of_register_fixup(diasom_rk3568_evb_fixup, NULL);
+	if (of_machine_is_compatible("diasom,ds-rk3568-som-evb"))
+		of_register_fixup(diasom_rk3568_evb_fixup, NULL);
 
 	return 0;
 }
 
-static const struct of_device_id diasom_rk3568_evb_of_match[] = {
-	{ .compatible = "diasom,ds-rk3568-evb" },
+static const struct of_device_id diasom_rk3568_of_match[] = {
+	{ .compatible = "diasom,ds-rk3568-som" },
 	{ },
 };
-BAREBOX_DEEP_PROBE_ENABLE(diasom_rk3568_evb_of_match);
+BAREBOX_DEEP_PROBE_ENABLE(diasom_rk3568_of_match);
 
-static struct driver diasom_rk3568_evb_driver = {
-	.name = "board-ds-rk3568-evb",
-	.probe = diasom_rk3568_evb_probe,
-	.of_compatible = diasom_rk3568_evb_of_match,
+static struct driver diasom_rk3568_driver = {
+	.name = "board-ds-rk3568-som",
+	.probe = diasom_rk3568_probe,
+	.of_compatible = diasom_rk3568_of_match,
 };
-coredevice_platform_driver(diasom_rk3568_evb_driver);
+coredevice_platform_driver(diasom_rk3568_driver);

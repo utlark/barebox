@@ -2,7 +2,7 @@
 
 obj-y	+= board.o
 lwl-y	+= lowlevel.o
-bbenv-y	+= defaultenv-diasom-rk3568-evb
+bbenv-y	+= defaultenv-diasom-rk3568
 extra-y	+= rk3568-diasom-evb-lvds.dtbo
 extra-y	+= rk3568-diasom-evb-test.dtbo
 
