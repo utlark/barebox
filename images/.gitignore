@@ -36,3 +36,7 @@ barebox.sum
 *.stm32
 *.nmon
 *.swapped
+*.rkimg
+*.imx9img
+*.fit
+*.missing-firmware

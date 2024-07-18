@@ -32,12 +32,19 @@ config NAND_ALLOW_ERASE_BAD
 	  to '1' it will be allowed to erase bad blocks. This is a potientially
 	  dangerous operation, so if unsure say no to this option.
 
+config NAND_NEED_EXEC_OP
+	bool
+
+config NAND_NEED_ECC_PLACEMENT_INTERLEAVED
+	bool
+
 comment "Raw/parallel NAND flash controllers"
 
 config NAND_IMX
 	bool
 	prompt "i.MX21 to 53 NAND driver aka 'mxc', for NFC"
 	depends on ARCH_IMX
+	select NAND_NEED_EXEC_OP
 	help
 	  Support for NAND flash on Freescale/NXP i.MX devices.  This is for the
 	  "MXC" series:  i.MX21/25/27/31/35/51/53.
@@ -104,6 +111,7 @@ config NAND_STM32
 	select STM32_FMC2_EBI if ARCH_STM32MP
 	select RESET_CONTROLLER if ARCH_STM32MP
 	select RESET_SIMPLE if ARCH_STM32MP
+	select NAND_NEED_EXEC_OP
 	help
 	  Enables support for NAND Flash chips on SoCs containing the FMC2
 	  NAND controller. This controller is found on STM32MP SoCs.
@@ -114,6 +122,7 @@ config NAND_ATMEL
 	bool
 	prompt "Atmel (AT91SAM9xxx) NAND driver"
 	select GENERIC_ALLOCATOR if OFDEVICE
+	select NAND_NEED_EXEC_OP
 	depends on ARCH_AT91 || (OFDEVICE && COMPILE_TEST)
 
 config NAND_ATMEL_LEGACY
@@ -147,19 +156,21 @@ config MTD_NAND_NOMADIK
 	  Driver for the NAND flash controller on the Nomadik, with ECC.
 
 config MTD_NAND_DENALI
-        tristate "Support Denali NAND controller"
-        depends on HAS_DMA
-        help
-          Enable support for the Denali NAND controller.  This should be
-          combined with either the PCI or platform drivers to provide device
-          registration.
+	tristate "Support Denali NAND controller"
+	depends on HAS_DMA
+	select NAND_NEED_EXEC_OP
+	select NAND_NEED_ECC_PLACEMENT_INTERLEAVED
+	help
+	  Enable support for the Denali NAND controller.  This should be
+	  combined with either the PCI or platform drivers to provide device
+	  registration.
 
 config MTD_NAND_DENALI_DT
-        tristate "Support Denali NAND controller as a DT device"
-        depends on HAVE_CLK && MTD_NAND_DENALI
-        help
-          Enable the driver for NAND flash on platforms using a Denali NAND
-          controller as a DT device.
+	tristate "Support Denali NAND controller as a DT device"
+	depends on HAVE_CLK && MTD_NAND_DENALI
+	help
+	  Enable the driver for NAND flash on platforms using a Denali NAND
+	  controller as a DT device.
 
 if MTD_NAND_DENALI
 

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0
 VERSION = 2024
-PATCHLEVEL = 05
+PATCHLEVEL = 07
 SUBLEVEL = 0
 EXTRAVERSION =
 NAME = None
@@ -451,8 +451,9 @@ KBUILD_CPPFLAGS        := -D__KERNEL__ -D__BAREBOX__ $(LINUXINCLUDE) -fno-builti
 
 KBUILD_CFLAGS   := -Wall -Wundef -Werror=strict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common -fshort-wchar \
-                   -Werror=implicit-function-declaration -Werror=implicit-int \
-                   -Os -pipe -Wmissing-prototypes -std=gnu11
+		   -Werror=implicit-function-declaration -Werror=implicit-int \
+		   -Werror=int-conversion \
+		   -Os -pipe -Wmissing-prototypes -std=gnu11
 KBUILD_AFLAGS          := -D__ASSEMBLY__
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
@@ -533,6 +534,8 @@ ifdef config-build
 # ===========================================================================
 # *config targets only - make sure prerequisites are updated, and descend
 # in scripts/kconfig to make the *config target
+
+include $(srctree)/scripts/Makefile.defconf
 
 # Read arch specific Makefile to set KBUILD_DEFCONFIG as needed.
 # KBUILD_DEFCONFIG may point out an alternative default configuration
@@ -1224,7 +1227,9 @@ PHONY += compile_commands.json
 # ---------------------------------------------------------------------------
 
 boards := $(wildcard $(srctree)/arch/$(SRCARCH)/configs/*_defconfig)
-boards := $(sort $(notdir $(boards)))
+boards := $(sort $(notdir $(boards)) $(generated_configs))
+
+PHONY += $(generated_configs)
 
 help:
 	@echo  'Cleaning targets:'
