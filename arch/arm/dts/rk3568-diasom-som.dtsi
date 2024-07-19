@@ -69,6 +69,57 @@
 		status = "disabled";
 	};
 
+	csi2_dphy0: csi2-dphy0 {
+		compatible = "rockchip,rk3568-csi2-dphy";
+		rockchip,hw = <&csi2_dphy_hw>;
+		status = "disabled";
+	};
+
+	csi2_dphy_hw: csi2-dphy-hw@fe870000 {
+		compatible = "rockchip,rk3568-csi2-dphy-hw";
+		reg = <0x0 0xfe870000 0x0 0x1000>;
+		clocks = <&cru PCLK_MIPICSIPHY>;
+		clock-names = "pclk";
+		rockchip,grf = <&grf>;
+		status = "disabled";
+	};
+
+	isp: rkisp@fdff0000 {
+		compatible = "rockchip,rk3568-rkisp";
+		reg = <0x0 0xfdff0000 0x0 0x10000>;
+		interrupts = <GIC_SPI 57 IRQ_TYPE_LEVEL_HIGH>,
+		<GIC_SPI 58 IRQ_TYPE_LEVEL_HIGH>,
+		<GIC_SPI 60 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "mipi_irq", "mi_irq", "isp_irq";
+		clocks = <&cru ACLK_ISP>, <&cru HCLK_ISP>, <&cru CLK_ISP>;
+		clock-names = "aclk_isp", "hclk_isp", "clk_isp";
+		resets = <&cru SRST_ISP>, <&cru SRST_H_ISP>;
+		reset-names = "isp", "isp-h";
+		rockchip,grf = <&grf>;
+		power-domains = <&power RK3568_PD_VI>;
+		iommus = <&isp_mmu>;
+		rockchip,iq-feature = /bits/ 64 <0x1BFBFFFE67FF>;
+		status = "disabled";
+	};
+
+	isp_mmu: iommu@fdff1a00 {
+		compatible = "rockchip,rk3568-iommu";
+		reg = <0x0 0xfdff1a00 0x0 0x100>;
+		interrupts = <GIC_SPI 59 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&cru ACLK_ISP>, <&cru HCLK_ISP>;
+		clock-names = "aclk", "iface";
+		power-domains = <&power RK3568_PD_VI>;
+		rockchip,disable-mmu-reset;
+		#iommu-cells = <0>;
+		status = "disabled";
+	};
+
+	isp_vir0: rkisp-vir0 {
+		compatible = "rockchip,rkisp-vir";
+		rockchip,hw = <&isp>;
+		status = "disabled";
+	};
+
 	/* Should be added in 6.10+ */
 	/*
 	 * There are no private per-core L2 caches, but only the
