@@ -60,9 +60,6 @@ static int __init diasom_rk3568_check_recovery(void)
 	struct device *aio_dev;
 	int ret, val;
 
-	if (!IS_ENABLED(CONFIG_AIODEV))
-		return 0;
-
 	if (!of_machine_is_compatible("diasom,ds-rk3568-som"))
 		return 0;
 
@@ -127,11 +124,6 @@ static int __init diasom_rk3568_machine_id(void)
 
 	if (!of_machine_is_compatible("diasom,ds-rk3568-som"))
 		return 0;
-
-	if (!IS_ENABLED(CONFIG_MACHINE_ID)) {
-		pr_warn("Machine ID is not set due to a disabled feature!\n");
-		return -ENOTSUPP;
-	}
 
 	mci = mci_get_device_by_name("mmc1");
 	if (!mci) {
