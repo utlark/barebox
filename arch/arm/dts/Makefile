@@ -14,6 +14,7 @@ lwl-$(CONFIG_MACH_DFI_FS700_M60) += imx6q-dfi-fs700-m60-6q.dtb.o imx6dl-dfi-fs70
 lwl-$(CONFIG_MACH_DIASOM_DS_IMX8M_EVB) += imx8mm-diasom-evb.dtb.o
 lwl-$(CONFIG_MACH_DIASOM_DS_RK3568_EVB) += rk3568-diasom-evb.dtb.o
 lwl-$(CONFIG_MACH_DIASOM_DS_RK3568_EVB) += rk3568-diasom-smarc.dtb.o
+lwl-$(CONFIG_MACH_DIASOM_DS_RK3568_EVB) += rk3568-diasom-sodimm.dtb.o
 obj-$(CONFIG_MACH_DIASOM_DS_RK3568_EVB) += rk3568-diasom-som-ver2.dtbo.o
 lwl-$(CONFIG_MACH_DUCKBILL) += imx28-duckbill.dtb.o
 lwl-$(CONFIG_MACH_KINDLE_MX50) += imx50-kindle-d01100.dtb.o imx50-kindle-d01200.dtb.o imx50-kindle-ey21.dtb.o
