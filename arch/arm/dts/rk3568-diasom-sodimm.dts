@@ -74,6 +74,13 @@
 //	status = "okay";
 //};
 
+//&uart6 {
+//	pinctrl-0 = <&uart6m1_xfer>;
+//	/* Should be added in 6.10+ */
+//	dma-names = "tx", "rx";
+//	status = "okay";
+//};
+
 &uart7 {
 	pinctrl-0 = <&uart7m1_xfer &uart7m0_ctsn &uart7m0_rtsn>;
 	/* Should be added in 6.10+ */
