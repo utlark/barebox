@@ -60,6 +60,27 @@
 	};
 };
 
+&uart3 {
+	pinctrl-0 = <&uart3m1_xfer>;
+	/* Should be added in 6.10+ */
+	dma-names = "tx", "rx";
+	status = "okay";
+};
+
+//&uart5 {
+//	pinctrl-0 = <&uart5m0_xfer &uart5m0_ctsn &uart5m0_rtsn>;
+//	/* Should be added in 6.10+ */
+//	dma-names = "tx", "rx";
+//	status = "okay";
+//};
+
+&uart7 {
+	pinctrl-0 = <&uart7m1_xfer &uart7m0_ctsn &uart7m0_rtsn>;
+	/* Should be added in 6.10+ */
+	dma-names = "tx", "rx";
+	status = "okay";
+};
+
 &pinctrl {
 	net {
 		gmac0_rst_pins: gmac0-rst-pins {
