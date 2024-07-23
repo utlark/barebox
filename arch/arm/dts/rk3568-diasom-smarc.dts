@@ -8,6 +8,11 @@
 / {
 	model = "Diasom DS-RK3568-SMARC";
 	compatible = "diasom,ds-rk3568-smarc", "diasom,ds-rk3568-som", "rockchip,rk3568";
+
+	aliases {
+		ethernet0 = &gmac0;
+		ethernet1 = &gmac1;
+	};
 };
 
 &i2c2 {
