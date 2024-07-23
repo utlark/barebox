@@ -10,6 +10,11 @@
 	compatible = "diasom,ds-rk3568-smarc", "diasom,ds-rk3568-som", "rockchip,rk3568";
 };
 
+&i2c2 {
+	pinctrl-0 = <&i2c2m1_xfer>;
+	status = "okay";
+};
+
 &gmac0 {
 	assigned-clocks = <&cru SCLK_GMAC0_RX_TX>, <&cru SCLK_GMAC0>;
 	assigned-clock-parents = <&cru SCLK_GMAC0_RGMII_SPEED>;
@@ -86,6 +91,17 @@
 	pinctrl-0 = <&uart7m1_xfer>;
 	/* Should be added in 6.10+ */
 	dma-names = "tx", "rx";
+	status = "okay";
+};
+
+&usb_host0_xhci {
+	hnp-disable;
+	srp-disable;
+	dr_mode = "host";
+	status = "okay";
+};
+
+&usb_host1_xhci {
 	status = "okay";
 };
 
