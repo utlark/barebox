@@ -50,6 +50,10 @@
 	status = "okay";
 };
 
+&gpu {
+	status = "okay";
+};
+
 &mdio0 {
 	rgmii_phy0: phy@0 {
 		pinctrl-names = "default";
