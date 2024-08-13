@@ -232,8 +232,6 @@
 	};
 };
 
-/delete-node/ &xin32k;
-
 &can1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&can1m0_pins>;

@@ -183,6 +183,8 @@
 	};
 };
 
+/delete-node/ &xin32k;
+
 &combphy0 {
 	/* USB3.0 OTG0 */
 	status = "okay";
