@@ -15,6 +15,10 @@
 	};
 };
 
+&display_subsystem {
+	status = "okay";
+};
+
 &i2c2 {
 	pinctrl-0 = <&i2c2m1_xfer>;
 	status = "okay";
@@ -86,6 +90,10 @@
 	status = "okay";
 };
 
+&rga {
+	status = "okay";
+};
+
 &uart3 {
 	pinctrl-0 = <&uart3m1_xfer>;
 	/* Should be added in 6.10+ */
@@ -129,6 +137,22 @@
 	*/
 	regulator-always-on;
 	regulator-boot-on;
+};
+
+&vpu {
+	status = "okay";
+};
+
+&vdpu_mmu {
+	status = "okay";
+};
+
+&vepu {
+	status = "okay";
+};
+
+&vepu_mmu {
+	status = "okay";
 };
 
 &pinctrl {

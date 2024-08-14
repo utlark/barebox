@@ -203,6 +203,10 @@
 	};
 };
 
+&display_subsystem {
+	status = "disabled";
+};
+
 &gpu {
 	mali-supply = <&vdd_gpu>;
 };
@@ -428,6 +432,10 @@
 	status = "okay";
 };
 
+&rga {
+	status = "disabled";
+};
+
 &saradc {
 	vref-supply = <&vcca_1v8>;
 	status = "okay";
@@ -476,6 +484,22 @@
 
 &usb2phy0_otg {
 	status = "okay";
+};
+
+&vpu {
+	status = "disabled";
+};
+
+&vdpu_mmu {
+	status = "disabled";
+};
+
+&vepu {
+	status = "disabled";
+};
+
+&vepu_mmu {
+	status = "disabled";
 };
 
 &pinctrl {
