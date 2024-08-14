@@ -120,20 +120,6 @@
 		status = "disabled";
 	};
 
-	/* Should be added in 6.10+ */
-	/*
-	 * There are no private per-core L2 caches, but only the
-	 * L3 cache that appears to the CPU cores as L2 caches
-	 */
-	l3_cache: l3-cache {
-		compatible = "cache";
-		cache-level = <2>;
-		cache-unified;
-		cache-size = <0x80000>;
-		cache-line-size = <64>;
-		cache-sets = <512>;
-	};
-
 	leds {
 		compatible = "gpio-leds";
 		pinctrl-names = "default";
@@ -192,50 +178,18 @@
 
 &cpu0 {
 	cpu-supply = <&vcc0v9_cpu>;
-	/* Should be added in 6.10+ */
-	i-cache-size = <0x8000>;
-	i-cache-line-size = <64>;
-	i-cache-sets = <128>;
-	d-cache-size = <0x8000>;
-	d-cache-line-size = <64>;
-	d-cache-sets = <128>;
-	next-level-cache = <&l3_cache>;
 };
 
 &cpu1 {
 	cpu-supply = <&vcc0v9_cpu>;
-	/* Should be added in 6.10+ */
-	i-cache-size = <0x8000>;
-	i-cache-line-size = <64>;
-	i-cache-sets = <128>;
-	d-cache-size = <0x8000>;
-	d-cache-line-size = <64>;
-	d-cache-sets = <128>;
-	next-level-cache = <&l3_cache>;
 };
 
 &cpu2 {
 	cpu-supply = <&vcc0v9_cpu>;
-	/* Should be added in 6.10+ */
-	i-cache-size = <0x8000>;
-	i-cache-line-size = <64>;
-	i-cache-sets = <128>;
-	d-cache-size = <0x8000>;
-	d-cache-line-size = <64>;
-	d-cache-sets = <128>;
-	next-level-cache = <&l3_cache>;
 };
 
 &cpu3 {
 	cpu-supply = <&vcc0v9_cpu>;
-	/* Should be added in 6.10+ */
-	i-cache-size = <0x8000>;
-	i-cache-line-size = <64>;
-	i-cache-sets = <128>;
-	d-cache-size = <0x8000>;
-	d-cache-line-size = <64>;
-	d-cache-sets = <128>;
-	next-level-cache = <&l3_cache>;
 };
 
 &cpu0_opp_table {
