@@ -705,14 +705,11 @@
 };
 
 &usb_host0_xhci {
-	hnp-disable;
-	srp-disable;
 #ifdef USBOTG_HOST
 	dr_mode = "host";
 #else
 	usb-role-switch;
 #endif
-	status = "okay";
 
 	port {
 		typec_role_sw: endpoint {

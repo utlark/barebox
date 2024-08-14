@@ -108,10 +108,7 @@
 };
 
 &usb_host0_xhci {
-	hnp-disable;
-	srp-disable;
 	dr_mode = "host";
-	status = "okay";
 };
 
 &usb_host1_xhci {

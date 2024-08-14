@@ -459,6 +459,12 @@
 	status = "okay";
 };
 
+&usb_host0_xhci {
+	hnp-disable;
+	srp-disable;
+	status = "okay";
+};
+
 &usb2phy0 {
 	status = "okay";
 };
