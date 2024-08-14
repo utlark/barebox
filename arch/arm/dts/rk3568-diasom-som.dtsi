@@ -483,6 +483,7 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&emmc_bus8 &emmc_clk &emmc_cmd &emmc_datastrobe &emmc_rstnout>;
 	bus-width = <8>;
+	cap-mmc-hw-reset;
 	max-frequency = <200000000>;
 	non-removable;
 	no-mmc-hs400;
