@@ -347,11 +347,6 @@
 
 			vdda0v9_image: LDO_REG1 {
 				regulator-name = "vdda0v9_image";
-				/* Temporary hack regulator-always-on and regulator-boot-on
-				   properties until we have regulator handling for dsi & lvds nodes
-				*/
-				regulator-always-on;
-				regulator-boot-on;
 				regulator-min-microvolt = <900000>;
 				regulator-max-microvolt = <900000>;
 
@@ -435,11 +430,6 @@
 
 			vcca1v8_image: LDO_REG9 {
 				regulator-name = "vcca1v8_image";
-				/* Temporary hack regulator-always-on and regulator-boot-on
-				   properties until we have regulator handling for dsi & lvds nodes
-				*/
-				regulator-always-on;
-				regulator-boot-on;
 				regulator-min-microvolt = <1800000>;
 				regulator-max-microvolt = <1800000>;
 
