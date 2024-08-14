@@ -56,10 +56,6 @@
 	};
 };
 
-&tsadc {
-	rockchip,hw-tshut-mode = <1>;
-};
-
 &vcc0v9_cpu {
 	status = "disabled";
 };
