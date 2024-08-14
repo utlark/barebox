@@ -21,7 +21,7 @@
 #include <linux/ctype.h>
 #include <linux/stat.h>
 
-LIST_HEAD(netdev_list);
+DEFINE_DEV_CLASS(eth_class, "eth");
 
 struct eth_ethaddr {
 	struct list_head list;
@@ -204,7 +204,7 @@ static int eth_carrier_check(struct eth_device *edev, bool may_wait)
 		return 0;
 
 	if (!edev->last_link_check ||
-	    is_timeout(edev->last_link_check, 5 * SECOND))
+	    is_timeout(edev->last_link_check, edev->phydev->polling_interval))
 		eth_carrier_poll_once(edev);
 
 	if (may_wait && !edev->phydev->link) {
@@ -393,6 +393,33 @@ static const char * const eth_mode_names[] = {
 	[ETH_MODE_DISABLED] = "disabled",
 };
 
+static int eth_param_set_ip(struct param_d *p, void *priv)
+{
+	struct eth_device *edev = priv;
+
+	net_set_ip(edev, edev->ipaddr);
+
+	return 0;
+}
+
+static int eth_param_set_gw(struct param_d *p, void *priv)
+{
+	struct eth_device *edev = priv;
+
+	net_set_gateway(edev, net_get_gateway());
+
+	return 0;
+}
+
+static int eth_param_set_nm(struct param_d *p, void *priv)
+{
+	struct eth_device *edev = priv;
+
+	net_set_netmask(edev, edev->netmask);
+
+	return 0;
+}
+
 int eth_register(struct eth_device *edev)
 {
 	struct device *dev = &edev->dev;
@@ -428,10 +455,10 @@ int eth_register(struct eth_device *edev)
 
 	edev->devname = xstrdup(dev_name(&edev->dev));
 
-	dev_add_param_ip(dev, "ipaddr", NULL, NULL, &edev->ipaddr, edev);
+	dev_add_param_ip(dev, "ipaddr", eth_param_set_ip, NULL, &edev->ipaddr, edev);
 	dev_add_param_string(dev, "serverip", NULL, NULL, &net_server, edev);
-	dev_add_param_ip(dev, "gateway", NULL, NULL, &net_gateway, edev);
-	dev_add_param_ip(dev, "netmask", NULL, NULL, &edev->netmask, edev);
+	dev_add_param_ip(dev, "gateway", eth_param_set_gw, NULL, &net_gateway, edev);
+	dev_add_param_ip(dev, "netmask", eth_param_set_nm, NULL, &edev->netmask, edev);
 	dev_add_param_mac(dev, "ethaddr", eth_param_set_ethaddr, NULL,
 			edev->ethaddr, edev);
 	edev->bootarg = xstrdup("");
@@ -445,7 +472,7 @@ int eth_register(struct eth_device *edev)
 	if (edev->init)
 		edev->init(edev);
 
-	list_add_tail(&edev->list, &netdev_list);
+	class_add_device(&eth_class, &edev->dev);
 
 	ret = eth_get_registered_ethaddr(edev, ethaddr);
 	if (!ret)
@@ -512,11 +539,12 @@ void eth_unregister(struct eth_device *edev)
 	if (IS_ENABLED(CONFIG_OFDEVICE))
 		free(edev->nodepath);
 
+	class_remove_device(&eth_class, &edev->dev);
+
 	free(edev->devname);
 
 	unregister_device(&edev->dev);
 	slice_exit(&edev->slice);
-	list_del(&edev->list);
 }
 
 void led_trigger_network(enum led_trigger trigger)
@@ -535,7 +563,7 @@ struct eth_device *of_find_eth_device_by_node(struct device_node *np)
 	 */
 	(void)of_device_ensure_probed(np);
 
-	list_for_each_entry(edev, &netdev_list, list)
+	for_each_netdev(edev)
 		if (edev->parent->of_node == np)
 			return edev;
 	return NULL;
@@ -546,7 +574,7 @@ void eth_open_all(void)
 {
 	struct eth_device *edev;
 
-	list_for_each_entry(edev, &netdev_list, list) {
+	for_each_netdev(edev) {
 		if (edev->global_mode == ETH_MODE_DISABLED)
 			continue;
 		eth_open(edev);
@@ -559,7 +587,7 @@ static int populate_ethaddr(void)
 	bool generated = false;
 	int ret;
 
-	list_for_each_entry(edev, &netdev_list, list) {
+	for_each_netdev(edev) {
 		if (!edev->parent || is_valid_ether_addr(edev->ethaddr))
 			continue;
 

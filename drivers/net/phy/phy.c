@@ -62,6 +62,9 @@ int phy_update_status(struct phy_device *phydev)
 	    phydev->link == oldlink)
 		return 0;
 
+	if (!phydev->link && !oldlink)
+		return 0;
+
 	if (phydev->adjust_link)
 		phydev->adjust_link(edev);
 
@@ -170,6 +173,8 @@ struct phy_device *phy_device_create(struct mii_bus *bus, int addr, int phy_id)
 	phydev->duplex = -1;
 	phydev->pause = phydev->asym_pause = 0;
 	phydev->autoneg = AUTONEG_ENABLE;
+
+	phydev->polling_interval = PHY_POLL_INTERVAL;
 
 	phydev->addr = addr;
 	phydev->phy_id = phy_id;

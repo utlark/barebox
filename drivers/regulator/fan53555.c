@@ -315,6 +315,8 @@ static int fan53555_device_setup(struct fan53555_device_info *di)
 		case FAN53555_VSEL_ID_1:
 			mode_reg = FAN53555_VSEL0;
 			break;
+		default:
+			return -EINVAL;
 		}
 		break;
 	case FAN53526_VENDOR_TCS:
@@ -415,7 +417,7 @@ static int fan53555_regulator_probe(struct device *dev)
 
 	ret = of_property_read_u32(np, "fcs,suspend-voltage-selector", &val);
 	if (!ret) {
-		if (val >> 1) {
+		if (val > 1) {
 			dev_err(di->dev, "Invalid VSEL ID=%u!\n", val);
 			ret = -EINVAL;
 			goto err;
@@ -429,13 +431,15 @@ static int fan53555_regulator_probe(struct device *dev)
 		goto err;
 
 	ret = of_regulator_register(&di->rdev, np);
-	if (!ret) {
-		dev_info(di->dev, "FAN53555 Option[%d] Rev[%d] Detected!\n",
-			 di->chip_id, di->chip_rev);
-		return 0;
+	if (ret) {
+		dev_err(di->dev, "Failed to register regulator!\n");
+		goto err;
 	}
 
-	dev_err(di->dev, "Failed to register regulator!\n");
+	dev_info(di->dev, "FAN53555 Option[%d] Rev[%d] Detected!\n",
+		 di->chip_id, di->chip_rev);
+
+	return 0;
 
 err:
 	free(di);

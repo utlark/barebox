@@ -133,10 +133,10 @@ static int source_env_network(struct eth_device *edev)
 		memcpy(edev->ethaddr, ethaddr, 6);
 
 	if (mode == ETH_MODE_STATIC) {
-		edev->ipaddr = ipaddr;
-		edev->netmask = netmask;
+		net_set_ip(edev, ipaddr);
+		net_set_netmask(edev, netmask);
 		if (gateway)
-			net_set_gateway(gateway);
+			net_set_gateway(edev, gateway);
 		if (serverip)
 			net_set_serverip(serverip);
 	}
@@ -358,7 +358,7 @@ int ifup_all(unsigned flags)
 	closedir(dir);
 
 	if ((flags & IFUP_FLAG_FORCE) || net_ifup_force_detect ||
-	    list_empty(&netdev_list))
+	    list_empty(&eth_class.devices))
 		device_detect_all();
 
 	/*
