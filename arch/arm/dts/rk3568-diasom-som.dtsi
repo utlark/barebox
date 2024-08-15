@@ -400,6 +400,8 @@
 				regulator-name = "vcc_3v3_sw1";
 				regulator-always-on;
 				regulator-boot-on;
+				regulator-coupled-with = <&vcc_3v3_sw2>;
+				regulator-coupled-max-spread = <10000>;
 
 				regulator-state-mem {
 					regulator-off-in-suspend;
@@ -410,6 +412,8 @@
 				regulator-name = "vcc_3v3_sw2";
 				regulator-always-on;
 				regulator-boot-on;
+				regulator-coupled-with = <&vcc_3v3_sw1>;
+				regulator-coupled-max-spread = <10000>;
 
 				regulator-state-mem {
 					regulator-off-in-suspend;
@@ -451,7 +455,6 @@
 	no-mmc-hs400;
 	no-sd;
 	no-sdio;
-	vmmc-supply = <&vcc_3v3_sw1>;
 	vqmmc-supply = <&vcc_1v8>;
 	status = "okay";
 };
