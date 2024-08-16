@@ -1,0 +1,59 @@
+/* SPDX-License-Identifier: GPL-2.0+ */
+/* SPDX-FileCopyrightText: Yuri Zubkov <utlark@ya.ru> */
+
+/dts-v1/;
+
+#include <dt-bindings/soc/rockchip,vop2.h>
+#include "rk3568-diasom-som.dtsi"
+
+/ {
+	model = "Saut DS-RK3568-SIB-2";
+	compatible = "saut,ds-rk3568-som-sib", "diasom,ds-rk3568-som", "rockchip,rk3568";
+
+	aliases {
+		can0 = &can1;
+		ethernet0 = &gmac0;
+	};
+};
+
+&can1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&can1m0_pins>;
+	status = "okay";
+};
+
+&gmac0 {
+	assigned-clocks = <&cru SCLK_GMAC0_RX_TX>, <&cru SCLK_GMAC0>;
+	assigned-clock-parents = <&cru SCLK_GMAC0_RGMII_SPEED>;
+	assigned-clock-rates = <0>, <125000000>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&gmac0_miim &gmac0_tx_bus2 &gmac0_rx_bus2 &gmac0_rgmii_clk &gmac0_rgmii_bus>;
+	clock_in_out = "output";
+	phy-handle = <&rgmii_phy0>;
+	phy-mode = "rgmii-id";
+	phy-supply = <&vcc3v3_sys>;
+	status = "okay";
+};
+
+&mdio0 {
+	rgmii_phy0: phy@0 {
+		pinctrl-names = "default";
+		pinctrl-0 = <&gmac0_rst_pins>;
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <0x0>;
+		reset-assert-us = <20000>;
+		reset-deassert-us = <100000>;
+		reset-gpios = <&gpio2 RK_PD3 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&pinctrl {
+	pinctrl-names = "default";
+
+	net {
+		gmac0_rst_pins: gmac0-rst-pins {
+			rockchip,pins =
+				<2 RK_PD3 RK_FUNC_GPIO &pcfg_pull_none>;	/* GMAC0_RST */
+		};
+	};
+};

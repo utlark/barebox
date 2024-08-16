@@ -77,6 +77,16 @@ config MACH_DIASOM_DS_RK3568_EVB
 	help
 	  Say Y here if you are using a Diasom DS-RK3568-EVB board
 
+config MACH_SAUT_DS_RK3568_SIB
+	bool "Saut DS-RK3568-SIB"
+	depends on $(success,test -e $(srctree)/arch/arm/boards/saut-rk3568-sib/sdram-init.bin)
+	select ARCH_RK3568
+	select AIODEV
+	select DEFAULT_ENVIRONMENT
+	select MACHINE_ID
+	help
+	  Say Y here if you are using a Saut DS-RK3568-SIB board
+
 config MACH_RK3568_EVB
 	select ARCH_RK3568
 	bool "RK3568 EVB"
