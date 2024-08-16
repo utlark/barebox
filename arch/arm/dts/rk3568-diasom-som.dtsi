@@ -455,6 +455,7 @@
 	no-mmc-hs400;
 	no-sd;
 	no-sdio;
+	vmmc-supply = <&vcc3v3_sys>;
 	vqmmc-supply = <&vcc_1v8>;
 	status = "okay";
 };
