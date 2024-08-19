@@ -13,6 +13,31 @@
 	aliases {
 		can0 = &can1;
 		ethernet0 = &gmac0;
+		sound0 = &sound0;
+	};
+
+	sound0: es8388-sound {
+		compatible = "simple-audio-card";
+		simple-audio-card,name = "ES8388";
+		simple-audio-card,format = "i2s";
+		simple-audio-card,bitclock-master = <&es8388_master>;
+		simple-audio-card,frame-master = <&es8388_master>;
+
+		es8388_master: simple-audio-card,cpu {
+			sound-dai = <&i2s1_8ch>;
+		};
+
+		es8388_codec: simple-audio-card,codec {
+			sound-dai = <&es8388>;
+		};
+	};
+
+	vcc1v8_sys: vcc1v8-sys-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "1v8_sys";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		vin-supply = <&vcc3v3_sys>;
 	};
 };
 
@@ -35,6 +60,37 @@
 	status = "okay";
 };
 
+&i2c4 {
+	clock-frequency = <400000>;
+	status = "okay";
+
+	es8388: codec@10 {
+		compatible = "everest,es8388";
+		assigned-clocks = <&cru I2S1_MCLKOUT_TX>;
+		assigned-clock-rates = <12288000>;
+		assigned-clock-parents = <&cru CLK_I2S1_8CH_TX>;
+		reg = <0x10>;
+		clocks = <&cru I2S1_MCLKOUT_TX>;
+		DVDD-supply = <&vcc1v8_sys>;
+		AVDD-supply = <&vcc3v3_sys>;
+		PVDD-supply = <&vcc3v3_sys>;
+		HPVDD-supply = <&vcc3v3_sys>;
+
+		#sound-dai-cells = <0>;
+	};
+};
+
+&i2s1_8ch {
+	/* I2S Sound */
+	pinctrl-0 = <
+		&i2s1_pins
+		&i2s1m1_sdo0	/* I2S1_SDO0 */
+		&i2s1m1_sdi0	/* I2S1_SDI0 */
+	>;
+	rockchip,trcm-sync-tx-only;
+	status = "okay";
+};
+
 &mdio0 {
 	rgmii_phy0: phy@0 {
 		pinctrl-names = "default";
@@ -49,6 +105,15 @@
 
 &pinctrl {
 	pinctrl-names = "default";
+
+	i2s {
+		i2s1_pins: i2s1-pins {
+			rockchip,pins =
+				<3 RK_PC6 4 &pcfg_pull_none_smt>,			/* I2S1_MCLK */
+				<3 RK_PC7 4 &pcfg_pull_none_smt>,			/* I2S1_TX_SCLK */
+				<3 RK_PD0 4 &pcfg_pull_none_smt>;			/* I2S1_TX_LRCK */
+		};
+	};
 
 	net {
 		gmac0_rst_pins: gmac0-rst-pins {
