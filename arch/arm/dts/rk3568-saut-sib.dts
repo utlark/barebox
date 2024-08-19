@@ -14,6 +14,15 @@
 		can0 = &can1;
 		ethernet0 = &gmac0;
 		sound0 = &sound0;
+		mmc0 = &sdmmc0;
+	};
+
+	chosen {
+		environment-sd {
+			compatible = "barebox,environment";
+			device-path = &sdmmc0, "partname:env";
+			status = "disabled";
+		};
 	};
 
 	sound0: es8388-sound {
@@ -101,6 +110,20 @@
 		reset-deassert-us = <100000>;
 		reset-gpios = <&gpio2 RK_PD3 GPIO_ACTIVE_LOW>;
 	};
+};
+
+&sdmmc0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&sdmmc0_bus4 &sdmmc0_clk &sdmmc0_cmd &sdmmc0_det>;
+	bus-width = <4>;
+	cap-mmc-highspeed;
+	cap-sd-highspeed;
+	cd-gpios = <&gpio0 RK_PA4 GPIO_ACTIVE_LOW>;
+	disable-wp;
+	sd-uhs-sdr104;
+	vmmc-supply = <&vcc3v3_sys>;
+	vqmmc-supply = <&vccio_sd>;
+	status = "okay";
 };
 
 &pinctrl {
