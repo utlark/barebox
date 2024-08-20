@@ -30,11 +30,11 @@
 	};
 };
 
-&imx335_in {
+&imx335_i2c4_in {
 	data-lanes = <1 2>;
 };
 
-&imx335_out {
+&imx335_i2c4_out {
 	data-lanes = <1 2>;
 };
 

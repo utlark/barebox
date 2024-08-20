@@ -15,7 +15,7 @@
 
 	aliases {
 		camera0 = &xc7160;
-		camera1 = &imx335;
+		camera1 = &imx335_i2c4;
 		can0 = &can1;
 		can1 = &can2;
 		ethernet0 = &gmac0;
@@ -284,9 +284,9 @@
 				data-lanes = <1 2 3 4>;
 			};
 
-			imx335_in: endpoint@1 {
+			imx335_i2c4_in: endpoint@1 {
 				reg = <1>;
-				remote-endpoint = <&imx335_out>;
+				remote-endpoint = <&imx335_i2c4_out>;
 				data-lanes = <1 2 3 4>;
 			};
 		};
@@ -510,7 +510,7 @@
 		#sound-dai-cells = <0>;
 	};
 
-	imx335: camera@1a {
+	imx335_i2c4: camera@1a {
 		compatible = "sony,imx335";
 		reg = <0x1a>;
 		clocks = <&xin24m>;
@@ -521,9 +521,9 @@
 		status = "disabled";
 
 		port {
-			imx335_out: endpoint {
+			imx335_i2c4_out: endpoint {
 				data-lanes = <1 2 3 4>;
-				remote-endpoint = <&imx335_in>;
+				remote-endpoint = <&imx335_i2c4_in>;
 				link-frequencies = /bits/ 64 <594000000>;
 			};
 		};

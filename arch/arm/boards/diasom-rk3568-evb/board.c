@@ -36,7 +36,6 @@ static int diasom_rk3568_evb_fixup(struct device_node *root, void *unused)
 	if (!adapter)
 		return -ENODEV;
 
-	/* i2c4@0x10 */
 	if (diasom_rk3568_probe_i2c(adapter, 0x10)) {
 		pr_warn("ES8388 codec not found, disabling soundcard.\n");
 		of_register_set_status_fixup("sound0", false);
@@ -50,6 +49,20 @@ static int diasom_rk3568_evb_fixup(struct device_node *root, void *unused)
 
 	pr_info("Assume camera XC7160 is used.\n");
 	of_register_set_status_fixup("camera0", true);
+
+	return 0;
+}
+
+static int diasom_rk3568_evb_ver3_fixup(struct device_node *root, void *unused)
+{
+	struct i2c_adapter *adapter = i2c_get_adapter(4);
+	if (!adapter)
+		return -ENODEV;
+
+	if (!diasom_rk3568_probe_i2c(adapter, 0x1a)) {
+		pr_info("Camera IMX335 detected.\n");
+		of_register_set_status_fixup("camera1", true);
+	}
 
 	return 0;
 }
@@ -181,8 +194,12 @@ static int __init diasom_rk3568_late_init(void)
 			overlay = of_unflatten_dtb(__dtbo_rk3568_diasom_evb_ver3_start, INT_MAX);
 			of_overlay_apply_tree(of_get_root_node(), overlay);
 			of_probe();
-		} else
+
+			of_register_fixup(diasom_rk3568_evb_ver3_fixup, NULL);
+		} else {
 			pr_info("EVB version 2 or earlier detected.\n");
+			of_register_fixup(diasom_rk3568_evb_fixup, NULL);
+		}
 	};
 
 	return 0;
@@ -213,9 +230,6 @@ static int __init diasom_rk3568_probe(struct device *dev)
 				"/dev/mmc1");
 
 	defaultenv_append_directory(defaultenv_diasom_rk3568);
-
-	if (of_machine_is_compatible("diasom,ds-rk3568-som-evb"))
-		of_register_fixup(diasom_rk3568_evb_fixup, NULL);
 
 	return 0;
 }
