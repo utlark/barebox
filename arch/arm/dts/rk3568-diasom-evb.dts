@@ -236,7 +236,7 @@
 		pinctrl-0 = <&csi1_pwr>;
 		compatible = "regulator-fixed";
 		enable-active-high;
-		gpio = <&gpio2 RK_PD2 GPIO_ACTIVE_HIGH>;
+		gpio = <&gpio0 RK_PD4 GPIO_ACTIVE_HIGH>;
 		regulator-name = "vcc_cam1";
 		startup-delay-us = <250000>;
 		vin-supply = <&vcc5v0_sys>;
