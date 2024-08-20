@@ -4,6 +4,10 @@
 /dts-v1/;
 /plugin/;
 
+&csi_out {
+	data-lanes = <1 2>;
+};
+
 &i2c4 {
 	i2c-mux@70 {
 		compatible = "nxp,pca9546";
@@ -24,6 +28,14 @@
 			#size-cells = <0>;
 		};
 	};
+};
+
+&imx335_in {
+	data-lanes = <1 2>;
+};
+
+&imx335_out {
+	data-lanes = <1 2>;
 };
 
 &vcc_cam0 {
