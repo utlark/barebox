@@ -20,6 +20,10 @@
 		can1 = &can2;
 		ethernet0 = &gmac0;
 		ethernet1 = &gmac1;
+		i2c40 = &i2c40;
+		i2c41 = &i2c41;
+		i2c42 = &i2c42;
+		i2c43 = &i2c43;
 		mmc0 = &sdmmc0;
 		sound0 = &sound0;
 	};
@@ -548,6 +552,42 @@
 				data-lanes = <1 2 3 4>;
 				remote-endpoint = <&xc7160_in>;
 			};
+		};
+	};
+
+	i2c_mux: i2c-mux@70 {
+		compatible = "nxp,pca9546";
+		reg = <0x70>;
+		i2c-mux-idle-disconnect;
+		vdd-supply = <&vcc3v3_sys>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+
+		i2c40: i2c@0 {
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		
+		i2c41: i2c@1 {
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c42: i2c@2 {
+			reg = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		
+		i2c43: i2c@3 {
+			reg = <3>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
 		};
 	};
 };
