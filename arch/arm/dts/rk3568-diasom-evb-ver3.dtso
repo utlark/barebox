@@ -1,0 +1,29 @@
+/* SPDX-License-Identifier: GPL-2.0+ */
+/* SPDX-FileCopyrightText: Alexander Shiyan <shc_work@mail.ru> */
+
+/dts-v1/;
+/plugin/;
+
+&csi_out {
+	data-lanes = <1 2>;
+};
+
+&i2c_mux {
+	status = "okay";
+};
+
+&imx335_i2c4_in {
+	data-lanes = <1 2>;
+};
+
+&imx335_i2c4_out {
+	data-lanes = <1 2>;
+};
+
+&vcc_cam0 {
+	vin-supply = <&vcc3v3_sys>;
+};
+
+&vcc_cam1 {
+	vin-supply = <&vcc3v3_sys>;
+};

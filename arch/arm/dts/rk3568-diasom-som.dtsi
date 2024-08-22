@@ -455,6 +455,7 @@
 	no-mmc-hs400;
 	no-sd;
 	no-sdio;
+	vmmc-supply = <&vcc3v3_sys>;
 	vqmmc-supply = <&vcc_1v8>;
 	status = "okay";
 };
@@ -481,7 +482,6 @@
 };
 
 &usb2phy0_host {
-	phy-supply = <&vcc5v0_sys>;
 	status = "okay";
 };
 

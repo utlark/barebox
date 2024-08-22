@@ -15,11 +15,15 @@
 
 	aliases {
 		camera0 = &xc7160;
-		camera1 = &imx335;
+		camera1 = &imx335_i2c4;
 		can0 = &can1;
 		can1 = &can2;
 		ethernet0 = &gmac0;
 		ethernet1 = &gmac1;
+		i2c6 = &i2c6;
+		i2c7 = &i2c7;
+		i2c8 = &i2c8;
+		i2c9 = &i2c9;
 		mmc0 = &sdmmc0;
 		sound0 = &sound0;
 	};
@@ -220,13 +224,24 @@
 		vin-supply = <&vcc5v0_sys>;
 	};
 
-	vcc_cam: vcc-cam-regulator {
+	vcc_cam0: vcc-cam0-regulator {
 		pinctrl-names = "default";
 		pinctrl-0 = <&csi0_pwr>;
 		compatible = "regulator-fixed";
 		enable-active-high;
 		gpio = <&gpio2 RK_PD2 GPIO_ACTIVE_HIGH>;
-		regulator-name = "vcc_cam";
+		regulator-name = "vcc_cam0";
+		startup-delay-us = <250000>;
+		vin-supply = <&vcc5v0_sys>;
+	};
+
+	vcc_cam1: vcc-cam1-regulator {
+		pinctrl-names = "default";
+		pinctrl-0 = <&csi1_pwr>;
+		compatible = "regulator-fixed";
+		enable-active-high;
+		gpio = <&gpio0 RK_PD4 GPIO_ACTIVE_HIGH>;
+		regulator-name = "vcc_cam1";
 		startup-delay-us = <250000>;
 		vin-supply = <&vcc5v0_sys>;
 	};
@@ -273,9 +288,9 @@
 				data-lanes = <1 2 3 4>;
 			};
 
-			imx335_in: endpoint@1 {
+			imx335_i2c4_in: endpoint@1 {
 				reg = <1>;
-				remote-endpoint = <&imx335_out>;
+				remote-endpoint = <&imx335_i2c4_out>;
 				data-lanes = <1 2 3 4>;
 			};
 		};
@@ -499,20 +514,20 @@
 		#sound-dai-cells = <0>;
 	};
 
-	imx335: camera@1a {
+	imx335_i2c4: camera@1a {
 		compatible = "sony,imx335";
 		reg = <0x1a>;
 		clocks = <&xin24m>;
 		power-domains = <&power RK3568_PD_VI>;
-		avdd-supply = <&vcc_cam>;
-		dvdd-supply = <&vcc_cam>;
-		ovdd-supply = <&vcc_cam>;
+		avdd-supply = <&vcc_cam0>;
+		dvdd-supply = <&vcc_cam0>;
+		ovdd-supply = <&vcc_cam0>;
 		status = "disabled";
 
 		port {
-			imx335_out: endpoint {
+			imx335_i2c4_out: endpoint {
 				data-lanes = <1 2 3 4>;
-				remote-endpoint = <&imx335_in>;
+				remote-endpoint = <&imx335_i2c4_in>;
 				link-frequencies = /bits/ 64 <594000000>;
 			};
 		};
@@ -537,6 +552,40 @@
 				data-lanes = <1 2 3 4>;
 				remote-endpoint = <&xc7160_in>;
 			};
+		};
+	};
+
+	i2c_mux: i2c-mux@70 {
+		compatible = "nxp,pca9546";
+		reg = <0x70>;
+		i2c-mux-idle-disconnect;
+		vdd-supply = <&vcc3v3_sys>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+
+		i2c6: i2c@0 {
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		
+		i2c7: i2c@1 {
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c8: i2c@2 {
+			reg = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		
+		i2c9: i2c@3 {
+			reg = <3>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 	};
 };
@@ -800,21 +849,25 @@
 	csi {
 		/* csi0 clkout = cif_clk */
 
-		csi0_rst: csi0-rst-pins {
-			rockchip,pins =
-				<3 RK_PB6 RK_FUNC_GPIO &pcfg_pull_up>;		/* CSI_RESET0# */
-		};
-
 		csi0_pwr: csi0-pwr-pins {
 			rockchip,pins =
 				<2 RK_PD2 RK_FUNC_GPIO &pcfg_pull_up>;		/* CSI_PWREN0 */
 		};
 
+		csi0_rst: csi0-rst-pins {
+			rockchip,pins =
+				<3 RK_PB6 RK_FUNC_GPIO &pcfg_pull_up>;		/* CSI_RESET0# */
+		};
+
 		/* csi1 clkout = refclk_pins */
 
-		csi1_pins: csi1-pins {
+		csi1_pwr: csi1-pwr-pins {
 			rockchip,pins =
-				<0 RK_PD4 RK_FUNC_GPIO &pcfg_pull_up>,		/* CSI_PWREN1 */
+				<0 RK_PD4 RK_FUNC_GPIO &pcfg_pull_up>;		/* CSI_PWREN1 */
+		};
+
+		csi1_rst: csi1-rst-pins {
+			rockchip,pins =
 				<1 RK_PB3 RK_FUNC_GPIO &pcfg_pull_up>;		/* CSI_RESET1# */
 		};
 	};
