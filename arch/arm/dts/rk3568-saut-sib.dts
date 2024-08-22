@@ -24,12 +24,12 @@
 			status = "disabled";
 		};
 	};
-
+	
 	hdmi-connector {
 		compatible = "hdmi-connector";
 		label = "HDMI";
 		type = "a";
-
+		
 		port {
 			hdmi_connector_in: endpoint {
 				remote-endpoint = <&hdmi_connector_out>;
@@ -194,11 +194,10 @@
 };
 
 &i2s1_8ch {
-	/* I2S Sound */
 	pinctrl-0 = <
 		&i2s1_pins
-		&i2s1m1_sdo0	/* I2S1_SDO0 */
-		&i2s1m1_sdi0	/* I2S1_SDI0 */
+		&i2s1m1_sdo0
+		&i2s1m1_sdi0
 	>;
 	rockchip,trcm-sync-tx-only;
 	status = "okay";
@@ -257,24 +256,24 @@
 				<0 RK_PD4 RK_FUNC_GPIO &pcfg_pull_up>,		/* GPIO_1 		*/
 				<0 RK_PA0 RK_FUNC_GPIO &pcfg_pull_up>,		/* GPIO_2 		*/
 				<0 RK_PC5 RK_FUNC_GPIO &pcfg_pull_up>,		/* GPIO_3 		*/
-
+				
 				/* X7 - Discrete IN 										*/
-				<1 RK_PA5 RK_FUNC_GPIO &pcfg_pull_up>,		/* D_IN_1 		*/
-				<2 RK_PD2 RK_FUNC_GPIO &pcfg_pull_up>,		/* D_IN_2		*/
-				<1 RK_PB3 RK_FUNC_GPIO &pcfg_pull_up>,		/* D_IN_3 		*/
-				// <0 RK_PC5 RK_FUNC_GPIO &pcfg_pull_up>,	/* D_IN_4 		*/
-
+				<1 RK_PA5 RK_FUNC_GPIO &pcfg_pull_none>,	/* D_IN_1 		*/
+				<2 RK_PD2 RK_FUNC_GPIO &pcfg_pull_none>,	/* D_IN_2		*/
+				<1 RK_PB3 RK_FUNC_GPIO &pcfg_pull_none>,	/* D_IN_3 		*/
+				// <0 RK_PC5 RK_FUNC_GPIO &pcfg_pull_none>,	/* D_IN_4 		*/
+				
 				/* X8 - Discrete OUT 										*/
-				<1 RK_PB2 RK_FUNC_GPIO &pcfg_pull_up>,		/* D_OUT_1 		*/
-				<1 RK_PB1 RK_FUNC_GPIO &pcfg_pull_up>,		/* D_OUT_2		*/
-				<1 RK_PB0 RK_FUNC_GPIO &pcfg_pull_up>,		/* D_OUT_3 		*/
-				<1 RK_PA7 RK_FUNC_GPIO &pcfg_pull_up>,		/* D_OUT_4 		*/
-
+				<1 RK_PB2 RK_FUNC_GPIO &pcfg_output_low>,	/* D_OUT_1 		*/
+				<1 RK_PB1 RK_FUNC_GPIO &pcfg_output_low>,	/* D_OUT_2		*/
+				<1 RK_PB0 RK_FUNC_GPIO &pcfg_output_low>,	/* D_OUT_3 		*/
+				<1 RK_PA7 RK_FUNC_GPIO &pcfg_output_low>,	/* D_OUT_4 		*/
+				
 				/* LED_GREEN 												*/
-				<4 RK_PC2 RK_FUNC_GPIO &pcfg_pull_up>,		/* D_OUT_1 		*/
-
+				<4 RK_PC2 RK_FUNC_GPIO &pcfg_output_low>,	/* D_OUT_1 		*/
+				
 				/* LED_RED 													*/
-				<4 RK_PC3 RK_FUNC_GPIO &pcfg_pull_up>;		/* D_OUT_2		*/
+				<4 RK_PC3 RK_FUNC_GPIO &pcfg_output_low>;	/* D_OUT_2		*/
 		};
 	};
 	
