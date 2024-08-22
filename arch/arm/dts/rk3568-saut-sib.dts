@@ -231,6 +231,14 @@
 	status = "okay";
 };
 
+&usb_host0_xhci {
+	dr_mode = "host";
+};
+
+&usb2phy0_host {
+	phy-supply = <&vcc5v0_sys>;
+};
+
 &sdmmc0 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&sdmmc0_bus4 &sdmmc0_clk &sdmmc0_cmd &sdmmc0_det>;
@@ -253,9 +261,9 @@
 		board_pins: board-pins {
 			rockchip,pins =
 				/* X4 - Multi 												*/
-				<0 RK_PD4 RK_FUNC_GPIO &pcfg_pull_up>,		/* GPIO_1 		*/
-				<0 RK_PA0 RK_FUNC_GPIO &pcfg_pull_up>,		/* GPIO_2 		*/
-				<0 RK_PC5 RK_FUNC_GPIO &pcfg_pull_up>,		/* GPIO_3 		*/
+				<0 RK_PD4 RK_FUNC_GPIO &pcfg_pull_none>,	/* GPIO_1 		*/
+				<0 RK_PA0 RK_FUNC_GPIO &pcfg_pull_none>,	/* GPIO_2 		*/
+				<0 RK_PC5 RK_FUNC_GPIO &pcfg_pull_none>,	/* GPIO_3 		*/
 				
 				/* X7 - Discrete IN 										*/
 				<1 RK_PA5 RK_FUNC_GPIO &pcfg_pull_none>,	/* D_IN_1 		*/
