@@ -4,6 +4,10 @@
 /dts-v1/;
 /plugin/;
 
+&i2c4 {
+	clock-frequency = <100000>;
+};
+
 &i2c_mux {
 	status = "okay";
 };
