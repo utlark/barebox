@@ -182,6 +182,11 @@
 		
 		#sound-dai-cells = <0>;
 	};
+	
+	cbm1307: cbm1307@68 {
+		compatible = "dallas,ds1338";
+		reg = <0x68>;
+	};
 };
 
 &pwm5 {
