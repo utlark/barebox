@@ -162,6 +162,12 @@
 	pinctrl-0 = <&i2c2m1_xfer>;
 	clock-frequency = <400000>;
 	status = "okay";
+	
+	hdmi_lt8619c_1: lt8619c_1@32 {
+		compatible = "lontium,lt8619c";
+		reset-gpios = <&gpio4 RK_PD2 GPIO_ACTIVE_LOW>;
+		reg = <0x32>;
+	};
 };
 
 &i2c4 {
@@ -181,6 +187,11 @@
 		HPVDD-supply = <&vcc3v3_sys>;
 		
 		#sound-dai-cells = <0>;
+	};
+	
+	hdmi_lt8619c_2: lt8619c_2@32 {
+		compatible = "lontium,lt8619c";
+		reg = <0x32>;
 	};
 	
 	cbm1307: cbm1307@68 {
@@ -287,6 +298,9 @@
 				
 				/* LED_RED 													*/
 				<4 RK_PC3 RK_FUNC_GPIO &pcfg_output_low>;	/* D_OUT_2		*/
+
+				/* HDMI_RESET 												*/
+				<4 RK_PD2 RK_FUNC_GPIO &pcfg_pull_none>;	/* HDMI_RESET	*/
 		};
 	};
 	
