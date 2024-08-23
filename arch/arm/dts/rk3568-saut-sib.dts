@@ -298,7 +298,7 @@
 				<4 RK_PC2 RK_FUNC_GPIO &pcfg_output_low>,	/* D_OUT_1 		*/
 				
 				/* LED_RED 													*/
-				<4 RK_PC3 RK_FUNC_GPIO &pcfg_output_low>;	/* D_OUT_2		*/
+				<4 RK_PC3 RK_FUNC_GPIO &pcfg_output_low>,	/* D_OUT_2		*/
 
 				/* HDMI_RESET 												*/
 				<4 RK_PD2 RK_FUNC_GPIO &pcfg_pull_none>;	/* HDMI_RESET	*/
