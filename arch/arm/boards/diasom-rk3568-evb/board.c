@@ -55,13 +55,13 @@ static int diasom_rk3568_evb_fixup(struct device_node *root, void *unused)
 
 static int diasom_rk3568_evb_ver3_fixup(struct device_node *root, void *unused)
 {
-	struct i2c_adapter *adapter = i2c_get_adapter(4);
+	struct i2c_adapter *adapter = i2c_get_adapter(7);
 	if (!adapter)
 		return -ENODEV;
 
 	if (!diasom_rk3568_probe_i2c(adapter, 0x1a)) {
 		pr_info("Camera IMX335 detected.\n");
-		of_register_set_status_fixup("camera1", true);
+		of_register_set_status_fixup("camera2", true);
 	}
 
 	return 0;

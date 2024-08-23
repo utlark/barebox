@@ -1,6 +1,0 @@
-#!/bin/sh
-
-# Put camera GPIO into active state
-gpio_direction_output 90 1
-
-exit 0

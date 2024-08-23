@@ -16,6 +16,7 @@
 	aliases {
 		camera0 = &xc7160;
 		camera1 = &imx335_i2c4;
+		camera2 = &imx335_i2c7;
 		can0 = &can1;
 		can1 = &can2;
 		ethernet0 = &gmac0;
@@ -156,6 +157,7 @@
 	vcc1v8_sys: vcc1v8-sys-regulator {
 		compatible = "regulator-fixed";
 		regulator-name = "1v8_sys";
+		regulator-boot-on;
 		regulator-min-microvolt = <1800000>;
 		regulator-max-microvolt = <1800000>;
 		vin-supply = <&vcc3v3_sys>;
@@ -228,6 +230,7 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&csi0_pwr>;
 		compatible = "regulator-fixed";
+		regulator-boot-on;
 		enable-active-high;
 		gpio = <&gpio2 RK_PD2 GPIO_ACTIVE_HIGH>;
 		regulator-name = "vcc_cam0";
@@ -239,6 +242,7 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&csi1_pwr>;
 		compatible = "regulator-fixed";
+		regulator-boot-on;
 		enable-active-high;
 		gpio = <&gpio0 RK_PD4 GPIO_ACTIVE_HIGH>;
 		regulator-name = "vcc_cam1";
@@ -292,6 +296,12 @@
 				reg = <1>;
 				remote-endpoint = <&imx335_i2c4_out>;
 				data-lanes = <1 2 3 4>;
+			};
+
+			imx335_i2c7_in: endpoint@2 {
+				reg = <2>;
+				remote-endpoint = <&imx335_i2c7_out>;
+				data-lanes = <1 2>;
 			};
 		};
 
@@ -569,11 +579,30 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
-		
+
 		i2c7: i2c@1 {
 			reg = <1>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+
+			imx335_i2c7: camera@1a {
+				compatible = "sony,imx335";
+				reg = <0x1a>;
+				clocks = <&xin24m>;
+				power-domains = <&power RK3568_PD_VI>;
+				avdd-supply = <&vcc_cam0>;
+				dvdd-supply = <&vcc_cam0>;
+				ovdd-supply = <&vcc_cam0>;
+				status = "disabled";
+
+				port {
+					imx335_i2c7_out: endpoint {
+						data-lanes = <1 2>;
+						remote-endpoint = <&imx335_i2c7_in>;
+						link-frequencies = /bits/ 64 <594000000>;
+					};
+				};
+			};
 		};
 
 		i2c8: i2c@2 {
@@ -581,7 +610,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
-		
+
 		i2c9: i2c@3 {
 			reg = <3>;
 			#address-cells = <1>;
