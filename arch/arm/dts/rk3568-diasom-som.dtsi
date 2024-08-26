@@ -148,6 +148,7 @@
 	vcc0v9_cpu: vcc0v9-cpu-regulator {
 		compatible = "regulator-fixed";
 		regulator-name = "0v9_cpu";
+		regulator-always-on;
 		regulator-boot-on;
 		regulator-min-microvolt = <900000>;
 		regulator-max-microvolt = <900000>;
@@ -157,6 +158,7 @@
 	vcc3v3_sys: vcc3v3-sys-regulator {
 		compatible = "regulator-fixed";
 		regulator-name = "3v3_sys";
+		regulator-always-on;
 		regulator-boot-on;
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
@@ -166,6 +168,7 @@
 	vcc5v0_sys: vcc5v0-sys-regulator {
 		compatible = "regulator-fixed";
 		regulator-name = "5v0_sys";
+		regulator-always-on;
 		regulator-boot-on;
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;

@@ -42,6 +42,7 @@
 		compatible = "tcs,tcs4525";
 		reg = <0x1c>;
 		fcs,suspend-voltage-selector = <1>;
+		regulator-always-on;
 		regulator-boot-on;
 		regulator-name = "vdd_cpu";
 		regulator-min-microvolt = <900000>;
