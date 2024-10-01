@@ -97,10 +97,10 @@ config CMD_DEVLOOKUP
 
 	  devlookup [-v VAR] /dev/DEVICE [parameter]
 
-          Detects the device behind a device file and outputs it,
-          unless a second argument is given. In that case the device
-          parameter with that name is looked up. Specifying -v VARIABLE
-          will write output to VARIABLE instead of printing it.
+	  Detects the device behind a device file and outputs it,
+	  unless a second argument is given. In that case the device
+	  parameter with that name is looked up. Specifying -v VARIABLE
+	  will write output to VARIABLE instead of printing it.
 
 config CMD_DEVUNBIND
 	tristate
@@ -254,6 +254,17 @@ config CMD_REGINFO
 	prompt "reginfo"
 	help
 	  Print register information.
+
+config CMD_BLKSTATS
+	bool
+	depends on BLOCK
+	select BLOCK_STATS
+	prompt "blkstats command"
+	help
+	  The blkstats displays statistics about a block devices' number of
+	  sectors read, written and erased. This should only be needed for
+	  development. Saying y here will start to collect these statistics
+	  and enable a command for querying them.
 
 config CMD_REGULATOR
 	bool
@@ -1871,6 +1882,20 @@ config CMD_DETECT
 		  -e	bail out if one device fails to detect
 		  -a	detect all devices
 
+config CMD_SYNC
+	tristate
+	prompt "sync"
+	help
+	  sync - flush cached writes
+
+	  Usage: sync DEVICE
+
+	  Synchronize cached writes to persistent storage of DEVICE
+	  immediately instead of waiting for block device to be closed,
+	  cache eviction or the regular barebox exit.
+
+	  This command is mainly useful for benchmarking.
+
 config CMD_FLASH
 	tristate
 	prompt "erase, protect and unprotect"
@@ -2331,7 +2356,7 @@ config CMD_OF_PROPERTY
 
 	  Valid formats for values:
 	  <0x00112233 4 05> - an array of cells. cells not beginning with a digit are
-                    interpreted as node paths and converted to phandles
+	            interpreted as node paths and converted to phandles
 	  [00 11 22 .. nn]  - byte stream
 	  If the value does not start with '<' or '[' it is interpreted as string
 

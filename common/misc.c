@@ -59,6 +59,7 @@ const char *strerror(int errnum)
 	case	EPROBE_DEFER	: str = "Requested probe deferral"; break;
 	case	ELOOP		: str = "Too many symbolic links encountered"; break;
 	case	ENODATA		: str = "No data available"; break;
+	case	EOPNOTSUPP	: str = "Operation not supported"; break;
 #if 0 /* These are probably not needed */
 	case	ENOTBLK		: str = "Block device required"; break;
 	case	EFBIG		: str = "File too large"; break;
@@ -285,8 +286,8 @@ BAREBOX_MAGICVAR(global.of.kernel.add_machine_compatible, "Additional machine/bo
 
 static void __noreturn do_panic(bool stacktrace, const char *fmt, va_list ap)
 {
-	vprintf(fmt, ap);
-	putchar('\n');
+	veprintf(fmt, ap);
+	eputchar('\n');
 
 	if (stacktrace)
 		dump_stack();

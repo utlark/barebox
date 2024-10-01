@@ -789,7 +789,7 @@ static void cb_erase(struct fastboot *fb, const char *cmd)
 	if (fd < 0)
 		fastboot_tx_print(fb, FASTBOOT_MSG_FAIL, strerror(-fd));
 
-	ret = erase(fd, ERASE_SIZE_ALL, 0);
+	ret = erase(fd, ERASE_SIZE_ALL, 0, ERASE_TO_CLEAR);
 
 	close(fd);
 
@@ -812,7 +812,7 @@ static void fb_run_command(struct fastboot *fb, const char *cmdbuf,
 	const struct cmd_dispatch_info *cmd;
 	int i;
 
-	console_countdown_abort();
+	console_countdown_abort("fastboot");
 
 	for (i = 0; i < num_commands; i++) {
 		cmd = &cmds[i];
