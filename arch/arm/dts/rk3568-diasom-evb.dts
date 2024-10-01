@@ -245,6 +245,7 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&csi0_pwr>;
 		compatible = "regulator-fixed";
+		/* Used by RAW probe for cameras connected via I2C */
 		regulator-boot-on;
 		enable-active-high;
 		gpio = <&gpio2 RK_PD2 GPIO_ACTIVE_HIGH>;
@@ -257,7 +258,6 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&csi1_pwr>;
 		compatible = "regulator-fixed";
-		regulator-boot-on;
 		enable-active-high;
 		gpio = <&gpio0 RK_PD4 GPIO_ACTIVE_HIGH>;
 		regulator-name = "vcc_cam1";
