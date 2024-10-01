@@ -17,6 +17,7 @@
 		camera0 = &xc7160;
 		camera1 = &imx335_i2c4;
 		camera2 = &imx335_i2c7;
+		camera3 = &fpdlink;
 		can0 = &can1;
 		can1 = &can2;
 		ethernet0 = &gmac0;
@@ -25,6 +26,7 @@
 		i2c7 = &i2c7;
 		i2c8 = &i2c8;
 		i2c9 = &i2c9;
+		i2c10 = &i2c10;
 		mmc0 = &sdmmc0;
 		sound0 = &sound0;
 	};
@@ -35,6 +37,18 @@
 			device-path = &sdmmc0, "partname:env";
 			status = "disabled";
 		};
+	};
+
+	clk25m: clk25m {
+		compatible = "fixed-clock";
+		clock-frequency = <25000000>;
+		#clock-cells = <0>;
+	};
+
+	clk27m: clk27m {
+		compatible = "fixed-clock";
+		clock-frequency = <27000000>;
+		#clock-cells = <0>;
 	};
 
 	backlight: backlight {
@@ -289,20 +303,26 @@
 
 			xc7160_in: endpoint@0 {
 				reg = <0>;
-				remote-endpoint = <&xc7160_out>;
 				data-lanes = <1 2 3 4>;
+				remote-endpoint = <&xc7160_out>;
 			};
 
 			imx335_i2c4_in: endpoint@1 {
 				reg = <1>;
-				remote-endpoint = <&imx335_i2c4_out>;
 				data-lanes = <1 2 3 4>;
+				remote-endpoint = <&imx335_i2c4_out>;
 			};
 
 			imx335_i2c7_in: endpoint@2 {
 				reg = <2>;
-				remote-endpoint = <&imx335_i2c7_out>;
 				data-lanes = <1 2>;
+				remote-endpoint = <&imx335_i2c7_out>;
+			};
+
+			ub954_csi_in: endpoint@3 {
+				reg = <3>;
+				data-lanes = <1 2>;
+				remote-endpoint = <&ub954_csi_out>;
 			};
 		};
 
@@ -601,6 +621,105 @@
 						data-lanes = <1 2>;
 						remote-endpoint = <&imx335_i2c7_in>;
 						link-frequencies = /bits/ 64 <594000000>;
+					};
+				};
+			};
+
+			fpdlink: deser@30 {
+				compatible = "ti,ds90ub954-q1";
+				reg = <0x30>;
+
+				clocks = <&clk25m>;
+				clock-names = "refclk";
+				i2c-alias-pool = <0x4a 0x4b 0x4c 0x4d>;
+				power-domains = <&power RK3568_PD_VI>;
+				vddio-supply = <&vcc_cam0>;
+				status = "disabled";
+
+				ports {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					/* Port 0, FPD Channel 0 RX */
+					port@0 {
+						reg = <0>;
+
+						ub954_0_fpd_in: endpoint {
+							remote-endpoint = <&ub953_fpd_out>;
+						};
+					};
+
+					/* Port 2, CSI-2 TX */
+					port@2 {
+						reg = <2>;
+
+						ub954_csi_out: endpoint {
+							data-lanes = <1 2>;
+							link-frequencies = /bits/ 64 <400000000>;
+							remote-endpoint = <&ub954_csi_in>;
+						};
+					};
+				};
+
+				links {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					/* Link 0, DS90UB953 serializer and AR0233 sensor */
+					link@0 {
+						reg = <0>;
+						i2c-alias = <0x18>;
+						ti,rx-mode = <3>;
+
+						ser0: serializer {
+							compatible = "ti,ds90ub953-q1";
+							gpio-controller;
+							#gpio-cells = <2>;
+
+							ports {
+								#address-cells = <1>;
+								#size-cells = <0>;
+
+								/* Port 0, CSI-2 RX */
+								port@0 {
+									reg = <0>;
+
+									ub953_csi_in: endpoint {
+										data-lanes = <1 2>;
+										remote-endpoint = <&ar0233_out>;
+									};
+								};
+
+								/* Port 1, FPD TX */
+								port@1 {
+									reg = <1>;
+
+									ub953_fpd_out: endpoint {
+										remote-endpoint = <&ub954_0_fpd_in>;
+									};
+								};
+							};
+
+							i2c10: i2c {
+								#address-cells = <1>;
+								#size-cells = <0>;
+
+								camera@10 {
+									compatible = "onnn,ar0233";
+									reg = <0x10>;
+									clocks = <&clk27m>;
+									reset-gpios = <&ser0 0 GPIO_ACTIVE_LOW>;
+
+									port {
+										ar0233_out: endpoint {
+											data-lanes = <1 2>;
+											link-frequencies = /bits/ 64 <375000000>;
+											remote-endpoint = <&ub953_csi_in>;
+										};
+									};
+								};
+							};
+						};
 					};
 				};
 			};

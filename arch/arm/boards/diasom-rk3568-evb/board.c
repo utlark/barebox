@@ -59,7 +59,10 @@ static int diasom_rk3568_evb_ver3_fixup(struct device_node *root, void *unused)
 	if (!adapter)
 		return -ENODEV;
 
-	if (!diasom_rk3568_probe_i2c(adapter, 0x1a)) {
+	if (!diasom_rk3568_probe_i2c(adapter, 0x30)) {
+		pr_info("FPD-Link deserializer detected.\n");
+		of_register_set_status_fixup("camera3", true);
+	} else if (!diasom_rk3568_probe_i2c(adapter, 0x1a)) {
 		pr_info("Camera IMX335 detected.\n");
 		of_register_set_status_fixup("camera2", true);
 	}
