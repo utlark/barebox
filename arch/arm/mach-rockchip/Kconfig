@@ -67,6 +67,16 @@ endif
 
 if 64BIT
 
+config CONFIG_MACH_SAUT_DS_RK3568_MB
+	bool "Saut DS-RK3568-MB"
+	depends on $(success,test -e $(srctree)/arch/arm/boards/saut-rk3568-mb/sdram-init.bin)
+	select ARCH_RK3568
+	select AIODEV
+	select DEFAULT_ENVIRONMENT
+	select MACHINE_ID
+	help
+	  Say Y here if you are using a Saut DS-RK3568-MB board
+
 config MACH_DIASOM_DS_RK3568
 	bool "Diasom DS-RK3568"
 	depends on $(success,test -e $(srctree)/arch/arm/boards/diasom-rk3568/sdram-init.bin)
@@ -86,16 +96,6 @@ config MACH_DIASOM_DS_RK3588
 	select MACHINE_ID
 	help
 	  Say Y here if you are using a Diasom DS-RK3588 based boards
-
-config MACH_SAUT_DS_RK3568_SIB
-	bool "Saut DS-RK3568-SIB"
-	depends on $(success,test -e $(srctree)/arch/arm/boards/saut-rk3568-sib/sdram-init.bin)
-	select ARCH_RK3568
-	select AIODEV
-	select DEFAULT_ENVIRONMENT
-	select MACHINE_ID
-	help
-	  Say Y here if you are using a Saut DS-RK3568-SIB board
 
 config MACH_RK3568_EVB
 	select ARCH_RK3568

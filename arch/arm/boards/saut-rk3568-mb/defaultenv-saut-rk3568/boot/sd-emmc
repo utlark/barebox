@@ -3,14 +3,14 @@
 if [ -f /mnt/mmc0.2/boot/Image.gz ]; then
 	echo "Booting from SD"
 
-	DTB=/mnt/mmc0.2/boot/rk3568-saut-sib.dtb
+	DTB=/mnt/mmc0.2/boot/rk3568-saut-mb.dtb
 
 	global.bootm.image=/mnt/mmc0.2/boot/Image.gz
 	global.linux.bootargs.dyn.root="root=/dev/mmcblk0p3 ro rootdelay=3"
 elif [ -f /mnt/mmc1.2/boot/Image.gz ]; then
 	echo "Booting from eMMC"
 
-	DTB=/mnt/mmc1.2/boot/rk3568-saut-sib.dtb
+	DTB=/mnt/mmc1.2/boot/rk3568-saut-mb.dtb
 
 	global.bootm.image=/mnt/mmc1.2/boot/Image.gz
 	global.linux.bootargs.dyn.root="root=/dev/mmcblk1p3 ro rootdelay=3"

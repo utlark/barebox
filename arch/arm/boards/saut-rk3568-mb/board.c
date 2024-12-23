@@ -124,15 +124,15 @@ static int __init diasom_rk3568_late_init(void)
 		struct i2c_adapter *adapter = i2c_get_adapter(0);
 
 		if (!adapter) {
-			pr_err("Cannot determine board version.\n");
+			pr_err("Cannot determine SOM version.\n");
 			return 0;
 		}
 
-		if (!saut_rk3568_probe_i2c(adapter, 0x1c)) {
+		if (!diasom_rk3568_probe_i2c(adapter, 0x1c)) {
 			extern char __dtbo_rk3568_diasom_som_ver2_start[];
 			struct device_node *overlay;
 
-			pr_info("SOM version 2 detected.\n");
+			pr_info("SOM version 2+ detected.\n");
 
 			overlay = of_unflatten_dtb(__dtbo_rk3568_diasom_som_ver2_start, INT_MAX);
 			of_overlay_apply_tree(of_get_root_node(), overlay);
