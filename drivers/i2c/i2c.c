@@ -686,6 +686,20 @@ void i2c_parse_fw_timings(struct device *dev, struct i2c_timings *t,
 EXPORT_SYMBOL_GPL(i2c_parse_fw_timings);
 
 /**
+ * i2c_first_nonreserved_index() - get the first index that is not reserved
+ */
+static int i2c_first_nonreserved_index(void)
+{
+	int max;
+
+	max = of_alias_get_highest_id("i2c");
+	if (max < 0)
+		return 0;
+
+	return max + 1;
+}
+
+/**
  * i2c_add_numbered_adapter - declare i2c adapter, use static bus number
  * @adapter: the adapter to register (with adap->nr initialized)
  *
@@ -705,21 +719,21 @@ int i2c_add_numbered_adapter(struct i2c_adapter *adapter)
 	struct device *hw_dev;
 	int ret;
 
+	if (adapter->nr < 0 && dev_of_node(&adapter->dev))
+		adapter->nr = of_alias_get_id(adapter->dev.of_node, "i2c");
+
 	if (adapter->nr < 0) {
-		if (!adapter->dev.of_node) {
-			int nr = adapter->dev.id;
+		int nr;
 
-			for (nr = 0;; nr++)
-				if (!i2c_get_adapter(nr))
-					break;
-			adapter->nr = nr;
-		} else
-			adapter->nr =
-				of_alias_get_id(adapter->dev.of_node, "i2c");
+		for (nr = i2c_first_nonreserved_index();
+		     i2c_get_adapter(nr); nr++)
+			;
+
+		adapter->nr = nr;
+	} else {
+		if (i2c_get_adapter(adapter->nr))
+			return -EBUSY;
 	}
-
-	if (i2c_get_adapter(adapter->nr))
-		return -EBUSY;
 
 	adapter->dev.id = adapter->nr;
 	dev_set_name(&adapter->dev, "i2c");

@@ -28,7 +28,7 @@ obj-y			+= stringlist.o
 obj-y			+= cmdlinepart.o
 obj-y			+= recursive_action.o
 obj-y			+= make_directory.o
-obj-y			+= math.o
+obj-y			+= arith.o
 obj-$(CONFIG_IDR)	+= idr.o
 obj-y			+= math/
 obj-y			+= uuid.o
@@ -76,7 +76,6 @@ obj-$(CONFIG_RATP)	+= ratp.o
 obj-$(CONFIG_DEBUG_LIST) += list_debug.o
 obj-y			+= list_sort.o
 obj-y			+= refcount.o
-obj-y			+= int_sqrt.o
 obj-y			+= parseopt.o
 obj-y			+= clz_ctz.o
 obj-$(CONFIG_CRC_CCITT) += crc-ccitt.o
@@ -101,7 +100,7 @@ CFLAGS_ubsan.o := -fno-stack-protector
 libfdt_files = fdt.o fdt_ro.o fdt_wip.o fdt_rw.o fdt_sw.o fdt_strerror.o \
 	                      fdt_empty_tree.o
 $(foreach file, $(libfdt_files), \
-        $(eval CFLAGS_$(file) = -I $(srctree)/scripts/dtc/libfdt) \
+	$(eval CFLAGS_$(file) = -I $(srctree)/scripts/dtc/libfdt) \
 	$(eval CFLAGS_$(file:%.o=%.pbl.o) = -I $(srctree)/scripts/dtc/libfdt))
 
 obj-pbl-$(CONFIG_LIBFDT) += $(libfdt_files)

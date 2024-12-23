@@ -12,7 +12,8 @@
 
 / {
 	model = "Diasom DS-RK3568-SOM";
-	compatible = "diasom,ds-rk3568-som", "rockchip,rk3568";
+	compatible = "diasom,ds-rk3568-som",
+		     "rockchip,rk3568";
 	chassis-type = "embedded";
 
 	aliases {
@@ -41,32 +42,6 @@
 			linux,code = <KEY_VENDOR>;
 			press-threshold-microvolt = <18000>;
 		};
-	};
-
-	can1: can@fe580000 {
-		compatible = "rockchip,rk3568-can-2.0";
-		reg = <0x0 0xfe580000 0x0 0x1000>;
-		interrupts = <GIC_SPI 2 IRQ_TYPE_LEVEL_HIGH>;
-		clocks = <&cru CLK_CAN1>, <&cru PCLK_CAN1>;
-		clock-names = "baudclk", "apb_pclk";
-		resets = <&cru SRST_CAN1>, <&cru SRST_P_CAN1>;
-		reset-names = "can", "can-apb";
-		tx-fifo-depth = <1>;
-		rx-fifo-depth = <6>;
-		status = "disabled";
-	};
-
-	can2: can@fe590000 {
-		compatible = "rockchip,rk3568-can-2.0";
-		reg = <0x0 0xfe590000 0x0 0x1000>;
-		interrupts = <GIC_SPI 3 IRQ_TYPE_LEVEL_HIGH>;
-		clocks = <&cru CLK_CAN2>, <&cru PCLK_CAN2>;
-		clock-names = "baudclk", "apb_pclk";
-		resets = <&cru SRST_CAN2>, <&cru SRST_P_CAN2>;
-		reset-names = "can", "can-apb";
-		tx-fifo-depth = <1>;
-		rx-fifo-depth = <6>;
-		status = "disabled";
 	};
 
 	csi2_dphy0: csi2-dphy0 {
@@ -120,6 +95,12 @@
 		status = "disabled";
 	};
 
+	isp_vir1: rkisp-vir1 {
+		compatible = "rockchip,rkisp-vir";
+		rockchip,hw = <&isp>;
+		status = "disabled";
+	};
+
 	leds {
 		compatible = "gpio-leds";
 		pinctrl-names = "default";
@@ -148,6 +129,7 @@
 	vcc0v9_cpu: vcc0v9-cpu-regulator {
 		compatible = "regulator-fixed";
 		regulator-name = "0v9_cpu";
+		regulator-always-on;
 		regulator-boot-on;
 		regulator-min-microvolt = <900000>;
 		regulator-max-microvolt = <900000>;
@@ -157,6 +139,7 @@
 	vcc3v3_sys: vcc3v3-sys-regulator {
 		compatible = "regulator-fixed";
 		regulator-name = "3v3_sys";
+		regulator-always-on;
 		regulator-boot-on;
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
@@ -166,6 +149,7 @@
 	vcc5v0_sys: vcc5v0-sys-regulator {
 		compatible = "regulator-fixed";
 		regulator-name = "5v0_sys";
+		regulator-always-on;
 		regulator-boot-on;
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
@@ -173,6 +157,24 @@
 };
 
 /delete-node/ &xin32k;
+
+&can1 {
+	/* Keep CAN node until update to 6.12 kernel */
+	compatible = "rockchip,rk3568-can-2.0";
+	clock-names = "baudclk", "apb_pclk";
+	reset-names = "can", "can-apb";
+	tx-fifo-depth = <1>;
+	rx-fifo-depth = <6>;
+};
+
+&can2 {
+	/* Keep CAN node until update to 6.12 kernel */
+	compatible = "rockchip,rk3568-can-2.0";
+	clock-names = "baudclk", "apb_pclk";
+	reset-names = "can", "can-apb";
+	tx-fifo-depth = <1>;
+	rx-fifo-depth = <6>;
+};
 
 &combphy0 {
 	/* USB3.0 OTG0 */
@@ -276,6 +278,8 @@
 				regulator-always-on;
 				regulator-boot-on;
 				regulator-initial-mode = <0x2>;
+				regulator-min-microvolt = <1100000>;
+				regulator-max-microvolt = <1100000>;
 
 				regulator-state-mem {
 					regulator-on-in-suspend;
@@ -404,6 +408,8 @@
 				regulator-name = "vcc_3v3_sw1";
 				regulator-always-on;
 				regulator-boot-on;
+				regulator-min-microvolt = <3300000>;
+				regulator-max-microvolt = <3300000>;
 				regulator-coupled-with = <&vcc_3v3_sw2>;
 				regulator-coupled-max-spread = <10000>;
 
@@ -416,6 +422,8 @@
 				regulator-name = "vcc_3v3_sw2";
 				regulator-always-on;
 				regulator-boot-on;
+				regulator-min-microvolt = <3300000>;
+				regulator-max-microvolt = <3300000>;
 				regulator-coupled-with = <&vcc_3v3_sw1>;
 				regulator-coupled-max-spread = <10000>;
 
@@ -465,7 +473,6 @@
 };
 
 &tsadc {
-	rockchip,hw-tshut-temp = <95000>;
 	rockchip,hw-tshut-mode = <0>;
 	rockchip,hw-tshut-polarity = <0>;
 	status = "okay";

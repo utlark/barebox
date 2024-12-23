@@ -452,7 +452,7 @@ FILE_barebox-gome-e143_01.img = start_gome_e143_01.pblb.imximg
 image-$(CONFIG_MACH_VARISCITE_SOM_MX7) += barebox-gome-e143_01.img
 
 # ----------------------- i.MX8mm based boards --------------------------
-$(call build_imx8m_habv4img, CONFIG_MACH_DIASOM_DS_IMX8M_EVB, start_diasom_imx8m_evb, diasom-imx8m-evb/flash-header-diasom-imx8m-evb, diasom-imx8m-evb)
+$(call build_imx8m_habv4img, CONFIG_MACH_DIASOM_DS_IMX8M, start_diasom_imx8m_som_evb, diasom-imx8m/flash-header-diasom-imx8m, diasom-imx8m-evb)
 
 $(call build_imx8m_habv4img, CONFIG_MACH_NXP_IMX8MM_EVK, start_nxp_imx8mm_evk, nxp-imx8mm-evk/flash-header-imx8mm-evk, nxp-imx8mm-evk)
 

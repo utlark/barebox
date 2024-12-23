@@ -1,0 +1,14 @@
+/* SPDX-License-Identifier: GPL-2.0+ */
+/* SPDX-FileCopyrightText: Alexander Shiyan <shc_work@mail.ru> */
+
+/dts-v1/;
+
+#include "imx8mm-diasom-som.dtsi"
+
+/ {
+	model = "Diasom DS-IMX8M-SOM-EVB";
+	compatible = "diasom,ds-imx8m-som-evb",
+		     "diasom,ds-imx8m-som",
+		     "fsl,imx8mm";
+};
+

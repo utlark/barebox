@@ -218,6 +218,8 @@ extern struct device_node *of_get_compatible_child(const struct device_node *par
 					const char *compatible);
 extern struct device_node *of_get_child_by_name(const struct device_node *node,
 					const char *name);
+extern struct device_node *of_get_child_by_name_stem(const struct device_node *node,
+					const char *name);
 extern char *of_get_reproducible_name(struct device_node *node);
 extern struct device_node *of_get_node_by_reproducible_name(struct device_node *dstroot,
 							    struct device_node *srcnp);
@@ -309,6 +311,7 @@ extern void of_alias_scan(void);
 extern int of_alias_get_id(struct device_node *np, const char *stem);
 extern int of_alias_get_id_from(struct device_node *root, struct device_node *np,
 				const char *stem);
+extern int of_alias_get_highest_id(const char *stem);
 extern const char *of_alias_get(struct device_node *np);
 extern int of_modalias_node(struct device_node *node, char *modalias, int len);
 
@@ -555,6 +558,12 @@ static inline struct device_node *of_get_compatible_child(const struct device_no
 }
 
 static inline struct device_node *of_get_child_by_name(
+			const struct device_node *node, const char *name)
+{
+	return NULL;
+}
+
+static inline struct device_node *of_get_child_by_name_stem(
 			const struct device_node *node, const char *name)
 {
 	return NULL;
@@ -920,6 +929,11 @@ static inline int of_alias_get_id(struct device_node *np, const char *stem)
 
 static inline int of_alias_get_id_from(struct device_node *root, struct device_node *np,
 				       const char *stem)
+{
+	return -ENOSYS;
+}
+
+static inline int of_alias_get_highest_id(const char *stem)
 {
 	return -ENOSYS;
 }

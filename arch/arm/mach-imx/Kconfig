@@ -143,6 +143,7 @@ config ARCH_IMX6UL
 config ARCH_IMX7
 	bool
 	select CPU_V7
+	select HAS_PSCI_PROVIDER
 	select PINCTRL_IMX_IOMUX_V3
 	select COMMON_CLK_OF_PROVIDER
 	select ARCH_HAS_FEC_IMX
@@ -589,8 +590,8 @@ if 64BIT
 
 comment "i.MX8M boards"
 
-config MACH_DIASOM_DS_IMX8M_EVB
-	bool "Diasom DS-IMX8M-EVB"
+config MACH_DIASOM_DS_IMX8M
+	bool "Diasom DS-IMX8M"
 	select ARCH_IMX8MM
 	select DEFAULT_ENVIRONMENT
 	select FIRMWARE_IMX_LPDDR4_PMU_TRAIN
@@ -601,7 +602,7 @@ config MACH_DIASOM_DS_IMX8M_EVB
 	select I2C_IMX_EARLY
 	select USB_GADGET_DRIVER_ARC_PBL
 	help
-	  Say Y here if you are using a Diasom DS-IMX8M-EVB board
+	  Say Y here if you are using a Diasom DS-IMX8M based boards
 
 config MACH_CONGATEC_QMX8P_SOM
 	bool

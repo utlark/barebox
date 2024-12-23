@@ -1,0 +1,637 @@
+/* SPDX-License-Identifier: GPL-2.0+ */
+/* SPDX-FileCopyrightText: Alexander Shiyan <shc_work@mail.ru> */
+
+/dts-v1/;
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/soc/rockchip,vop2.h>
+#include <dt-bindings/usb/pd.h>
+
+#include "rk3588-diasom-btb.dtsi"
+
+/ {
+	model = "Diasom DS-RK3588-BTB-EVB";
+	compatible = "diasom,ds-rk3588-btb-evb",
+		     "diasom,ds-rk3588-btb",
+		     "rockchip,rk3588";
+
+	aliases {
+		ethernet0 = &gmac0;
+		ethernet1 = &gmac1;
+		i2c9 = &i2c9;
+		i2c10 = &i2c10;
+		i2c11 = &i2c11;
+		i2c12 = &i2c12;
+		mmc1 = &sdmmc;
+	};
+
+	chosen {
+		environment-sd {
+			compatible = "barebox,environment";
+			device-path = &sdmmc, "partname:env";
+			status = "disabled";
+		};
+	};
+
+	adc-keys-1 {
+		compatible = "adc-keys";
+		io-channels = <&saradc 1>;
+		io-channel-names = "buttons";
+		keyup-threshold-microvolt = <1800000>;
+		poll-interval = <100>;
+
+		button-recovery {
+			label = "Recovery";
+			linux,code = <KEY_VENDOR>;
+			press-threshold-microvolt = <100000>;
+		};
+	};
+
+	/* From 6.12 */
+	hdmi0: hdmi@fde80000 {
+		compatible = "rockchip,rk3588-dw-hdmi-qp";
+		reg = <0x0 0xfde80000 0x0 0x20000>;
+		clocks = <&cru PCLK_HDMITX0>,
+			 <&cru CLK_HDMITX0_EARC>,
+			 <&cru CLK_HDMITX0_REF>,
+			 <&cru MCLK_I2S5_8CH_TX>,
+			 <&cru CLK_HDMIHDP0>,
+			 <&cru HCLK_VO1>;
+		clock-names = "pclk", "earc", "ref", "aud", "hdp", "hclk_vo1";
+		interrupts = <GIC_SPI 169 IRQ_TYPE_LEVEL_HIGH 0>,
+			     <GIC_SPI 170 IRQ_TYPE_LEVEL_HIGH 0>,
+			     <GIC_SPI 171 IRQ_TYPE_LEVEL_HIGH 0>,
+			     <GIC_SPI 172 IRQ_TYPE_LEVEL_HIGH 0>,
+			     <GIC_SPI 360 IRQ_TYPE_LEVEL_HIGH 0>;
+		interrupt-names = "avp", "cec", "earc", "main", "hpd";
+		phys = <&hdptxphy_hdmi0>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&hdmim0_tx0_cec &hdmim0_tx0_hpd
+			     &hdmim0_tx0_scl &hdmim0_tx0_sda>;
+		power-domains = <&power RK3588_PD_VO1>;
+		resets = <&cru SRST_HDMITX0_REF>, <&cru SRST_HDMIHDP0>;
+		reset-names = "ref", "hdp";
+		rockchip,grf = <&sys_grf>;
+		rockchip,vo-grf = <&vo1_grf>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			hdmi0_in: port@0 {
+				reg = <0>;
+			};
+
+			hdmi0_out: port@1 {
+				reg = <1>;
+			};
+		};
+	};
+
+	hdmi0-con {
+		/* In fact, port connected to RK628, leave this as is for now */
+		compatible = "hdmi-connector";
+		type = "a";
+
+		port {
+			hdmi0_con_in: endpoint {
+				remote-endpoint = <&hdmi0_out_con>;
+			};
+		};
+	};
+
+	pcie_refclk: pcie-refclk-clock {
+		pinctrl-0 = <&pcie30_clk_pins>;
+		pinctrl-names = "default";
+		compatible = "gpio-gate-clock";
+		clocks = <&pcie_refclk_gen>;
+		#clock-cells = <0>;
+		enable-gpios = <&gpio1 RK_PB3 GPIO_ACTIVE_HIGH>;
+	};
+
+	pcie_refclk_gen: pcie-refclk-gen-clock {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <100000000>;
+	};
+
+	v_sys: v-sys-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "v_sys";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <12000000>;
+		regulator-max-microvolt = <12000000>;
+	};
+
+	vbus_typec: vbus-typec-regulator {
+		/* Incorrect wiring 1.8v - 3.3v */
+		pinctrl-0 = <&typec_pins>;
+		pinctrl-names = "default";
+		compatible = "regulator-fixed";
+		enable-active-high;
+		gpio = <&gpio4 RK_PA7 GPIO_ACTIVE_HIGH>;
+		regulator-name = "vbus_typec";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		vin-supply = <&vcc_5v0_sys>;
+	};
+
+	vcc_1v8_sys: vcc-1v8_sys-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc_1v8_sys";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		vin-supply = <&vcc_5v0_sys>;
+	};
+
+	vcc_3v3_sys: vcc-3v3_sys-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc_3v3_sys";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		vin-supply = <&v_sys>;
+	};
+
+	vcc_5v0_sys: vcc-5v03_sys-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc_5v0_sys";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		vin-supply = <&v_sys>;
+	};
+
+	vcc_pcie30: vcc-pcie30-regulator {
+		pinctrl-0 = <&pcie30_vcc_pins>;
+		pinctrl-names = "default";
+		compatible = "regulator-fixed";
+		enable-active-high;
+		gpio = <&gpio1 RK_PC2 GPIO_ACTIVE_HIGH>;
+		regulator-name = "vcc_pcie30";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		vin-supply = <&vcc_5v0_sys>;
+	};
+};
+
+&av1d {
+	status = "okay";
+};
+
+&combphy0_ps {
+	/* pcie2x1l2 (PCIE20_0) */
+	status = "okay";
+};
+
+&combphy1_ps {
+	/* pcie2x1l0 (PCIE20_1) */
+	status = "okay";
+};
+
+&gmac0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <
+		&gmac0_miim &gmac0_tx_bus2 &gmac0_rx_bus2
+		&gmac0_rgmii_clk &gmac0_rgmii_bus &eth0_pins
+	>;
+	clock_in_out = "output";
+	phy-handle = <&rgmii_phy0>;
+	phy-mode = "rgmii-rxid";
+	rx_delay = <0x00>;
+	tx_delay = <0x44>;
+	nvmem-cells = <&mac0>;
+	nvmem-cell-names = "mac-address";
+	status = "okay";
+};
+
+&gmac1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <
+		&gmac1_miim &gmac1_tx_bus2 &gmac1_rx_bus2
+		&gmac1_rgmii_clk &gmac1_rgmii_bus &eth1_pins
+	>;
+	clock_in_out = "output";
+	phy-handle = <&rgmii_phy1>;
+	phy-mode = "rgmii-rxid";
+	rx_delay = <0x00>;
+	tx_delay = <0x44>;
+	nvmem-cells = <&mac1>;
+	nvmem-cell-names = "mac-address";
+	status = "okay";
+};
+
+&gpu {
+	status = "okay";
+};
+
+&hdmi0 {
+	/* CEC is not used here */
+	pinctrl-0 = <&hdmim0_tx0_hpd &hdmim0_tx0_scl &hdmim0_tx0_sda>;
+	status = "okay";
+};
+
+&hdmi0_in {
+	hdmi0_in_vp0: endpoint {
+		remote-endpoint = <&vp0_out_hdmi0>;
+	};
+};
+
+&hdmi0_out {
+	hdmi0_out_con: endpoint {
+		remote-endpoint = <&hdmi0_con_in>;
+	};
+};
+
+&hdptxphy_hdmi0 {
+	status = "okay";
+};
+
+&i2c3 {
+	clock-frequency = <400000>;
+	status = "okay";
+
+	i2c_mux: i2c-mux@70 {
+		pinctrl-0 = <&mux_pins>;
+		pinctrl-names = "default";
+		compatible = "nxp,pca9546";
+		reg = <0x70>;
+		i2c-mux-idle-disconnect;
+		reset-gpios = <&gpio0 RK_PC4 GPIO_ACTIVE_HIGH>;
+		vdd-supply = <&vcc_3v3_sys>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		i2c9: i2c@0 {
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c10: i2c@1 {
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c11: i2c@2 {
+			reg = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			usb@22 {
+				pinctrl-names = "default";
+				pinctrl-0 = <&fusb302_pins>;
+				compatible = "fcs,fusb302";
+				reg = <0x22>;
+				interrupt-parent = <&gpio4>;
+				interrupts = <RK_PA6 IRQ_TYPE_LEVEL_LOW>;
+				vbus-supply = <&vbus_typec>;
+
+				connector {
+					compatible = "usb-c-connector";
+					label = "USB-C";
+					data-role = "dual";
+					op-sink-microwatt = <1000000>;
+					power-role = "dual";
+					sink-pdos =
+						<PDO_FIXED(5000, 1000, PDO_FIXED_USB_COMM)>;
+					source-pdos =
+						<PDO_FIXED(5000, 3000, PDO_FIXED_USB_COMM)>;
+					try-power-role = "source";
+
+					ports {
+						#address-cells = <1>;
+						#size-cells = <0>;
+
+						port@0 {
+							reg = <0>;
+
+							usbc0_hs: endpoint {
+								remote-endpoint = <&usb_host0_xhci_drd_sw>;
+							};
+						};
+
+						port@1 {
+							reg = <1>;
+
+							usbc0_ss: endpoint {
+								remote-endpoint = <&usbdp_phy0_typec_ss>;
+							};
+						};
+
+						port@2 {
+							reg = <2>;
+
+							usbc0_sbu: endpoint {
+								remote-endpoint = <&usbdp_phy0_typec_sbu>;
+							};
+						};
+					};
+				};
+			};
+		};
+
+		i2c12: i2c@3 {
+			reg = <3>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+	};
+};
+
+&i2c7 {
+	clock-frequency = <100000>;
+	status = "okay";
+
+	eeprom@50 {
+		compatible = "microchip,24aa025e48", "atmel,24c02";
+		reg = <0x50>;
+		pagesize = <16>;
+		vcc-supply = <&vcc_1v8_sys>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		mac1: mac-address@fa {
+			reg = <0xfa 0x06>;
+			read-only;
+		};
+	};
+
+	eeprom@51 {
+		compatible = "microchip,24aa025e48", "atmel,24c02";
+		reg = <0x51>;
+		pagesize = <16>;
+		vcc-supply = <&vcc_1v8_sys>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		mac2: mac-address@fa {
+			reg = <0xfa 0x06>;
+			read-only;
+		};
+	};
+
+	eeprom@52 {
+		compatible = "microchip,24aa025e48", "atmel,24c02";
+		reg = <0x52>;
+		pagesize = <16>;
+		vcc-supply = <&vcc_1v8_sys>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		mac3: mac-address@fa {
+			reg = <0xfa 0x06>;
+			read-only;
+		};
+	};
+};
+
+&leds {
+	pinctrl-0 = <&leds_som_pins &leds_evb_pins>;
+
+	led-act {
+		label = "evb:act";
+		gpios = <&gpio1 RK_PC5 GPIO_ACTIVE_HIGH>;
+		function = LED_FUNCTION_ACTIVITY;
+		color = <LED_COLOR_ID_GREEN>;
+		linux,default-trigger = LED_FUNCTION_ACTIVITY;
+		default-state = "off";
+	};
+};
+
+&mdio0 {
+	rgmii_phy0: ethernet-phy@1 {
+		/* RTL8211F */
+		compatible = "ethernet-phy-id001c.c916",
+			     "ethernet-phy-ieee802.3-c22";
+		reg = <0x1>;
+	};
+};
+
+&mdio1 {
+	rgmii_phy1: ethernet-phy@2 {
+		/* RTL8211F */
+		compatible = "ethernet-phy-id001c.c916",
+			     "ethernet-phy-ieee802.3-c22";
+		reg = <0x2>;
+	};
+};
+
+&pcie2x1l0 {
+	/* PCIE20_1 */
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie2x1l0_pins>;
+	reset-gpios = <&gpio4 RK_PC1 GPIO_ACTIVE_HIGH>;
+	vpcie3v3-supply = <&vcc_3v3_sys>;
+//	status = "okay";
+};
+
+&pcie2x1l2 {
+	/* PCIE20_0 */
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie2x1l2_pins>;
+	reset-gpios = <&gpio4 RK_PA5 GPIO_ACTIVE_HIGH>;
+	vpcie3v3-supply = <&vcc_3v3_sys>;
+//	status = "okay";
+};
+
+&pcie30phy {
+	status = "okay";
+};
+
+&pcie3x4 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie3x4_pins>;
+	clocks = <&cru ACLK_PCIE_4L_MSTR>, <&cru ACLK_PCIE_4L_SLV>,
+		 <&cru ACLK_PCIE_4L_DBI>, <&cru PCLK_PCIE_4L>,
+		 <&cru CLK_PCIE_AUX0>, <&cru CLK_PCIE4L_PIPE>,
+		 <&pcie_refclk>;
+	clock-names = "aclk_mst", "aclk_slv",
+		      "aclk_dbi", "pclk",
+		      "aux", "pipe",
+		      "ref";
+	reset-gpios = <&gpio1 RK_PB2 GPIO_ACTIVE_HIGH>;
+	vpcie3v3-supply = <&vcc_pcie30>;
+//	status = "okay";
+};
+
+&sdmmc {
+	bus-width = <4>;
+	cap-mmc-highspeed;
+	cap-sd-highspeed;
+	disable-wp;
+	no-sdio;
+	no-mmc;
+	sd-uhs-sdr104;
+	cd-gpios = <&gpio0 RK_PA4 GPIO_ACTIVE_LOW>;
+	vmmc-supply = <&vcc_3v3_sys>;
+	vqmmc-supply = <&vccio_sd>;
+	status = "okay";
+};
+
+&usb_host0_xhci {
+	/* USB3_HOST_0 X28 */
+	usb-role-switch;
+//	status = "okay";
+
+	port {
+		usb_host0_xhci_drd_sw: endpoint {
+			remote-endpoint = <&usbc0_hs>;
+		};
+	};
+};
+
+&usb_host1_ehci {
+	/* USB20_HOST1 X27 */
+//	status = "okay";
+};
+
+&usb_host1_xhci {
+	/* USB3_HOST_1 X25 */
+	dr_mode = "host";
+//	status = "okay";
+};
+
+&usbdp_phy0 {
+	mode-switch;
+	orientation-switch;
+//	sbu1-dc-gpios = <&gpio0 RK_PC6 GPIO_ACTIVE_HIGH>;
+//	sbu2-dc-gpios = <&gpio0 RK_PD3 GPIO_ACTIVE_HIGH>;
+	status = "okay";
+
+	port {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		usbdp_phy0_typec_ss: endpoint@0 {
+			reg = <0>;
+			remote-endpoint = <&usbc0_ss>;
+		};
+
+		usbdp_phy0_typec_sbu: endpoint@1 {
+			reg = <1>;
+			remote-endpoint = <&usbc0_sbu>;
+		};
+	};
+};
+
+&usbdp_phy1 {
+	status = "okay";
+};
+
+&u2phy0 {
+	status = "okay";
+};
+
+&u2phy0_otg {
+	phy-supply = <&vbus_typec>;
+//	status = "okay";
+};
+
+&u2phy1 {
+	status = "okay";
+};
+
+&u2phy1_otg {
+	/* Power is missing! */
+	// phy-supply = <&vbus_host30_1>;
+	status = "okay";
+};
+
+&u2phy3 {
+	status = "okay";
+};
+
+&u2phy3_host {
+	/* Power is missing! */
+	// phy-supply = <&vbus_host20_1>;
+	status = "okay";
+};
+
+&vcc4v0_sys {
+	vin-supply = <&v_sys>;
+};
+
+&vop {
+	status = "okay";
+};
+
+&vop_mmu {
+	status = "okay";
+};
+
+&vp0 {
+	vp0_out_hdmi0: endpoint@ROCKCHIP_VOP2_EP_HDMI0 {
+		reg = <ROCKCHIP_VOP2_EP_HDMI0>;
+		remote-endpoint = <&hdmi0_in_vp0>;
+	};
+};
+
+&pinctrl {
+	leds {
+		leds_evb_pins: leds-evb-pins {
+			rockchip,pins =
+				<1 RK_PC5 RK_FUNC_GPIO &pcfg_pull_none>;	/* VD19 */
+		};
+	};
+
+	mux {
+		mux_pins: mux-pins {
+			rockchip,pins =
+				<0 RK_PC4 RK_FUNC_GPIO &pcfg_pull_up>;		/* CAM_I2C_MUX_RST */
+		};
+	};
+
+	pcie {
+		pcie2x1l0_pins: pcie2x1l0-pins {
+			rockchip,pins =
+				<4 RK_PB7 4 &pcfg_pull_none>,			/* pcie20x1_2_clkreqn_m1 */
+				<4 RK_PC1 RK_FUNC_GPIO &pcfg_pull_none>,	/* pcie20x1_2_perstn_m1 */
+				<4 RK_PC0 4 &pcfg_pull_none>;			/* pcie20x1_2_waken_m1 */
+		};
+
+		pcie2x1l2_pins: pcie2x1l2-pins {
+			rockchip,pins =
+				<4 RK_PA3 4 &pcfg_pull_none>,			/* pcie30x1_0_clkreqn_m1 */
+				<4 RK_PA5 RK_FUNC_GPIO &pcfg_pull_none>,	/* pcie30x1_0_perstn_m1 */
+				<4 RK_PA4 4 &pcfg_pull_none>;			/* pcie30x1_0_waken_m1 */
+		};
+
+		pcie30_clk_pins: pcie30-clk-pins {
+			rockchip,pins =
+				<1 RK_PB3 RK_FUNC_GPIO &pcfg_pull_none>;	/* PCIE30_CLK_PWREN */
+		};
+
+		pcie30_vcc_pins: pcie30-vcc-pins {
+			rockchip,pins =
+				<1 RK_PC2 RK_FUNC_GPIO &pcfg_pull_none>;	/* PCIE30_PWREN */
+		};
+
+		pcie3x4_pins: pci3x4-pins {
+			rockchip,pins =
+				<1 RK_PB0 4 &pcfg_pull_none>,			/* pcie30x4_clkreqn_m3 */
+				<1 RK_PB2 RK_FUNC_GPIO &pcfg_pull_none>,	/* pcie30x4_perstn_m3 */
+				<1 RK_PB1 4 &pcfg_pull_none>;			/* pcie30x4_waken_m3 */
+		};
+	};
+
+	usb {
+		fusb302_pins: fusb302-pins {
+			rockchip,pins =
+				<4 RK_PA6 RK_FUNC_GPIO &pcfg_pull_none>;	/* TYPEC0_INT */
+		};
+
+		typec_pins: typec-pins {
+			rockchip,pins =
+				<4 RK_PA7 RK_FUNC_GPIO &pcfg_pull_none>;	/* TYPEC0_PWREN */
+		};
+	};
+};

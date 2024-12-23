@@ -4,6 +4,7 @@
 #include <malloc.h>
 #include <string.h>
 #include <memory.h>
+#include <linux/overflow.h>
 #include <linux/build_bug.h>
 
 #include <stdio.h>
@@ -640,8 +641,8 @@ static inline mchunkptr mem2chunk(void *mem)
 /* pad request bytes into a usable size */
 
 #define request2size(req) \
- (((long)((req) + (SIZE_SZ + MALLOC_ALIGN_MASK)) < \
-  (long)(MINSIZE + MALLOC_ALIGN_MASK)) ? MINSIZE : \
+ ((((req) + (SIZE_SZ + MALLOC_ALIGN_MASK)) < \
+  (MINSIZE + MALLOC_ALIGN_MASK)) ? MINSIZE : \
    (((req) + (SIZE_SZ + MALLOC_ALIGN_MASK)) & ~(MALLOC_ALIGN_MASK)))
 
 /* Check if m has acceptable alignment */
@@ -1431,6 +1432,17 @@ void free(void *mem)
 		frontlink(p, sz, idx, bck, fwd);
 }
 
+size_t malloc_usable_size(void *mem)
+{
+	mchunkptr p;
+
+	if (!mem)
+		return 0;
+
+	p = mem2chunk(mem);
+	return chunksize(p);
+}
+
 /*
   Realloc algorithm:
 
@@ -1739,7 +1751,7 @@ void *calloc(size_t n, size_t elem_size)
 {
 	mchunkptr p;
 	INTERNAL_SIZE_T csz;
-	INTERNAL_SIZE_T sz = n * elem_size;
+	INTERNAL_SIZE_T sz = size_mul(n, elem_size);
 	void *mem;
 
 	/* check if expand_top called, in which case don't need to clear */

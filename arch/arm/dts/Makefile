@@ -11,16 +11,13 @@ lwl-$(CONFIG_MACH_BEAGLEPLAY) += k3-am625-beagleplay.dtb.o
 lwl-$(CONFIG_MACH_CLEP7212) += ep7212-clep7212.dtb.o
 lwl-$(CONFIG_MACH_CM_FX6) += imx6dl-cm-fx6.dtb.o imx6q-cm-fx6.dtb.o imx6q-utilite.dtb.o
 lwl-$(CONFIG_MACH_DFI_FS700_M60) += imx6q-dfi-fs700-m60-6q.dtb.o imx6dl-dfi-fs700-m60-6s.dtb.o
-lwl-$(CONFIG_MACH_DIASOM_DS_IMX8M_EVB) += imx8mm-diasom-evb.dtb.o
-lwl-$(CONFIG_MACH_DIASOM_DS_RK3568_EVB) += rk3568-diasom-evb.dtb.o
-obj-$(CONFIG_MACH_DIASOM_DS_RK3568_EVB) += rk3568-diasom-evb-ver3.dtbo.o
-lwl-$(CONFIG_MACH_DIASOM_DS_RK3568_EVB) += rk3568-diasom-smarc.dtb.o
-lwl-$(CONFIG_MACH_DIASOM_DS_RK3568_EVB) += rk3568-diasom-sodimm.dtb.o
-lwl-$(CONFIG_MACH_DIASOM_DS_RK3568_EVB) += rk3568-diasom-som.dtb.o
-obj-$(CONFIG_MACH_DIASOM_DS_RK3568_EVB) += rk3568-diasom-som-ver2.dtbo.o
-lwl-$(CONFIG_MACH_SAUT_DS_RK3568_SIB) += rk3568-saut-sib.dtb.o
-lwl-$(CONFIG_MACH_SAUT_DS_RK3568_SIB) += rk3568-diasom-som.dtb.o
-obj-$(CONFIG_MACH_SAUT_DS_RK3568_SIB) += rk3568-diasom-som-ver2.dtbo.o
+lwl-$(CONFIG_MACH_DIASOM_DS_IMX8M) += imx8mm-diasom-som-evb.dtb.o
+lwl-$(CONFIG_MACH_DIASOM_DS_RK3568) += rk3568-diasom-som-evb.dtb.o
+obj-$(CONFIG_MACH_DIASOM_DS_RK3568) += rk3568-diasom-som-evb-ver3.dtbo.o
+lwl-$(CONFIG_MACH_DIASOM_DS_RK3568) += rk3568-diasom-som-smarc-evb.dtb.o
+obj-$(CONFIG_MACH_DIASOM_DS_RK3568) += rk3568-diasom-som-ver2.dtbo.o
+lwl-$(CONFIG_MACH_DIASOM_DS_RK3588) += rk3588-diasom-btb-evb.dtb.o
+lwl-$(CONFIG_MACH_DIASOM_DS_RK3588) += rk3568-saut-sib.dtb.o
 lwl-$(CONFIG_MACH_DUCKBILL) += imx28-duckbill.dtb.o
 lwl-$(CONFIG_MACH_KINDLE_MX50) += imx50-kindle-d01100.dtb.o imx50-kindle-d01200.dtb.o imx50-kindle-ey21.dtb.o
 lwl-$(CONFIG_MACH_EFIKA_MX_SMARTBOOK) += imx51-genesi-efika-sb.dtb.o
@@ -137,7 +134,7 @@ lwl-$(CONFIG_MACH_RPI2) += bcm2836-rpi-2.dtb.o
 lwl-$(CONFIG_MACH_RPI3) += bcm2837-rpi-3.dtb.o
 lwl-$(CONFIG_MACH_RPI_CM3) += bcm2837-rpi-cm3.dtb.o
 lwl-$(CONFIG_MACH_RPI4) += bcm2711-rpi-4.dtb.o bcm2711-rpi-400.dtb.o bcm2711-rpi-cm4-io.dtb.o bcm2711-rpi-cm4s-io.dtb.o
-lwl-$(CONFIG_MACH_SABRELITE) += imx6q-sabrelite.dtb.o imx6dl-sabrelite.dtb.o
+lwl-$(CONFIG_MACH_SABRELITE) += imx6q-sabrelite.dtb.o imx6dl-sabrelite.dtb.o imx6q-sabrelite-qemu.dtb.o
 lwl-$(CONFIG_MACH_SABRESD) += imx6q-sabresd.dtb.o imx6qp-sabresd.dtb.o imx6dl-sabresd.dtb.o
 lwl-$(CONFIG_MACH_FREESCALE_IMX6SX_SABRESDB) += imx6sx-sdb.dtb.o
 lwl-$(CONFIG_MACH_SOCFPGA_ALTERA_SOCDK) += socfpga_cyclone5_socdk.dtb.o
@@ -196,6 +193,7 @@ lwl-$(CONFIG_MACH_VF610_TWR) += vf610-twr.dtb.o
 lwl-$(CONFIG_MACH_WEBASTO_CCBV2) += imx6ul-webasto-ccbv2.dtb.o
 lwl-$(CONFIG_MACH_WEBASTO_CCBV2) += imx6ul-webasto-marvel.dtb.o
 lwl-$(CONFIG_MACH_WOLFVISION_PF5) += rk3568-wolfvision-pf5.dtb.o
+lwl-$(CONFIG_MACH_XUNLONG_ORANGEPI_5_PLUS) += rk3588-orangepi-5-plus.dtb.o
 lwl-$(CONFIG_MACH_ZII_RDU1) +=	\
 	imx51-zii-rdu1.dtb.o		\
 	imx51-zii-scu2-mezz.dtb.o	\
@@ -240,6 +238,6 @@ lwl-$(CONFIG_MACH_VARISCITE_DT8MCUSTOMBOARD_IMX8MP) += imx8mp-var-dart-dt8mcusto
 lwl-$(CONFIG_MACH_TQMA93XX) += imx93-tqma9352-mba93xxca.dtb.o \
 			       imx93-tqma9352-mba93xxla.dtb.o
 
-obj-$(CONFIG_MACH_WOLFVISION_PF5) += rk3568-wolfvision-pf5-io-expander.dtbo.o
-
+obj-$(CONFIG_MACH_WOLFVISION_PF5) += rk3568-wolfvision-pf5-io-expander.dtbo.o \
+				     rk3568-wolfvision-pf5-display-vz.dtbo.o
 clean-files := *.dtb *.dtb.S .*.dtc .*.pre .*.dts *.dtb.z

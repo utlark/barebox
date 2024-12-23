@@ -176,7 +176,7 @@ static struct device_node *__of_unflatten_dtb(const void *infdt, int size,
 	void *dt_strings;
 	struct fdt_header f;
 	int ret;
-	unsigned int maxlen;
+	int maxlen;
 	const struct fdt_header *fdt = infdt;
 
 	ret = fdt_parse_header(infdt, size, &f);
@@ -210,8 +210,13 @@ static struct device_node *__of_unflatten_dtb(const void *infdt, int size,
 			maxlen = (unsigned long)fdt + f.off_dt_struct +
 				f.size_dt_struct - (unsigned long)name;
 
-			len = strnlen(name, maxlen + 1);
-			if (len > maxlen) {
+			if (maxlen <= 0) {
+				ret = -ESPIPE;
+				goto err;
+			}
+
+			len = strnlen(name, maxlen);
+			if (len >= maxlen) {
 				ret = -ESPIPE;
 				goto err;
 			}
@@ -252,6 +257,11 @@ static struct device_node *__of_unflatten_dtb(const void *infdt, int size,
 
 		case FDT_PROP:
 			fdt_prop = infdt + dt_struct;
+			if (!dt_ptr_ok(fdt, fdt_prop)) {
+				ret = -ESPIPE;
+				goto err;
+			}
+
 			len = fdt32_to_cpu(fdt_prop->len);
 			nodep = fdt_prop->data;
 

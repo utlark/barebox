@@ -1,0 +1,365 @@
+/* SPDX-License-Identifier: GPL-2.0+ */
+/* SPDX-FileCopyrightText: Alexander Shiyan <shc_work@mail.ru> */
+
+/dts-v1/;
+
+#include "rk3568-diasom-som.dtsi"
+
+/ {
+	model = "Diasom DS-RK3568-SMARC";
+	compatible = "diasom,ds-rk3568-som-smarc",
+		     "diasom,ds-rk3568-som",
+		     "rockchip,rk3568";
+
+	aliases {
+		ethernet0 = &gmac0;
+		ethernet1 = &gmac1;
+		i2c6 = &i2c6;
+		i2c7 = &i2c7;
+		i2c8 = &i2c8;
+		i2c9 = &i2c9;
+	};
+
+	pcie_refclk: pcie-refclk-clock {
+		pinctrl-0 = <&pcie30_clk_pins>;
+		pinctrl-names = "default";
+		compatible = "gpio-gate-clock";
+		clocks = <&pcie_refclk_gen>;
+		#clock-cells = <0>;
+		enable-gpios = <&gpio1 RK_PB0 GPIO_ACTIVE_HIGH>;
+	};
+
+	pcie_refclk_gen: pcie-refclk-gen-clock {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <100000000>;
+	};
+
+	pps {
+		pinctrl-names = "default";
+		pinctrl-0 = <&pps_pins>;
+		compatible = "pps-gpio";
+		gpios = <&gpio0 RK_PB6 GPIO_ACTIVE_HIGH>;
+	};
+
+	vcc_pcie30: vcc-pcie30-regulator {
+		pinctrl-0 = <&pcie30_vcc_pins>;
+		pinctrl-names = "default";
+		compatible = "regulator-fixed";
+		gpio = <&gpio2 RK_PD0 GPIO_ACTIVE_LOW>;
+		regulator-name = "vcc_pcie30";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		startup-delay-us = <20000>;
+		vin-supply = <&vcc3v3_sys>;
+	};
+};
+
+&combphy2 {
+	/* PCI-E 2.0 */
+	phy-supply = <&vcc3v3_sys>;
+	status = "okay";
+};
+
+&display_subsystem {
+	status = "okay";
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2m1_xfer>;
+	clock-frequency = <400000>;
+	status = "okay";
+
+	exp: gpio@23 {
+		pinctrl-names = "default";
+		pinctrl-0 = <&exp_pins>;
+		compatible = "nxp,pcal6524";
+		reg = <0x23>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+		interrupt-parent = <&gpio2>;
+		interrupts = <RK_PD1 IRQ_TYPE_LEVEL_LOW>;
+	};
+
+	i2c-mux@70 {
+		compatible = "nxp,pca9546";
+		reg = <0x70>;
+		i2c-mux-idle-disconnect;
+		vdd-supply = <&vcc3v3_sys>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		i2c6: i2c@0 {
+			/* I2C_CAM0 */
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c7: i2c@1 {
+			/* I2C_CAM1 */
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c8: i2c@2 {
+			/* I2C_LCD */
+			reg = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c9: i2c@3 {
+			reg = <3>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+	};
+};
+
+&i2c3 {
+	/* I2C_GP */
+	clock-frequency = <400000>;
+	status = "okay";
+
+	eeprom@50 {
+		compatible = "microchip,24aa025e48", "atmel,24c02";
+		reg = <0x50>;
+		pagesize = <16>;
+		vcc-supply = <&vcc3v3_sys>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		mac0: mac-address@fa {
+			reg = <0xfa 0x06>;
+			read-only;
+		};
+	};
+
+	eeprom@51 {
+		compatible = "microchip,24aa025e48", "atmel,24c02";
+		reg = <0x51>;
+		pagesize = <16>;
+		vcc-supply = <&vcc3v3_sys>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		mac1: mac-address@fa {
+			reg = <0xfa 0x06>;
+			read-only;
+		};
+	};
+
+	rtc@68 {
+		pinctrl-names = "default";
+		pinctrl-0 = <&rtc_pins>;
+		compatible = "st,m41t62";
+		reg = <0x68>;
+		interrupt-parent = <&gpio4>;
+		interrupts = <RK_PD1 IRQ_TYPE_LEVEL_LOW>;
+		wakeup-source;
+
+		clock {
+			compatible = "fixed-clock";
+			clock-accuracy = <2000>;
+			clock-frequency = <1>;
+			clock-output-names = "pps";
+			#clock-cells = <0>;
+		};
+	};
+};
+
+&i2c4 {
+	/* I2C_PM */
+	status = "okay";
+};
+
+&gmac0 {
+	assigned-clocks = <&cru SCLK_GMAC0_RX_TX>, <&cru SCLK_GMAC0>;
+	assigned-clock-parents = <&cru SCLK_GMAC0_RGMII_SPEED>;
+	assigned-clock-rates = <0>, <125000000>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&gmac0_tx_bus2 &gmac0_rx_bus2 &gmac0_rgmii_clk &gmac0_rgmii_bus>;
+	clock_in_out = "output";
+	nvmem-cells = <&mac0>;
+	nvmem-cell-names = "mac-address";
+	phy-handle = <&rgmii_phy0>;
+	phy-mode = "rgmii-id";
+	phy-supply = <&vcc3v3_sys>;
+	status = "okay";
+};
+
+&gmac1 {
+	assigned-clocks = <&cru SCLK_GMAC1_RX_TX>, <&cru SCLK_GMAC1>;
+	assigned-clock-parents = <&cru SCLK_GMAC1_RGMII_SPEED>;
+	assigned-clock-rates = <0>, <125000000>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&gmac1m1_miim &gmac1m1_tx_bus2 &gmac1m1_rx_bus2 &gmac1m1_rgmii_clk &gmac1m1_rgmii_bus>;
+	clock_in_out = "output";
+	nvmem-cells = <&mac1>;
+	nvmem-cell-names = "mac-address";
+	phy-handle = <&rgmii_phy1>;
+	phy-mode = "rgmii-id";
+	phy-supply = <&vcc3v3_sys>;
+	status = "okay";
+};
+
+&gpu {
+	status = "okay";
+};
+
+&mdio0 {
+	status = "disabled";
+};
+
+&mdio1 {
+	rgmii_phy0: phy@2 {
+		/* RTL8211F */
+		pinctrl-names = "default";
+		pinctrl-0 = <&gmac0_rst_pins>;
+		compatible = "ethernet-phy-id001c.c916",
+			     "ethernet-phy-ieee802.3-c22";
+		reg = <0x2>;
+		reset-assert-us = <20000>;
+		reset-deassert-us = <100000>;
+		reset-gpios = <&gpio0 RK_PC5 GPIO_ACTIVE_LOW>;
+	};
+
+	rgmii_phy1: phy@4 {
+		/* RTL8211F */
+		pinctrl-names = "default";
+		pinctrl-0 = <&gmac1_rst_pins>;
+		compatible = "ethernet-phy-id001c.c916",
+			     "ethernet-phy-ieee802.3-c22";
+		reg = <0x4>;
+		reset-assert-us = <20000>;
+		reset-deassert-us = <100000>;
+		reset-gpios = <&gpio0 RK_PA0 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&pcie2x1 {
+	/* PCIE_C */
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie2x1_pins>;
+	reset-gpios = <&gpio4 RK_PC2 GPIO_ACTIVE_HIGH>;
+	vpcie3v3-supply = <&vcc3v3_sys>;
+	status = "okay";
+};
+
+&pcie30phy {
+	phy-supply = <&vcc_pcie30>;
+	status = "okay";
+};
+
+//pcie_refclk should be handles in pci node
+
+&pwm4 {
+	/* LCD0_BKLT_PWM */
+	status = "okay";
+};
+
+&pwm5 {
+	/* LCD1_BKLT_PWM */
+	status = "okay";
+};
+
+&rga {
+	status = "okay";
+};
+
+&usb_host0_xhci {
+	dr_mode = "host";
+};
+
+&usb_host1_xhci {
+	status = "okay";
+};
+
+&vdda0v9_image {
+	/* Temporary hack regulator-always-on and regulator-boot-on
+	   properties until we have regulator handling for dsi & lvds nodes
+	*/
+	regulator-always-on;
+	regulator-boot-on;
+};
+
+&vcca1v8_image {
+	/* Temporary hack regulator-always-on and regulator-boot-on
+	   properties until we have regulator handling for dsi & lvds nodes
+	*/
+	regulator-always-on;
+	regulator-boot-on;
+};
+
+&vpu {
+	status = "okay";
+};
+
+&vdpu_mmu {
+	status = "okay";
+};
+
+&vepu {
+	status = "okay";
+};
+
+&vepu_mmu {
+	status = "okay";
+};
+
+&pinctrl {
+	exp {
+		exp_pins: exp-pins {
+			rockchip,pins =
+				<2 RK_PD1 RK_FUNC_GPIO &pcfg_pull_none>;	/* GPIO_EXP_INT */
+		};
+	};
+
+	net {
+		gmac0_rst_pins: gmac0-rst-pins {
+			rockchip,pins =
+				<0 RK_PC5 RK_FUNC_GPIO &pcfg_pull_none>;	/* GMAC0_RST */
+		};
+
+		gmac1_rst_pins: gmac1-rst-pins {
+			rockchip,pins =
+				<0 RK_PA0 RK_FUNC_GPIO &pcfg_pull_none>;	/* GMAC1_RST */
+		};
+	};
+
+	pci {
+		pcie2x1_pins: pcie2x1-pins {
+			rockchip,pins =
+				<4 RK_PC2 RK_FUNC_GPIO &pcfg_pull_none>,	/* PCIE_C_RST# */
+				<1 RK_PB1 4 &pcfg_pull_none>;			/* pcie20_wakenm2 */
+		};
+
+		pcie30_clk_pins: pcie30-clk-pins {
+			rockchip,pins =
+				<1 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>;	/* PCIE30_CLK_IC_OE */
+		};
+
+		pcie30_vcc_pins: pcie30-vcc-pins {
+			rockchip,pins =
+				<2 RK_PD0 RK_FUNC_GPIO &pcfg_pull_none>;	/* PCIE30_CLK_IC_PDN */
+		};
+	};
+
+	pps {
+		pps_pins: pps-pins {
+			rockchip,pins =
+				<0 RK_PB6 RK_FUNC_GPIO &pcfg_pull_none>;	/* RTC_SQW */
+		};
+	};
+
+	rtc {
+		rtc_pins: rtc-pins {
+			rockchip,pins =
+				<4 RK_PD1 RK_FUNC_GPIO &pcfg_pull_none>;	/* RTC_IRQ */
+		};
+	};
+};

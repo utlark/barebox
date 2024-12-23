@@ -67,15 +67,25 @@ endif
 
 if 64BIT
 
-config MACH_DIASOM_DS_RK3568_EVB
-	bool "Diasom DS-RK3568-EVB"
-	depends on $(success,test -e $(srctree)/arch/arm/boards/diasom-rk3568-evb/sdram-init.bin)
+config MACH_DIASOM_DS_RK3568
+	bool "Diasom DS-RK3568"
+	depends on $(success,test -e $(srctree)/arch/arm/boards/diasom-rk3568/sdram-init.bin)
 	select ARCH_RK3568
 	select AIODEV
 	select DEFAULT_ENVIRONMENT
 	select MACHINE_ID
 	help
-	  Say Y here if you are using a Diasom DS-RK3568-EVB board
+	  Say Y here if you are using a Diasom DS-RK3568 based boards
+
+config MACH_DIASOM_DS_RK3588
+	bool "Diasom DS-RK3588"
+	depends on $(success,test -e $(srctree)/arch/arm/boards/diasom-rk3588/sdram-init.bin)
+	select ARCH_RK3588
+	select AIODEV
+	select DEFAULT_ENVIRONMENT
+	select MACHINE_ID
+	help
+	  Say Y here if you are using a Diasom DS-RK3588 based boards
 
 config MACH_SAUT_DS_RK3568_SIB
 	bool "Saut DS-RK3568-SIB"
@@ -135,6 +145,12 @@ config MACH_WOLFVISION_PF5
 	bool "WolfVision PF5 mainboard"
 	help
 	  Say Y here if you are using a WolfVision PF5 mainboard
+
+config MACH_XUNLONG_ORANGEPI_5_PLUS
+       select ARCH_RK3588
+       bool "Xunlong Orange Pi 5 Plus"
+       help
+         Say Y here if you are using a Xunlong Orange Pi 5 Plus
 
 endif
 

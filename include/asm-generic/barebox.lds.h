@@ -70,12 +70,6 @@
 	KEEP(*(SORT_BY_NAME(.barebox_magicvar*)))	\
 	__barebox_magicvar_end = .;
 
-#define BAREBOX_CLASSES				\
-	STRUCT_ALIGN();				\
-	__barebox_class_start = .;		\
-	KEEP(*(SORT_BY_NAME(.barebox_class*)))	\
-	__barebox_class_end = .;
-
 #define BAREBOX_CLK_TABLE			\
 	STRUCT_ALIGN();				\
 	__clk_of_table_start = .;		\
@@ -112,11 +106,11 @@
 #define BAREBOX_PCI_FIXUP
 #endif
 
-#define BAREBOX_RSA_KEYS			\
+#define BAREBOX_PUBLIC_KEYS			\
 	STRUCT_ALIGN();				\
-	__rsa_keys_start = .;			\
-	KEEP(*(.rsa_keys.rodata.*));		\
-	__rsa_keys_end = .;			\
+	__public_keys_start = .;		\
+	KEEP(*(.public_keys.rodata.*));		\
+	__public_keys_end = .;			\
 
 #define BAREBOX_DEEP_PROBE			\
 	STRUCT_ALIGN();				\
@@ -144,10 +138,9 @@
 	BAREBOX_SYMS				\
 	KERNEL_CTORS()				\
 	BAREBOX_MAGICVARS			\
-	BAREBOX_CLASSES				\
 	BAREBOX_CLK_TABLE			\
 	BAREBOX_DTB				\
-	BAREBOX_RSA_KEYS			\
+	BAREBOX_PUBLIC_KEYS			\
 	BAREBOX_PCI_FIXUP			\
 	BAREBOX_DEEP_PROBE
 
@@ -178,3 +171,8 @@ CONFIG_ARCH_BAREBOX_MAX_PBL_SIZE < CONFIG_BAREBOX_MAX_PBL_SIZE
 	ASSERT(_barebox_pbl_size < MAX_PBL_SIZE, "Barebox pbl size > ") \
 	ASSERT(_barebox_pbl_size < MAX_PBL_SIZE, __stringify(MAX_PBL_SIZE)) \
 
+#if defined(__GNUC__) && __GNUC__ >= 11
+#define READONLY READONLY
+#else
+#define READONLY
+#endif

@@ -1,0 +1,33 @@
+/* SPDX-License-Identifier: GPL-2.0+ */
+/* SPDX-FileCopyrightText: Alexander Shiyan <shc_work@mail.ru> */
+
+/dts-v1/;
+/plugin/;
+
+&i2c4 {
+	clock-frequency = <100000>;
+};
+
+&i2c_mux {
+	status = "okay";
+};
+
+&vcc_cam0 {
+	regulator-min-microvolt = <3300000>;
+	regulator-max-microvolt = <3300000>;
+	vin-supply = <&vcc3v3_sys>;
+};
+
+&vcc_cam1_v1 {
+	status = "disabled";
+};
+
+&vcc_cam1_v3 {
+	status = "okay";
+};
+
+&vcc_cam1 {
+	regulator-min-microvolt = <3300000>;
+	regulator-max-microvolt = <3300000>;
+	vin-supply = <&vcc_cam1_v3>;
+};

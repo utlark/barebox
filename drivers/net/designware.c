@@ -156,7 +156,7 @@ static void rx_descs_init(struct eth_device *dev)
 		else
 			desc_p->dmamac_cntl |= DESC_RXCTRL_RXCHAIN;
 
-		dma_sync_single_for_cpu(dev->parent, desc_p->dmamac_addr,
+		dma_sync_single_for_device(dev->parent, desc_p->dmamac_addr,
 					CONFIG_ETH_BUFSIZE, DMA_FROM_DEVICE);
 		desc_p->txrx_status = DESC_RXSTS_OWNBYDMA;
 	}
@@ -180,6 +180,10 @@ static void descs_init(struct eth_device *dev)
 static int phy_resume(struct phy_device *phydev)
 {
 	int bmcr;
+
+	// Bus will be NULL if a fixed-link is used.
+	if (!phydev->bus)
+		return 0;
 
 	bmcr = phy_read(phydev, MII_BMCR);
 	if (bmcr < 0)
@@ -480,18 +484,20 @@ struct dw_eth_dev *dwc_drv_probe(struct device *dev)
 	dwc_version(dev, readl(&priv->mac_regs_p->version));
 	priv->dma_regs_p = base + DW_DMA_BASE_OFFSET;
 
-	priv->tx_mac_descrtable_cpu = dma_alloc_coherent(
+	/* [tr]x_mac_descrtable_dev will be used by the [tr]x_dma_addr helpers */
+
+	priv->tx_mac_descrtable_cpu = dma_alloc_coherent(DMA_DEVICE_BROKEN,
 		CONFIG_TX_DESCR_NUM * sizeof(struct dmamacdescr),
 		&priv->tx_mac_descrtable_dev);
 
-	if (dma_mapping_error(dev, priv->tx_mac_descrtable_dev))
+	if (!priv->tx_mac_descrtable_cpu)
 		return ERR_PTR(-EFAULT);
 
-	priv->rx_mac_descrtable_cpu = dma_alloc_coherent(
+	priv->rx_mac_descrtable_cpu = dma_alloc_coherent(DMA_DEVICE_BROKEN,
 		CONFIG_RX_DESCR_NUM * sizeof(struct dmamacdescr),
 		&priv->rx_mac_descrtable_dev);
 
-	if (dma_mapping_error(dev, priv->rx_mac_descrtable_dev))
+	if (!priv->rx_mac_descrtable_cpu)
 		return ERR_PTR(-EFAULT);
 
 	priv->txbuffs = dma_alloc(TX_TOTAL_BUFSIZE);
