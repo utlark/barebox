@@ -10,7 +10,7 @@
 
 ENTRY_FUNCTION(start_rk3568_saut, r0, r1, r2)
 {
-	extern char __dtb_rk3568_saut_sib_start[];
+	extern char __dtb_rk3568_saut_mb_start[];
 
 	/*
 	 * Enable vccio4 1.8V and vccio6 1.8V
@@ -31,5 +31,5 @@ ENTRY_FUNCTION(start_rk3568_saut, r0, r1, r2)
 
 	setup_c();
 
-	rk3568_barebox_entry(__dtb_rk3568_saut_sib_start);
+	rk3568_barebox_entry(__dtb_rk3568_saut_mb_start);
 }

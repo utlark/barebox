@@ -12,6 +12,7 @@ lwl-$(CONFIG_MACH_CLEP7212) += ep7212-clep7212.dtb.o
 lwl-$(CONFIG_MACH_CM_FX6) += imx6dl-cm-fx6.dtb.o imx6q-cm-fx6.dtb.o imx6q-utilite.dtb.o
 lwl-$(CONFIG_MACH_DFI_FS700_M60) += imx6q-dfi-fs700-m60-6q.dtb.o imx6dl-dfi-fs700-m60-6s.dtb.o
 lwl-$(CONFIG_MACH_SAUT_DS_RK3568_MB) += rk3568-saut-mb.dtb.o
+obj-$(CONFIG_MACH_SAUT_DS_RK3568_MB) += rk3568-diasom-som-ver2.dtbo.o
 lwl-$(CONFIG_MACH_DIASOM_DS_IMX8M) += imx8mm-diasom-som-evb.dtb.o
 lwl-$(CONFIG_MACH_DIASOM_DS_RK3568) += rk3568-diasom-som-evb.dtb.o
 obj-$(CONFIG_MACH_DIASOM_DS_RK3568) += rk3568-diasom-som-evb-ver3.dtbo.o

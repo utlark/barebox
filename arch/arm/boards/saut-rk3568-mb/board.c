@@ -128,7 +128,7 @@ static int __init diasom_rk3568_late_init(void)
 			return 0;
 		}
 
-		if (!diasom_rk3568_probe_i2c(adapter, 0x1c)) {
+		if (!saut_rk3568_probe_i2c(adapter, 0x1c)) {
 			extern char __dtbo_rk3568_diasom_som_ver2_start[];
 			struct device_node *overlay;
 

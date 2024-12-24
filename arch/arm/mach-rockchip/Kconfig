@@ -67,7 +67,7 @@ endif
 
 if 64BIT
 
-config CONFIG_MACH_SAUT_DS_RK3568_MB
+config MACH_SAUT_DS_RK3568_MB
 	bool "Saut DS-RK3568-MB"
 	depends on $(success,test -e $(srctree)/arch/arm/boards/saut-rk3568-mb/sdram-init.bin)
 	select ARCH_RK3568
