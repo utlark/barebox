@@ -130,10 +130,6 @@
 	};
 };
 
-&hdmi_sound {
-	status = "okay";
-};
-
 &rga {
 	status = "okay";
 };
@@ -219,11 +215,6 @@
 
 &pwm2 {
 	pinctrl-0 = <&pwm2m1_pins>;
-	status = "okay";
-};
-
-/* HDMI Sound */
-&i2s0_8ch {
 	status = "okay";
 };
 
