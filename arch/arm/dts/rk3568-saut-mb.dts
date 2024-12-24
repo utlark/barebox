@@ -169,7 +169,7 @@
 
 &i2c2 {
 	pinctrl-0 = <&i2c2m1_xfer>;
-	clock-frequency = <400000>;
+	clock-frequency = <100000>;
 	status = "okay";
 	
 	hdmi_lt8619c_1: lt8619c_1@32 {
@@ -180,7 +180,7 @@
 };
 
 &i2c4 {
-	clock-frequency = <400000>;
+	clock-frequency = <100000>;
 	status = "okay";
 	
 	es8388: codec@10 {
