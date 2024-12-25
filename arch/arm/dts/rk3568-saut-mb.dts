@@ -203,6 +203,11 @@
 		reg = <0x32>;
 	};
 	
+	pcf8563: pcf8563@51 {
+		compatible = "nxp,pcf8563";
+		reg = <0x51>;
+	};
+	
 	cbm1307: cbm1307@68 {
 		compatible = "dallas,ds1338";
 		reg = <0x68>;
@@ -305,7 +310,7 @@
 				
 				/* LED_RED 													*/
 				<4 RK_PC3 RK_FUNC_GPIO &pcfg_output_low>,
-
+				
 				/* HDMI_RESET 												*/
 				<4 RK_PD2 RK_FUNC_GPIO &pcfg_pull_none>;	/* HDMI_RESET	*/
 		};
