@@ -17,7 +17,7 @@
 	chassis-type = "embedded";
 
 	aliases {
-		mmc1 = &sdhci;
+		mmc0 = &sdhci;
 	};
 
 	chosen: chosen {
@@ -63,8 +63,8 @@
 		compatible = "rockchip,rk3568-rkisp";
 		reg = <0x0 0xfdff0000 0x0 0x10000>;
 		interrupts = <GIC_SPI 57 IRQ_TYPE_LEVEL_HIGH>,
-		<GIC_SPI 58 IRQ_TYPE_LEVEL_HIGH>,
-		<GIC_SPI 60 IRQ_TYPE_LEVEL_HIGH>;
+			     <GIC_SPI 58 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 60 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "mipi_irq", "mi_irq", "isp_irq";
 		clocks = <&cru ACLK_ISP>, <&cru HCLK_ISP>, <&cru CLK_ISP>;
 		clock-names = "aclk_isp", "hclk_isp", "clk_isp";
@@ -126,16 +126,6 @@
 		};
 	};
 
-	vcc0v9_cpu: vcc0v9-cpu-regulator {
-		compatible = "regulator-fixed";
-		regulator-name = "0v9_cpu";
-		regulator-always-on;
-		regulator-boot-on;
-		regulator-min-microvolt = <900000>;
-		regulator-max-microvolt = <900000>;
-		vin-supply = <&vcc3v3_pmu>;
-	};
-
 	vcc3v3_sys: vcc3v3-sys-regulator {
 		compatible = "regulator-fixed";
 		regulator-name = "3v3_sys";
@@ -158,43 +148,9 @@
 
 /delete-node/ &xin32k;
 
-&can1 {
-	/* Keep CAN node until update to 6.12 kernel */
-	compatible = "rockchip,rk3568-can-2.0";
-	clock-names = "baudclk", "apb_pclk";
-	reset-names = "can", "can-apb";
-	tx-fifo-depth = <1>;
-	rx-fifo-depth = <6>;
-};
-
-&can2 {
-	/* Keep CAN node until update to 6.12 kernel */
-	compatible = "rockchip,rk3568-can-2.0";
-	clock-names = "baudclk", "apb_pclk";
-	reset-names = "can", "can-apb";
-	tx-fifo-depth = <1>;
-	rx-fifo-depth = <6>;
-};
-
 &combphy0 {
 	/* USB3.0 OTG0 */
 	status = "okay";
-};
-
-&cpu0 {
-	cpu-supply = <&vcc0v9_cpu>;
-};
-
-&cpu1 {
-	cpu-supply = <&vcc0v9_cpu>;
-};
-
-&cpu2 {
-	cpu-supply = <&vcc0v9_cpu>;
-};
-
-&cpu3 {
-	cpu-supply = <&vcc0v9_cpu>;
 };
 
 &cpu0_opp_table {
@@ -498,6 +454,20 @@
 
 &usb2phy0_otg {
 	status = "okay";
+};
+
+&vdda0v9_image {
+	/* Temporary hack regulator-always-on and regulator-boot-on */
+	/* properties until we have regulator handling for dsi & lvds nodes */
+	regulator-always-on;
+	regulator-boot-on;
+};
+
+&vcca1v8_image {
+	/* Temporary hack regulator-always-on and regulator-boot-on */
+	/* properties until we have regulator handling for dsi & lvds nodes */
+	regulator-always-on;
+	regulator-boot-on;
 };
 
 &vpu {

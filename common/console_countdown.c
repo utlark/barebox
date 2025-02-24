@@ -10,12 +10,13 @@
 #include <errno.h>
 #include <console_countdown.h>
 #include <stdio.h>
+#include <readkey.h>
 
 static bool console_countdown_timeout_abort;
 
 void console_countdown_abort(const char *reason)
 {
-	if (reason)
+	if (reason && !console_countdown_timeout_abort)
 		pr_info("\nCount down aborted by %s\n", reason);
 	console_countdown_timeout_abort = true;
 }
@@ -59,7 +60,7 @@ int console_countdown(int timeout_s, unsigned flags, const char *keys,
 					goto out;
 				if (flags & CONSOLE_COUNTDOWN_RETURN && (key == '\n' || key == '\r'))
 					goto out;
-				if (flags & CONSOLE_COUNTDOWN_CTRLC && key == 3)
+				if (flags & CONSOLE_COUNTDOWN_CTRLC && key == CTL_CH('c'))
 					goto out;
 			}
 			key = 0;

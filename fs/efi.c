@@ -142,7 +142,7 @@ static int efifs_rmdir(struct device *dev, const char *pathname)
 	return efifs_unlink(dev, pathname);
 }
 
-static int efifs_open(struct device *dev, FILE *f, const char *filename)
+static int efifs_open(struct device *dev, struct file *f, const char *filename)
 {
 	struct efifs_priv *priv = dev->priv;
 	efi_status_t efiret;
@@ -155,7 +155,7 @@ static int efifs_open(struct device *dev, FILE *f, const char *filename)
 
 	ufile = xzalloc(sizeof(*ufile));
 
-	if (f->flags & O_ACCMODE)
+	if (f->f_flags & O_ACCMODE)
 		efimode |= EFI_FILE_MODE_WRITE;
 
 	efiret = priv->root_dir->open(priv->root_dir, &ufile->entry, efi_path,
@@ -178,10 +178,10 @@ static int efifs_open(struct device *dev, FILE *f, const char *filename)
 		goto out;
 	}
 
-	f->size = info->FileSize;
+	f->f_size = info->FileSize;
 
 	free(info);
-	f->priv = ufile;
+	f->private_data = ufile;
 
 	return 0;
 out:
@@ -190,9 +190,9 @@ out:
 	return ret;
 }
 
-static int efifs_close(struct device *dev, FILE *f)
+static int efifs_close(struct device *dev, struct file *f)
 {
-	struct efifs_file *ufile = f->priv;
+	struct efifs_file *ufile = f->private_data;
 
 	ufile->entry->close(ufile->entry);
 
@@ -201,9 +201,9 @@ static int efifs_close(struct device *dev, FILE *f)
 	return 0;
 }
 
-static int efifs_read(struct device *_dev, FILE *f, void *buf, size_t insize)
+static int efifs_read(struct device *_dev, struct file *f, void *buf, size_t insize)
 {
-	struct efifs_file *ufile = f->priv;
+	struct efifs_file *ufile = f->private_data;
 	efi_status_t efiret;
 	unsigned long bufsize = insize;
 
@@ -215,10 +215,10 @@ static int efifs_read(struct device *_dev, FILE *f, void *buf, size_t insize)
 	return bufsize;
 }
 
-static int efifs_write(struct device *_dev, FILE *f, const void *buf,
+static int efifs_write(struct device *_dev, struct file *f, const void *buf,
 		       size_t insize)
 {
-	struct efifs_file *ufile = f->priv;
+	struct efifs_file *ufile = f->private_data;
 	efi_status_t efiret;
 	unsigned long bufsize = insize;
 
@@ -231,9 +231,9 @@ static int efifs_write(struct device *_dev, FILE *f, const void *buf,
 	return bufsize;
 }
 
-static int efifs_lseek(struct device *dev, FILE *f, loff_t pos)
+static int efifs_lseek(struct device *dev, struct file *f, loff_t pos)
 {
-	struct efifs_file *ufile = f->priv;
+	struct efifs_file *ufile = f->private_data;
 	efi_status_t efiret;
 
 	efiret = ufile->entry->set_position(ufile->entry, pos);
@@ -244,9 +244,9 @@ static int efifs_lseek(struct device *dev, FILE *f, loff_t pos)
 	return 0;
 }
 
-static int efifs_truncate(struct device *dev, FILE *f, loff_t size)
+static int efifs_truncate(struct device *dev, struct file *f, loff_t size)
 {
-	struct efifs_file *ufile = f->priv;
+	struct efifs_file *ufile = f->private_data;
 	efi_status_t efiret;
 	struct efi_file_info *info;
 	unsigned long bufsize = 1024;
@@ -420,15 +420,9 @@ static void efifs_remove(struct device *dev)
 	free(dev->priv);
 }
 
-static struct fs_driver efifs_driver = {
+static const struct fs_legacy_ops efifs_ops = {
 	.create    = efifs_create,
 	.unlink    = efifs_unlink,
-	.open      = efifs_open,
-	.close     = efifs_close,
-	.truncate  = efifs_truncate,
-	.read      = efifs_read,
-	.write     = efifs_write,
-	.lseek     = efifs_lseek,
 	.mkdir     = efifs_mkdir,
 	.rmdir     = efifs_rmdir,
 	.opendir   = efifs_opendir,
@@ -437,6 +431,16 @@ static struct fs_driver efifs_driver = {
 	.stat      = efifs_stat,
 	.symlink   = efifs_symlink,
 	.readlink  = efifs_readlink,
+};
+
+static struct fs_driver efifs_driver = {
+	.open      = efifs_open,
+	.close     = efifs_close,
+	.truncate  = efifs_truncate,
+	.read      = efifs_read,
+	.write     = efifs_write,
+	.lseek     = efifs_lseek,
+	.legacy_ops = &efifs_ops,
 	.drv = {
 		.probe  = efifs_probe,
 		.remove = efifs_remove,
@@ -451,11 +455,13 @@ static int efifs_init(void)
 
 coredevice_initcall(efifs_init);
 
-static int index;
+static unsigned index;
 
 static int efi_fs_probe(struct efi_device *efidev)
 {
-	char *path, *device;
+	char buf[sizeof("/efi4294967295")];
+	const char *path;
+	char *device;
 	int ret;
 	struct efi_file_io_interface *volume;
 
@@ -463,10 +469,13 @@ static int efi_fs_probe(struct efi_device *efidev)
 		BS->handle_protocol(efi_loaded_image->device_handle,
 				&efi_simple_file_system_protocol_guid, (void*)&volume);
 
-	if (efi_loaded_image && efidev->protocol == volume)
-		path = xstrdup("/boot");
-	else
-		path = basprintf("/efi%d", index);
+	if (efi_loaded_image && efidev->protocol == volume) {
+		path = "/boot";
+	} else {
+		snprintf(buf, sizeof(buf), "/efi%u", index);
+		path = buf;
+	}
+
 	device = basprintf("%s", dev_name(&efidev->dev));
 
 	ret = make_directory(path);
@@ -483,7 +492,6 @@ static int efi_fs_probe(struct efi_device *efidev)
 
 	ret = 0;
 out:
-	free(path);
 	free(device);
 
 	return ret;

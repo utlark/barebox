@@ -1,7 +1,7 @@
 #!/bin/sh
 
-DTBODIR=/mnt/mmc0.2/boot
-[ -d $DTBODIR ] || DTBODIR=/mnt/mmc1.2/boot
+DTBODIR=/mnt/mmc1.2/boot
+[ -d $DTBODIR ] || DTBODIR=/mnt/mmc0.2/boot
 
 if [ -d $DTBODIR ]; then
 	echo "Use LVDS devicetree overlays from $DTBODIR"

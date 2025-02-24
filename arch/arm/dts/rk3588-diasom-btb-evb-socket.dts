@@ -1,0 +1,154 @@
+/* SPDX-License-Identifier: GPL-2.0+ */
+/* SPDX-FileCopyrightText: Alexander Shiyan <shc_work@mail.ru> */
+
+/dts-v1/;
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/soc/rockchip,vop2.h>
+#include <dt-bindings/usb/pd.h>
+
+#include "rk3588-diasom-btb.dtsi"
+
+/ {
+	model = "Diasom DS-RK3588-BTB-EVB-SOCKET";
+	compatible = "diasom,ds-rk3588-btb-evb-socket",
+		     "diasom,ds-rk3588-btb",
+		     "rockchip,rk3588";
+
+	aliases {
+		mmc1 = &sdmmc;
+	};
+
+	chosen {
+		environment-sd {
+			compatible = "barebox,environment";
+			device-path = &sdmmc, "partname:env";
+			status = "disabled";
+		};
+	};
+
+	adc-keys-1 {
+		compatible = "adc-keys";
+		io-channels = <&saradc 1>;
+		io-channel-names = "buttons";
+		keyup-threshold-microvolt = <1750000>;
+		poll-interval = <100>;
+
+		button-recovery {
+			label = "Recovery";
+			linux,code = <KEY_VENDOR>;
+			press-threshold-microvolt = <50000>;
+		};
+	};
+
+	v_sys: v-sys-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "v_sys";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <12000000>;
+		regulator-max-microvolt = <12000000>;
+	};
+
+	vcc_1v8_sys: vcc-1v8_sys-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc_1v8_sys";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		vin-supply = <&vcc_3v3_sys>;
+	};
+
+	vcc_3v3_sys: vcc-3v3_sys-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc_3v3_sys";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		vin-supply = <&v_sys>;
+	};
+};
+
+&i2c7 {
+	clock-frequency = <100000>;
+	status = "okay";
+
+	/* 24aa025e48 */
+	eeprom@50 {
+		compatible = "atmel,24c02";
+		reg = <0x50>;
+		pagesize = <16>;
+		vcc-supply = <&vcc_1v8_sys>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		mac1: mac-address@fa {
+			reg = <0xfa 0x06>;
+			read-only;
+		};
+	};
+};
+
+&leds {
+	pinctrl-0 = <&leds_som_pins &leds_evb_pins>;
+
+	led-act {
+		label = "evb:act";
+		gpios = <&gpio1 RK_PC5 GPIO_ACTIVE_HIGH>;
+		function = LED_FUNCTION_ACTIVITY;
+		color = <LED_COLOR_ID_GREEN>;
+		linux,default-trigger = LED_FUNCTION_ACTIVITY;
+		default-state = "off";
+	};
+};
+
+&sdmmc {
+	bus-width = <4>;
+	cap-mmc-highspeed;
+	cap-sd-highspeed;
+	disable-wp;
+	no-1-8-v;
+	no-sdio;
+	no-mmc;
+	sd-uhs-sdr104;
+	cd-gpios = <&gpio0 RK_PA4 GPIO_ACTIVE_LOW>;
+	vmmc-supply = <&vccio_sd>;
+	vqmmc-supply = <&vccio_sd>;
+	status = "okay";
+};
+
+&usb_host0_xhci {
+	dr_mode = "peripheral";
+	status = "okay";
+};
+
+&usbdp_phy0 {
+	status = "okay";
+};
+
+&u2phy0 {
+	status = "okay";
+};
+
+&u2phy0_otg {
+	status = "okay";
+};
+
+&vcc4v0_sys {
+	vin-supply = <&v_sys>;
+};
+
+&vccio_sd {
+	regulator-min-microvolt = <3300000>;
+};
+
+&pinctrl {
+	leds {
+		leds_evb_pins: leds-evb-pins {
+			rockchip,pins =
+				<1 RK_PC5 RK_FUNC_GPIO &pcfg_pull_none>;	/* VD19 */
+		};
+	};
+};

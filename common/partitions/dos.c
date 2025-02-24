@@ -20,9 +20,16 @@
 #include <linux/err.h>
 #include <partitions.h>
 
+struct disk_signature_priv {
+	uint32_t signature;
+	struct block_device *blk;
+	struct param_d *param;
+};
+
 struct dos_partition_desc {
 	struct partition_desc pd;
 	uint32_t signature;
+	struct disk_signature_priv disksig;
 };
 
 struct dos_partition {
@@ -53,7 +60,7 @@ static inline int is_extended_partition(struct partition *p)
 
 static void *read_mbr(struct block_device *blk)
 {
-	void *buf = malloc(SECTOR_SIZE);
+	void *buf = xmalloc(SECTOR_SIZE);
 	int ret;
 
 	ret = block_read(blk, buf, 0, 1);
@@ -75,11 +82,6 @@ static int write_mbr(struct block_device *blk, void *buf)
 
 	return block_flush(blk);
 }
-
-struct disk_signature_priv {
-	uint32_t signature;
-	struct block_device *blk;
-};
 
 static int dos_set_disk_signature(struct param_d *p, void *_priv)
 {
@@ -124,7 +126,7 @@ static int dos_get_disk_signature(struct param_d *p, void *_priv)
 static void dos_extended_partition(struct block_device *blk, struct dos_partition_desc *dpd,
 		struct partition *partition, uint32_t signature)
 {
-	uint8_t *buf = malloc(SECTOR_SIZE);
+	uint8_t *buf = xmalloc(SECTOR_SIZE);
 	uint32_t ebr_sector = partition->first_sec;
 	struct partition_entry *table = (struct partition_entry *)&buf[0x1be];
 	unsigned partno = 4;
@@ -198,6 +200,26 @@ static void extract_flags(const struct partition_entry *p,
 		pentry->flags |= DEVFS_PARTITION_BOOTABLE_ESP;
 }
 
+static void add_nt_signature_param(struct disk_signature_priv *dsp,
+				   struct block_device *blk)
+{
+	dsp->blk = blk;
+
+	/*
+	 * This parameter contains the NT disk signature. This allows to
+	 * to specify the Linux rootfs using the following syntax:
+	 *
+	 *   root=PARTUUID=ssssssss-pp
+	 *
+	 * where ssssssss is a zero-filled hex representation of the 32-bit
+	 * signature and pp is a zero-filled hex representation of the 1-based
+	 * partition number.
+	 */
+	dsp->param = dev_add_param_uint32(blk->dev, "nt_signature",
+			dos_set_disk_signature, dos_get_disk_signature,
+			&dsp->signature, "%08x", dsp);
+}
+
 /**
  * Check if a DOS like partition describes this block device
  * @param blk Block device to register to
@@ -214,7 +236,6 @@ static struct partition_desc *dos_partition(void *buf, struct block_device *blk)
 	struct partition *extended_partition = NULL;
 	uint8_t *buffer = buf;
 	int i;
-	struct disk_signature_priv *dsp;
 	uint32_t signature = get_unaligned_le32(buf + 0x1b8);
 	struct dos_partition_desc *dpd;
 
@@ -273,28 +294,15 @@ static struct partition_desc *dos_partition(void *buf, struct block_device *blk)
 	if (extended_partition)
 		dos_extended_partition(blk, dpd, extended_partition, signature);
 
-	dsp = xzalloc(sizeof(*dsp));
-	dsp->blk = blk;
-
-	/*
-	 * This parameter contains the NT disk signature. This allows to
-	 * to specify the Linux rootfs using the following syntax:
-	 *
-	 *   root=PARTUUID=ssssssss-pp
-	 *
-	 * where ssssssss is a zero-filled hex representation of the 32-bit
-	 * signature and pp is a zero-filled hex representation of the 1-based
-	 * partition number.
-	 */
-	dev_add_param_uint32(blk->dev, "nt_signature",
-			dos_set_disk_signature, dos_get_disk_signature,
-			&dsp->signature, "%08x", dsp);
+	add_nt_signature_param(&dpd->disksig, blk);
 
 	return &dpd->pd;
 }
 
 static void dos_partition_free(struct partition_desc *pd)
 {
+	struct dos_partition_desc *dpd
+		= container_of(pd, struct dos_partition_desc, pd);
 	struct partition *part, *tmp;
 
 	list_for_each_entry_safe(part, tmp, &pd->partitions, list) {
@@ -302,6 +310,8 @@ static void dos_partition_free(struct partition_desc *pd)
 
 		free(dpart);
 	}
+
+	dev_remove_param(dpd->disksig.param);
 
 	free(pd);
 }
@@ -313,6 +323,8 @@ static __maybe_unused struct partition_desc *dos_partition_create_table(struct b
 	partition_desc_init(&dpd->pd, blk);
 
 	dpd->signature = random32();
+
+	add_nt_signature_param(&dpd->disksig, blk);
 
 	return &dpd->pd;
 }
@@ -414,12 +426,16 @@ create:
 	dpart = xzalloc(sizeof(*dpart));
 	part = &dpart->part;
 
-	if (start_lba > UINT_MAX)
+	if (start_lba > UINT_MAX) {
+		free(dpart);
 		return -ENOSPC;
+	}
 	size = end_lba - start_lba + 1;
 
-	if (size > UINT_MAX)
+	if (size > UINT_MAX) {
+		free(dpart);
 		return -ENOSPC;
+	}
 
 	dpart->type = fs_type_to_type(fs_type);
 

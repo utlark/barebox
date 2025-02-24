@@ -15,8 +15,8 @@
  */
 struct variable_d {
 	struct list_head list;
-	char *name;
-	char *data;
+	const char *name;
+	const char *data;
 };
 
 struct env_context {
@@ -26,10 +26,10 @@ struct env_context {
 };
 
 struct env_context *get_current_context(void);
-char *var_val(struct variable_d *);
-char *var_name(struct variable_d *);
+const char *var_val(struct variable_d *);
+const char *var_name(struct variable_d *);
 
-#ifdef CONFIG_ENVIRONMENT_VARIABLES
+#if IS_ENABLED(CONFIG_ENVIRONMENT_VARIABLES) && IN_PROPER
 const char *getenv(const char *);
 int setenv(const char *, const char *);
 int pr_setenv(const char *, const char *fmt, ...)  __attribute__ ((format(__printf__, 2, 3)));

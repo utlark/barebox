@@ -307,8 +307,8 @@ EXPORT_SYMBOL(mipi_dbi_enable_flush);
 
 static void mipi_dbi_blank(struct mipi_dbi_dev *dbidev)
 {
-	u16 height = dbidev->mode.xres;
-	u16 width = dbidev->mode.yres;
+	u16 height = dbidev->mode.yres;
+	u16 width = dbidev->mode.xres;
 	struct mipi_dbi *dbi = &dbidev->dbi;
 	size_t len = width * height * 2;
 
@@ -365,6 +365,9 @@ void mipi_dbi_fb_flush(struct fb_info *info)
 		dbidev->damage.x2 = info->xres;
 		dbidev->damage.y2 = info->yres;
 	}
+
+	if (!info->enabled)
+		return;
 
 	mipi_dbi_fb_dirty(dbidev, info, &dbidev->damage);
 }

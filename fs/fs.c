@@ -188,15 +188,21 @@ void stat_print(int dirfd, const char *filename, const struct stat *st)
 		typeprefix = "cdev link to ";
 	}
 
-	printf("\n");
+	printf("\nSize: ");
 
-	printf("  Size: %-20llu", st->st_size);
+	if (st->st_size == FILE_SIZE_STREAM)
+		printf("%-20s", "stream");
+	else
+		printf("%-20llu", st->st_size);
+
 	if (bdev)
 		printf("Blocks: %llu\tIO Block: %u\t",
 		       (u64)bdev->num_blocks, 1 << bdev->blockbits);
 
 	if (type)
 		printf("  %s%s", typeprefix, type);
+	else
+		printf("  unknown (mode=0%o)", st->st_mode);
 
 	fdev = get_fsdevice_by_path(dirfd, filename);
 
@@ -215,7 +221,7 @@ static char *cwd;
 static struct dentry *cwd_dentry;
 static struct vfsmount *cwd_mnt;
 
-static FILE *files;
+static struct file files[MAX_FILES];
 static struct dentry *d_root;
 static struct vfsmount *mnt_root;
 
@@ -225,8 +231,6 @@ static int init_fs(void)
 {
 	cwd = xzalloc(PATH_MAX);
 	*cwd = '/';
-
-	files = xzalloc(sizeof(FILE) * MAX_FILES);
 
 	return 0;
 }
@@ -300,37 +304,44 @@ char *get_mounted_path(const char *path)
 	return fdev->path;
 }
 
-static FILE *get_file(void)
+static struct file *get_file(struct fs_device *fsdev)
 {
 	int i;
 
 	for (i = 3; i < MAX_FILES; i++) {
-		if (!files[i].in_use) {
-			memset(&files[i], 0, sizeof(FILE));
-			files[i].in_use = 1;
-			files[i].no = i;
+		if (!files[i].fsdev) {
+			memset(&files[i], 0, sizeof(struct file));
+			files[i].fsdev = fsdev;
 			return &files[i];
 		}
 	}
 	return NULL;
 }
 
-static void put_file(FILE *f)
+static int file_to_fd(struct file *f)
+{
+	int fd = f - files;
+	if (fd < 0 || fd >= ARRAY_SIZE(files))
+		return -EBADFD;
+	return fd;
+}
+
+static void put_file(struct file *f)
 {
 	free(f->path);
 	f->path = NULL;
-	f->in_use = 0;
+	f->fsdev = NULL;
 	iput(f->f_inode);
-	dput(f->dentry);
+	dput(f->f_dentry);
 }
 
-static FILE *fd_to_file(int fd, bool o_path_ok)
+static struct file *fd_to_file(int fd, bool o_path_ok)
 {
-	if (fd < 0 || fd >= MAX_FILES || !files[fd].in_use) {
+	if (fd < 0 || fd >= MAX_FILES || !files[fd].fsdev) {
 		errno = EBADF;
 		return ERR_PTR(-errno);
 	}
-	if (!o_path_ok && (files[fd].flags & O_PATH)) {
+	if (!o_path_ok && (files[fd].f_flags & O_PATH)) {
 		errno = EINVAL;
 		return ERR_PTR(-errno);
 	}
@@ -353,7 +364,7 @@ static int create(struct dentry *dir, struct dentry *dentry)
 	return inode->i_op->create(inode, dentry, S_IFREG | S_IRWXU | S_IRWXG | S_IRWXO);
 }
 
-static int fsdev_truncate(struct device *dev, FILE *f, loff_t length)
+static int fsdev_truncate(struct device *dev, struct file *f, loff_t length)
 {
 	struct fs_driver *fsdrv = f->fsdev->driver;
 
@@ -362,21 +373,20 @@ static int fsdev_truncate(struct device *dev, FILE *f, loff_t length)
 
 int ftruncate(int fd, loff_t length)
 {
-	FILE *f = fd_to_file(fd, false);
+	struct file *f = fd_to_file(fd, false);
 	int ret;
 
 	if (IS_ERR(f))
 		return -errno;
 
-	if (f->size == FILE_SIZE_STREAM)
+	if (f->f_size == FILE_SIZE_STREAM)
 		return 0;
 
 	ret = fsdev_truncate(&f->fsdev->dev, f, length);
 	if (ret)
 		return errno_set(ret);
 
-	f->size = length;
-	f->f_inode->i_size = f->size;
+	f->f_size = length;
 
 	return 0;
 }
@@ -384,7 +394,7 @@ int ftruncate(int fd, loff_t length)
 int ioctl(int fd, unsigned int request, void *buf)
 {
 	struct fs_driver *fsdrv;
-	FILE *f = fd_to_file(fd, false);
+	struct file *f = fd_to_file(fd, false);
 	int ret;
 
 	if (IS_ERR(f))
@@ -400,12 +410,12 @@ int ioctl(int fd, unsigned int request, void *buf)
 	return errno_set(ret);
 }
 
-static ssize_t __read(FILE *f, void *buf, size_t count)
+static ssize_t __read(struct file *f, void *buf, size_t count)
 {
 	struct fs_driver *fsdrv;
 	int ret;
 
-	if ((f->flags & O_ACCMODE) == O_WRONLY) {
+	if ((f->f_flags & O_ACCMODE) == O_WRONLY) {
 		ret = -EBADF;
 		goto out;
 	}
@@ -415,8 +425,8 @@ static ssize_t __read(FILE *f, void *buf, size_t count)
 	if (fsdrv != ramfs_driver)
 		assert_command_context();
 
-	if (f->size != FILE_SIZE_STREAM && f->pos + count > f->size)
-		count = f->size - f->pos;
+	if (f->f_size != FILE_SIZE_STREAM && f->f_pos + count > f->f_size)
+		count = f->f_size - f->f_pos;
 
 	if (!count)
 		return 0;
@@ -429,16 +439,16 @@ out:
 ssize_t pread(int fd, void *buf, size_t count, loff_t offset)
 {
 	loff_t pos;
-	FILE *f = fd_to_file(fd, false);
+	struct file *f = fd_to_file(fd, false);
 	int ret;
 
 	if (IS_ERR(f))
 		return -errno;
 
-	pos = f->pos;
-	f->pos = offset;
+	pos = f->f_pos;
+	f->f_pos = offset;
 	ret = __read(f, buf, count);
-	f->pos = pos;
+	f->f_pos = pos;
 
 	return ret;
 }
@@ -446,7 +456,7 @@ EXPORT_SYMBOL(pread);
 
 ssize_t read(int fd, void *buf, size_t count)
 {
-	FILE *f = fd_to_file(fd, false);
+	struct file *f = fd_to_file(fd, false);
 	int ret;
 
 	if (IS_ERR(f))
@@ -455,19 +465,19 @@ ssize_t read(int fd, void *buf, size_t count)
 	ret = __read(f, buf, count);
 
 	if (ret > 0)
-		f->pos += ret;
+		f->f_pos += ret;
 	return ret;
 }
 EXPORT_SYMBOL(read);
 
-static ssize_t __write(FILE *f, const void *buf, size_t count)
+static ssize_t __write(struct file *f, const void *buf, size_t count)
 {
 	struct fs_driver *fsdrv;
 	int ret;
 
 	fsdrv = f->fsdev->driver;
 
-	if ((f->flags & O_ACCMODE) == O_RDONLY || !fsdrv->write) {
+	if ((f->f_flags & O_ACCMODE) == O_RDONLY || !fsdrv->write) {
 		ret = -EBADF;
 		goto out;
 	}
@@ -475,19 +485,18 @@ static ssize_t __write(FILE *f, const void *buf, size_t count)
 	if (fsdrv != ramfs_driver)
 		assert_command_context();
 
-	if (f->size != FILE_SIZE_STREAM && f->pos + count > f->size) {
-		ret = fsdev_truncate(&f->fsdev->dev, f, f->pos + count);
+	if (f->f_size != FILE_SIZE_STREAM && f->f_pos + count > f->f_size) {
+		ret = fsdev_truncate(&f->fsdev->dev, f, f->f_pos + count);
 		if (ret) {
 			if (ret == -EPERM)
 				ret = -ENOSPC;
 			if (ret != -ENOSPC)
 				goto out;
-			count = f->size - f->pos;
+			count = f->f_size - f->f_pos;
 			if (!count)
 				goto out;
 		} else {
-			f->size = f->pos + count;
-			f->f_inode->i_size = f->size;
+			f->f_size = f->f_pos + count;
 		}
 	}
 	ret = fsdrv->write(&f->fsdev->dev, f, buf, count);
@@ -498,16 +507,16 @@ out:
 ssize_t pwrite(int fd, const void *buf, size_t count, loff_t offset)
 {
 	loff_t pos;
-	FILE *f = fd_to_file(fd, false);
+	struct file *f = fd_to_file(fd, false);
 	int ret;
 
 	if (IS_ERR(f))
 		return -errno;
 
-	pos = f->pos;
-	f->pos = offset;
+	pos = f->f_pos;
+	f->f_pos = offset;
 	ret = __write(f, buf, count);
-	f->pos = pos;
+	f->f_pos = pos;
 
 	return ret;
 }
@@ -515,7 +524,7 @@ EXPORT_SYMBOL(pwrite);
 
 ssize_t write(int fd, const void *buf, size_t count)
 {
-	FILE *f = fd_to_file(fd, false);
+	struct file *f = fd_to_file(fd, false);
 	int ret;
 
 	if (IS_ERR(f))
@@ -524,7 +533,7 @@ ssize_t write(int fd, const void *buf, size_t count)
 	ret = __write(f, buf, count);
 
 	if (ret > 0)
-		f->pos += ret;
+		f->f_pos += ret;
 	return ret;
 }
 EXPORT_SYMBOL(write);
@@ -532,7 +541,7 @@ EXPORT_SYMBOL(write);
 int flush(int fd)
 {
 	struct fs_driver *fsdrv;
-	FILE *f = fd_to_file(fd, false);
+	struct file *f = fd_to_file(fd, false);
 	int ret;
 
 	if (IS_ERR(f))
@@ -550,7 +559,7 @@ int flush(int fd)
 loff_t lseek(int fd, loff_t offset, int whence)
 {
 	struct fs_driver *fsdrv;
-	FILE *f = fd_to_file(fd, false);
+	struct file *f = fd_to_file(fd, false);
 	loff_t pos;
 	int ret;
 
@@ -569,10 +578,10 @@ loff_t lseek(int fd, loff_t offset, int whence)
 		pos = 0;
 		break;
 	case SEEK_CUR:
-		pos = f->pos;
+		pos = f->f_pos;
 		break;
 	case SEEK_END:
-		pos = f->size;
+		pos = f->f_size;
 		break;
 	default:
 		goto out;
@@ -580,7 +589,7 @@ loff_t lseek(int fd, loff_t offset, int whence)
 
 	pos += offset;
 
-	if (f->size != FILE_SIZE_STREAM && (pos < 0 || pos > f->size))
+	if (f->f_size != FILE_SIZE_STREAM && (pos < 0 || pos > f->f_size))
 		goto out;
 
 	if (fsdrv->lseek) {
@@ -589,7 +598,7 @@ loff_t lseek(int fd, loff_t offset, int whence)
 			goto out;
 	}
 
-	f->pos = pos;
+	f->f_pos = pos;
 
 	return pos;
 
@@ -603,15 +612,15 @@ EXPORT_SYMBOL(lseek);
 int erase(int fd, loff_t count, loff_t offset, enum erase_type type)
 {
 	struct fs_driver *fsdrv;
-	FILE *f = fd_to_file(fd, false);
+	struct file *f = fd_to_file(fd, false);
 	int ret;
 
 	if (IS_ERR(f))
 		return -errno;
-	if (offset >= f->size)
+	if (offset >= f->f_size)
 		return 0;
-	if (count == ERASE_SIZE_ALL || count > f->size - offset)
-		count = f->size - offset;
+	if (count == ERASE_SIZE_ALL || count > f->f_size - offset)
+		count = f->f_size - offset;
 	if (count < 0)
 		return -EINVAL;
 
@@ -632,15 +641,15 @@ EXPORT_SYMBOL(erase);
 int protect(int fd, size_t count, loff_t offset, int prot)
 {
 	struct fs_driver *fsdrv;
-	FILE *f = fd_to_file(fd, false);
+	struct file *f = fd_to_file(fd, false);
 	int ret;
 
 	if (IS_ERR(f))
 		return -errno;
-	if (offset >= f->size)
+	if (offset >= f->f_size)
 		return 0;
-	if (count > f->size - offset)
-		count = f->size - offset;
+	if (count > f->f_size - offset)
+		count = f->f_size - offset;
 
 	fsdrv = f->fsdev->driver;
 
@@ -659,15 +668,15 @@ EXPORT_SYMBOL(protect);
 int discard_range(int fd, loff_t count, loff_t offset)
 {
 	struct fs_driver *fsdrv;
-	FILE *f = fd_to_file(fd, false);
+	struct file *f = fd_to_file(fd, false);
 	int ret;
 
 	if (IS_ERR(f))
 		return -errno;
-	if (offset >= f->size)
+	if (offset >= f->f_size)
 		return 0;
-	if (count > f->size - offset)
-		count = f->size - offset;
+	if (count > f->f_size - offset)
+		count = f->f_size - offset;
 
 	fsdrv = f->fsdev->driver;
 
@@ -700,7 +709,7 @@ int protect_file(const char *file, int prot)
 void *memmap(int fd, int flags)
 {
 	struct fs_driver *fsdrv;
-	FILE *f = fd_to_file(fd, false);
+	struct file *f = fd_to_file(fd, false);
 	void *retp = MAP_FAILED;
 	int ret;
 
@@ -724,13 +733,13 @@ EXPORT_SYMBOL(memmap);
 
 int close(int fd)
 {
-	FILE *f = fd_to_file(fd, true);
+	struct file *f = fd_to_file(fd, true);
 	int ret = 0;
 
 	if (IS_ERR(f))
 		return -errno;
 
-	if (!(f->flags & O_PATH)) {
+	if (!(f->f_flags & O_PATH)) {
 		struct fs_driver *fsdrv;
 
 		fsdrv = f->fsdev->driver;
@@ -933,6 +942,13 @@ int fsdev_open_cdev(struct fs_device *fsdev)
 			return ret;
 
 		fsdev->cdev = cdev_create_loop(fsdev->backingstore, O_RDWR, offset);
+		if (fsdev->cdev) {
+			ret = cdev_open(fsdev->cdev, O_RDWR);
+			if (ret) {
+				cdev_remove_loop(fsdev->cdev);
+				fsdev->cdev = NULL;
+			}
+		}
 	} else {
 		fsdev->cdev = cdev_open_by_name(fsdev->backingstore, O_RDWR);
 	}
@@ -1070,7 +1086,7 @@ static void stat_inode(struct inode *inode, struct stat *s)
 
 int fstat(int fd, struct stat *s)
 {
-	FILE *f = fd_to_file(fd, true);
+	struct file *f = fd_to_file(fd, true);
 
 	if (IS_ERR(f))
 		return -errno;
@@ -1145,7 +1161,7 @@ const char *cdev_mount_default(struct cdev *cdev, const char *fsoptions)
 		return ERR_PTR(ret);
 	}
 
-	return cdev_get_mount_path(cdev);
+	return cdev_get_mount_path(cdev) ?: ERR_PTR(-ENODEV);
 }
 
 /*
@@ -1523,9 +1539,6 @@ static struct dentry *d_lookup(struct dentry *parent, const struct qstr *name)
 {
 	struct dentry *dentry;
 
-	if (d_same_name(parent, name))
-		return dget(parent);
-
 	list_for_each_entry(dentry, &parent->d_subdirs, d_child) {
 		if (d_same_name(dentry, name))
 			return dget(dentry);
@@ -1570,6 +1583,7 @@ static struct dentry *lookup_dcache(const struct qstr *name,
 			if (!error)
 				d_invalidate(dentry);
 			dput(dentry);
+			dentry_kill(dentry);
 			return ERR_PTR(error);
 		}
 	}
@@ -2172,18 +2186,18 @@ OK:
 	}
 }
 
-static bool file_has_flag(FILE *f, unsigned flag)
+static bool file_has_flag(struct file *f, unsigned flag)
 {
 	if (IS_ERR_OR_NULL(f))
 		return false;
-	return (f->flags & flag) == flag;
+	return (f->f_flags & flag) == flag;
 }
 
 static const char *path_init(int dirfd, struct nameidata *nd, unsigned flags)
 {
 	const char *s = nd->name->name;
 	bool chroot = false;
-	FILE *f = NULL;
+	struct file *f = NULL;
 
 	nd->last_type = LAST_ROOT; /* if there are only slashes... */
 	nd->flags = flags | LOOKUP_JUMPED | LOOKUP_PARENT;
@@ -2209,7 +2223,7 @@ static const char *path_init(int dirfd, struct nameidata *nd, unsigned flags)
 			return ERR_CAST(f);
 
 		nd->path.mnt = &f->fsdev->vfsmount;
-		nd->path.dentry = f->dentry;
+		nd->path.dentry = f->f_dentry;
 		follow_mount(&nd->path);
 
 		if (*s == '/')
@@ -2525,7 +2539,7 @@ int openat(int dirfd, const char *pathname, int flags)
 	struct fs_device *fsdev;
 	struct fs_driver *fsdrv;
 	struct super_block *sb;
-	FILE *f;
+	struct file *f;
 	int error = 0;
 	struct inode *inode = NULL;
 	struct dentry *dentry = NULL;
@@ -2545,21 +2559,20 @@ int openat(int dirfd, const char *pathname, int flags)
 			return -errno;
 		}
 
-		f = get_file();
+		f = get_file(fsdev);
 		if (!f) {
 			errno = EMFILE;
 			return -errno;
 		}
 
 		f->path = NULL;
-		f->dentry = NULL;
+		f->f_dentry = NULL;
 		f->f_inode = new_inode(&fsdev->sb);
 		f->f_inode->i_mode = S_IFREG;
-		f->flags = flags;
-		f->size = 0;
-		f->fsdev = fsdev;
+		f->f_flags = flags;
+		f->f_size = 0;
 
-		return f->no;
+		return file_to_fd(f);
 	}
 
 	filename = getname(pathname);
@@ -2628,27 +2641,24 @@ int openat(int dirfd, const char *pathname, int flags)
 	}
 
 	inode = d_inode(dentry);
+	sb = inode->i_sb;
+	fsdev = container_of(sb, struct fs_device, sb);
 
-	f = get_file();
+	f = get_file(fsdev);
 	if (!f) {
 		error = -EMFILE;
 		goto out1;
 	}
 
 	f->path = dpath(dentry, d_root);
-	f->dentry = dentry;
+	f->f_dentry = dentry;
 	f->f_inode = iget(inode);
-	f->flags = flags;
-	f->size = inode->i_size;
+	f->f_flags = flags;
 
-	sb = inode->i_sb;
-	fsdev = container_of(sb, struct fs_device, sb);
 	fsdrv = fsdev->driver;
 
-	f->fsdev = fsdev;
-
 	if (flags & O_PATH)
-		return f->no;
+		return file_to_fd(f);
 
 	if (fsdrv->open) {
 		char *pathname = dpath(dentry, fsdev->vfsmount.mnt_root);
@@ -2661,16 +2671,15 @@ int openat(int dirfd, const char *pathname, int flags)
 
 	if (flags & O_TRUNC) {
 		error = fsdev_truncate(&fsdev->dev, f, 0);
-		f->size = 0;
-		inode->i_size = 0;
+		f->f_size = 0;
 		if (error)
 			goto out;
 	}
 
 	if (flags & O_APPEND)
-		f->pos = f->size;
+		f->f_pos = f->f_size;
 
-	return f->no;
+	return file_to_fd(f);
 
 out:
 	put_file(f);
@@ -2681,7 +2690,7 @@ EXPORT_SYMBOL(openat);
 
 static const char *fd_getpath(int fd)
 {
-	FILE *f;
+	struct file *f;
 
 	if (fd < 0)
 		return ERR_PTR(errno_set(fd));

@@ -62,7 +62,7 @@ int pstore_mkfile(struct pstore_record *record)
 			return -EEXIST;
 	}
 
-	private = xzalloc(sizeof(*private) + size);
+	private = xzalloc(struct_size(private, data, size));
 	private->type = record->type;
 	private->id = record->id;
 	private->count = record->count;
@@ -141,7 +141,7 @@ static struct pstore_private *pstore_get_by_name(struct list_head *head,
 	return NULL;
 }
 
-static int pstore_open(struct device *dev, FILE *file, const char *filename)
+static int pstore_open(struct device *dev, struct file *file, const char *filename)
 {
 	struct list_head *head = dev->priv;
 	struct pstore_private *d;
@@ -150,22 +150,22 @@ static int pstore_open(struct device *dev, FILE *file, const char *filename)
 	if (!d)
 		return -ENOENT;
 
-	file->size = d->size;
-	file->priv = d;
+	file->f_size = d->size;
+	file->private_data = d;
 	d->pos = 0;
 
 	return 0;
 }
 
-static int pstore_close(struct device *dev, FILE *file)
+static int pstore_close(struct device *dev, struct file *file)
 {
 	return 0;
 }
 
-static int pstore_read(struct device *dev, FILE *file, void *buf,
+static int pstore_read(struct device *dev, struct file *file, void *buf,
 		       size_t insize)
 {
-	struct pstore_private *d = file->priv;
+	struct pstore_private *d = file->private_data;
 
 	memcpy(buf, &d->data[d->pos], insize);
 	d->pos += insize;
@@ -173,9 +173,9 @@ static int pstore_read(struct device *dev, FILE *file, void *buf,
 	return insize;
 }
 
-static int pstore_lseek(struct device *dev, FILE *file, loff_t pos)
+static int pstore_lseek(struct device *dev, struct file *file, loff_t pos)
 {
-	struct pstore_private *d = file->priv;
+	struct pstore_private *d = file->private_data;
 
 	d->pos = pos;
 
@@ -274,17 +274,21 @@ static int pstore_probe(struct device *dev)
 	return 0;
 }
 
-static struct fs_driver pstore_driver = {
-	.open      = pstore_open,
-	.close     = pstore_close,
-	.read      = pstore_read,
-	.lseek     = pstore_lseek,
+static const struct fs_legacy_ops pstore_ops = {
 	.unlink    = pstore_unlink,
 	.opendir   = pstore_opendir,
 	.readdir   = pstore_readdir,
 	.closedir  = pstore_closedir,
 	.stat      = pstore_stat,
+};
+
+static struct fs_driver pstore_driver = {
+	.open      = pstore_open,
+	.close     = pstore_close,
+	.read      = pstore_read,
+	.lseek     = pstore_lseek,
 	.flags     = FS_DRIVER_NO_DEV,
+	.legacy_ops = &pstore_ops,
 	.type = filetype_uimage,
 	.drv = {
 		.probe  = pstore_probe,

@@ -28,6 +28,10 @@ struct handoff_data_entry {
 #define handoff_data_add_flags(_cookie, _data, _size, _flags)		\
 	do {								\
 		static struct handoff_data_entry hde __section(.data);	\
+									\
+		/* using static data, do not invoke multiple times */	\
+		BUG_ON(hde.cookie); 					\
+									\
 		hde.cookie = _cookie;					\
 		hde.data = _data;					\
 		hde.size = _size;					\
@@ -42,7 +46,6 @@ struct handoff_data_entry {
 void handoff_data_add_entry(struct handoff_data_entry *entry);
 void handoff_data_move(void *dest);
 void handoff_data_set(struct handoff_data *handoff);
-void *handoff_data_get_entry(unsigned int cookie, size_t *size);
 int handoff_data_show(void);
 
 size_t __handoff_data_size(const struct handoff_data *hd);
@@ -50,5 +53,15 @@ static inline size_t handoff_data_size(void)
 {
 	return __handoff_data_size(NULL);
 }
+
+#ifdef CONFIG_PBL_IMAGE
+void *handoff_data_get_entry(unsigned int cookie, size_t *size);
+#else
+static inline void *handoff_data_get_entry(unsigned int cookie, size_t *size)
+{
+	return NULL;
+}
+#endif
+void handoff_data_add_dt(void *fdt);
 
 #endif /* __PBL_HANDOFF_DATA_H */

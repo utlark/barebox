@@ -24,6 +24,7 @@
 #include <linux/ctype.h>
 #include <asm/word-at-a-time.h>
 #include <malloc.h>
+#include <asm-generic/sections.h>
 
 #ifndef __HAVE_ARCH_STRCASECMP
 int strcasecmp(const char *s1, const char *s2)
@@ -269,6 +270,27 @@ char * strncat(char *dest, const char *src, size_t count)
 }
 #endif
 EXPORT_SYMBOL(strncat);
+
+#ifndef __HAVE_ARCH_STRLCAT
+size_t strlcat(char *dest, const char *src, size_t count)
+{
+	size_t dsize = strlen(dest);
+	size_t len = strlen(src);
+	size_t res = dsize + len;
+
+	/* This would be a bug */
+	BUG_ON(dsize >= count);
+
+	dest += dsize;
+	count -= dsize;
+	if (len >= count)
+		len = count-1;
+	__builtin_memcpy(dest, src, len);
+	dest[len] = 0;
+	return res;
+}
+EXPORT_SYMBOL(strlcat);
+#endif
 
 #ifndef __HAVE_ARCH_STRCMP
 /**
@@ -1033,6 +1055,33 @@ char *strjoin(const char *separator, char **arr, size_t arrlen)
 	return buf;
 }
 EXPORT_SYMBOL(strjoin);
+
+const char *xstrdup_const(const char *str)
+{
+	if (is_barebox_rodata((ulong)str))
+		return str;
+
+	return xstrdup(str);
+}
+EXPORT_SYMBOL(xstrdup_const);
+
+const char *strdup_const(const char *str)
+{
+	if (is_barebox_rodata((ulong)str))
+		return str;
+
+	return strdup(str);
+}
+EXPORT_SYMBOL(strdup_const);
+
+void free_const(const void *str)
+{
+	if (is_barebox_rodata((ulong)str))
+		return;
+
+	free((void *)str);
+}
+EXPORT_SYMBOL(free_const);
 
 /**
  * strreplace - Replace all occurrences of character in string.

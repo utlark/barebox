@@ -20,7 +20,7 @@
 typedef u32 phandle;
 
 struct property {
-	char *name;
+	const char *name;
 	int length;
 	void *value;
 	const void *value_const;
@@ -28,7 +28,7 @@ struct property {
 };
 
 struct device_node {
-	char *name;
+	const char *name;
 	char *full_name;
 
 	struct list_head properties;
@@ -131,7 +131,7 @@ struct cdev;
 /* Maximum score returned by of_device_is_compatible() */
 #define OF_DEVICE_COMPATIBLE_MAX_SCORE	(INT_MAX / 2)
 
-#ifdef CONFIG_OFTREE
+#if IS_ENABLED(CONFIG_OFTREE) && IN_PROPER
 extern struct device_node *of_read_file(const char *filename);
 extern struct of_reserve_map *of_get_reserve_map(void);
 extern int of_bus_n_addr_cells(struct device_node *np);
@@ -314,6 +314,14 @@ extern int of_alias_get_id_from(struct device_node *root, struct device_node *np
 extern int of_alias_get_highest_id(const char *stem);
 extern const char *of_alias_get(struct device_node *np);
 extern int of_modalias_node(struct device_node *node, char *modalias, int len);
+
+extern const char *of_property_get_alias_from(struct device_node *root,
+					      const char *np_name, const char *propname,
+					      int index);
+
+extern const char *of_parse_phandle_and_get_alias_from(struct device_node *root,
+						       const char *np_name, const char *phandle_name,
+						       int index);
 
 extern struct device_node *of_get_root_node(void);
 extern int of_set_root_node(struct device_node *node);
@@ -949,6 +957,20 @@ static inline int of_modalias_node(struct device_node *node, char *modalias,
 	return -ENOSYS;
 }
 
+static inline const char *of_property_get_alias_from(struct device_node *root,
+						     const char *np_name, const char *propname,
+						     int index)
+{
+	return NULL;
+}
+
+static inline const char *of_parse_phandle_and_get_alias_from(struct device_node *root,
+							      const char *np_name, const char *phandle_name,
+							      int index)
+{
+	return NULL;
+}
+
 static inline int of_platform_populate(struct device_node *root,
 				const struct of_device_id *matches,
 				struct device *parent)
@@ -1280,6 +1302,16 @@ static inline void of_delete_property_by_name(struct device_node *np, const char
 	of_delete_property(of_find_property(np, name, NULL));
 }
 
+static inline const char *of_property_get_alias(const char *np_name, const char *propname)
+{
+	return of_property_get_alias_from(NULL, np_name, propname, 0);
+}
+
+static inline const char *of_parse_phandle_and_get_alias(const char *np_name, const char *phandle_name)
+{
+	return of_parse_phandle_and_get_alias_from(NULL, np_name, phandle_name, 0);
+}
+
 extern const struct of_device_id of_default_bus_match_table[];
 
 int of_device_enable(struct device_node *node);
@@ -1314,7 +1346,7 @@ static inline struct device_node *of_find_root_node(struct device_node *node)
 struct of_overlay_filter {
 	bool (*filter_filename)(struct of_overlay_filter *, const char *filename);
 	bool (*filter_content)(struct of_overlay_filter *, struct device_node *);
-	char *name;
+	const char *name;
 	struct list_head list;
 };
 

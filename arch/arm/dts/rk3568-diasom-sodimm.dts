@@ -111,22 +111,6 @@
 	status = "okay";
 };
 
-&vdda0v9_image {
-	/* Temporary hack regulator-always-on and regulator-boot-on
-	   properties until we have regulator handling for dsi & lvds nodes
-	*/
-	regulator-always-on;
-	regulator-boot-on;
-};
-
-&vcca1v8_image {
-	/* Temporary hack regulator-always-on and regulator-boot-on
-	   properties until we have regulator handling for dsi & lvds nodes
-	*/
-	regulator-always-on;
-	regulator-boot-on;
-};
-
 &vpu {
 	status = "okay";
 };

@@ -11,6 +11,17 @@
 		     "diasom,ds-rk3568-som-smarc",
 		     "diasom,ds-rk3568-som",
 		     "rockchip,rk3568";
+	aliases {
+		mmc1 = &sdmmc0;
+	};
+
+	chosen {
+		environment-sd {
+			compatible = "barebox,environment";
+			device-path = &sdmmc0, "partname:env";
+			status = "disabled";
+		};
+	};
 };
 
 &sdmmc0 {

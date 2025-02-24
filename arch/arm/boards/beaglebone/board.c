@@ -19,6 +19,7 @@
 #include <asm/armlinux.h>
 #include <asm/mach-types.h>
 #include <mach/omap/am33xx-silicon.h>
+#include <mach/omap/generic.h>
 #include <mach/omap/sys_info.h>
 #include <mach/omap/syslib.h>
 #include <mach/omap/gpmc.h>
@@ -49,7 +50,8 @@ static int beaglebone_mem_init(void)
 	else
 		sdram_size = SZ_256M;
 
-	arm_add_mem_device("ram0", 0x80000000, sdram_size);
+	arm_add_mem_device("ram0", OMAP_DRAM_ADDR_SPACE_START, sdram_size);
+
 	return 0;
 }
 mem_initcall(beaglebone_mem_init);
@@ -78,8 +80,18 @@ static int beaglebone_devices_init(void)
 
 	armlinux_set_architecture(MACH_TYPE_BEAGLEBONE);
 
-	/* Register update handler */
+	/* Register update handlers */
 	am33xx_bbu_emmc_mlo_register_handler("MLO.emmc", "/dev/mmc1");
+
+	bbu_register_std_file_update("MLO.fat.emmc", 0, "/mnt/mmc1.0/MLO",
+				     filetype_ch_image);
+	bbu_register_std_file_update("barebox.fat.emmc", 0, "/mnt/mmc1.0/barebox.bin",
+				     filetype_arm_barebox);
+
+	bbu_register_std_file_update("MLO.fat.sd", 0, "/mnt/mmc0.0/MLO",
+				     filetype_ch_image);
+	bbu_register_std_file_update("barebox.fat.sd", 0, "/mnt/mmc0.0/barebox.bin",
+				     filetype_arm_barebox);
 
 	if (IS_ENABLED(CONFIG_SHELL_NONE))
 		return am33xx_of_register_bootdevice();

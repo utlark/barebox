@@ -13,7 +13,18 @@ config ARM
 	select HAVE_PBL_MULTI_IMAGES
 	select RELOCATABLE
 	select PBL_RELOCATABLE
+	select USE_COMPRESSED_DTB
+	select HAVE_ARCH_BOARD_GENERIC_DT if OFDEVICE
 	default y
+
+config ARCH_LINUX_NAME
+	string
+	default "arm" if ARM32
+	default "arm64" if ARM64
+
+config ARCH_MKIMAGE_NAME
+	string
+	default ARCH_LINUX_NAME
 
 config ARM32
 	def_bool CPU_32
@@ -29,10 +40,6 @@ config ARM_LINUX
 	bool
 	default y
 	depends on CMD_BOOTZ || CMD_BOOTU || BOOTM
-
-config ARM_USE_COMPRESSED_DTB
-       bool
-       select USE_COMPRESSED_DTB
 
 menu "System Type"
 
@@ -160,8 +167,6 @@ config ARCH_IMX
 
 config ARCH_K3
 	bool "Texas Instruments Inc. K3 multicore SoC architecture"
-	depends on 64BIT
-	select CPU_V8
 	select GPIOLIB
 	select COMMON_CLK
 	select HAS_DEBUG_LL
@@ -176,7 +181,6 @@ config ARCH_LAYERSCAPE
 	select COMMON_CLK
 	select COMMON_CLK_OF_PROVIDER
 	select HW_HAS_PCI
-	select ARM_USE_COMPRESSED_DTB
 	select OF_DMA_COHERENCY
 
 config ARCH_OMAP_MULTI
@@ -210,7 +214,6 @@ config ARCH_STM32MP
 	select ARCH_HAS_RESET_CONTROLLER
 	select ARM_AMBA
 	select ARM_SMCCC
-	select ARM_USE_COMPRESSED_DTB
 
 config ARCH_VERSATILE
 	bool "ARM Versatile boards (ARM926EJ-S)"
@@ -265,15 +268,14 @@ source "arch/arm/mach-zynqmp/Kconfig"
 
 config BOARD_ARM_VIRT
 	bool
-	select BOARD_ARM_GENERIC_DT
+	select BOARD_GENERIC_DT
 	select BOARD_QEMU_VIRT
 	select OF_OVERLAY
 
 config BOARD_ARM_GENERIC_DT
-	select BOARD_GENERIC_DT
+	def_bool BOARD_GENERIC_DT
 	select ARM_AMBA
 	depends on OFDEVICE
-	bool "Build generic ARM device tree 2nd stage image"
 	help
 	  This enables compilation of a generic image that can be started 2nd
 	  stage from barebox or from qemu. It picks up a device tree passed
@@ -287,8 +289,9 @@ config BOARD_ARM_GENERIC_DT_AARCH64
 	default y
 
 config AEABI
-	bool "Use the ARM EABI to compile barebox"
+	bool "Use the ARM EABI to compile barebox" if !CC_IS_CLANG
 	depends on !CPU_V8
+	default CC_IS_CLANG
 	help
 	  This option allows for barebox to be compiled using the latest
 	  ARM ABI (aka EABI).

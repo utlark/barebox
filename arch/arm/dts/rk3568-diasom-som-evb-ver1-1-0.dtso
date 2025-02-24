@@ -1,0 +1,102 @@
+/* SPDX-License-Identifier: GPL-2.0+ */
+/* SPDX-FileCopyrightText: Alexander Shiyan <shc_work@mail.ru> */
+
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/pinctrl/rockchip.h>
+
+&gmac0 {
+	status = "okay";
+};
+
+&gmac1 {
+	status = "okay";
+};
+
+&i2c4 {
+	clock-frequency = <400000>;
+};
+
+&typec {
+	pinctrl-names = "default";
+	pinctrl-0 = <&fusb302_pins>;
+	interrupt-parent = <&gpio0>;
+	interrupts = <RK_PC1 IRQ_TYPE_LEVEL_LOW>;
+	status = "okay";
+};
+
+&vcc_cam0 {
+	regulator-min-microvolt = <5000000>;
+	regulator-max-microvolt = <5000000>;
+	vin-supply = <&vcc5v0_sys>;
+	status = "okay";
+};
+
+&vcc_cam1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&csi1_pwr>;
+	gpio = <&gpio0 RK_PD4 GPIO_ACTIVE_HIGH>;
+	regulator-min-microvolt = <5000000>;
+	regulator-max-microvolt = <5000000>;
+	vin-supply = <&vcc5v0_sys>;
+	status = "okay";
+};
+
+&vcc3v3_pcie20 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie20_pwr_pins>;
+	gpio = <&gpio3 RK_PD3 GPIO_ACTIVE_HIGH>;
+	status = "okay";
+};
+
+&vcc5v0_usb3_host1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&usb3_host1_en_pins>;
+	gpio = <&gpio1 RK_PB2 GPIO_ACTIVE_HIGH>;
+	status = "okay";
+};
+
+&vcc5v0_usb3_otg0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&usb3_otg0_en_pins>;
+	gpio = <&gpio1 RK_PA5 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&pinctrl {
+	csi {
+		csi1_pwr: csi1-pwr-pins {
+			rockchip,pins =
+				<0 RK_PD4 RK_FUNC_GPIO &pcfg_pull_up>;		/* CSI_PWREN1 */
+		};
+	};
+
+	fusb302 {
+		fusb302_pins: fusb302-pins {
+			rockchip,pins =
+				<0 RK_PC1 RK_FUNC_GPIO &pcfg_pull_up>;		/* USB3_OTG_INT */
+		};
+	};
+
+	pcie20 {
+		pcie20_pwr_pins: pcie20-pwr-pins {
+			rockchip,pins =
+				<3 RK_PD3 RK_FUNC_GPIO &pcfg_pull_none>;	/* PCIE20_PWREN */
+		};
+	};
+
+	usb {
+		usb3_host1_en_pins: usb3-host1-en-pins {
+			rockchip,pins =
+				<1 RK_PB2 RK_FUNC_GPIO &pcfg_pull_none>;	/* USB3_HOST1_EN */
+		};
+
+		usb3_otg0_en_pins: usb3-otg0-en-pins {
+			rockchip,pins =
+				<1 RK_PA5 RK_FUNC_GPIO &pcfg_pull_none>;	/* USB3_OTG0_EN */
+		};
+	};
+};

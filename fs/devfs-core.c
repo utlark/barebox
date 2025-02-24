@@ -428,8 +428,11 @@ int devfs_remove(struct cdev *cdev)
 	if (cdev_is_partition(cdev))
 		list_del(&cdev->partition_entry);
 
-	if (cdev->link)
+	if (cdev->link) {
+		free(cdev->name);
+		free(cdev->partname);
 		free(cdev);
+	}
 
 	return 0;
 }
@@ -527,14 +530,16 @@ static struct cdev *__devfs_add_partition(struct cdev *cdev,
 		return ERR_PTR(-EINVAL);
 	}
 
-	overlap = check_overlap(cdev, partinfo->name, offset, size);
-	if (overlap) {
-		if (!IS_ERR(overlap)) {
-			/* only fails with -EEXIST, which is fine */
-			(void)devfs_create_link(overlap, partinfo->name);
-		}
+	if (!(partinfo->flags & DEVFS_PARTITION_CAN_OVERLAP)) {
+		overlap = check_overlap(cdev, partinfo->name, offset, size);
+		if (overlap) {
+			if (!IS_ERR(overlap)) {
+				/* only fails with -EEXIST, which is fine */
+				(void)devfs_create_link(overlap, partinfo->name);
+			}
 
-		return overlap;
+			return overlap;
+		}
 	}
 
 	/* Filter flags that we want to pass along to children */

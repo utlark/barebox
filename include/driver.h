@@ -14,13 +14,14 @@
 #include <device.h>
 #include <of.h>
 #include <init.h>
+#include <errno.h>
 #include <filetype.h>
 
 #define FORMAT_DRIVER_NAME_ID	"%s%d"
 
 #include <param.h>
 
-struct filep;
+struct file;
 struct bus_type;
 struct generic_pm_domain;
 
@@ -352,12 +353,12 @@ ssize_t mem_copy(struct device *dev, void *dst, const void *src,
 int generic_memmap_ro(struct cdev *dev, void **map, int flags);
 int generic_memmap_rw(struct cdev *dev, void **map, int flags);
 
-static inline int dev_open_default(struct device *dev, struct filep *f)
+static inline int dev_open_default(struct device *dev, struct file *f)
 {
 	return 0;
 }
 
-static inline int dev_close_default(struct device *dev, struct filep *f)
+static inline int dev_close_default(struct device *dev, struct file *f)
 {
 	return 0;
 }
@@ -514,21 +515,40 @@ int devfs_create_link(struct cdev *, const char *name);
 int devfs_remove(struct cdev *);
 int cdev_find_free_index(const char *);
 struct cdev *device_find_partition(struct device *dev, const char *name);
-struct cdev *cdev_by_name(const char *filename);
 struct cdev *lcdev_by_name(const char *filename);
 struct cdev *cdev_readlink(struct cdev *cdev);
 struct cdev *cdev_by_device_node(struct device_node *node);
 struct cdev *cdev_by_partuuid(const char *partuuid);
 struct cdev *cdev_by_diskuuid(const char *partuuid);
-struct cdev *cdev_open_by_name(const char *name, unsigned long flags);
 struct cdev *cdev_create_loop(const char *path, ulong flags, loff_t offset);
 void cdev_remove_loop(struct cdev *cdev);
 int cdev_open(struct cdev *, unsigned long flags);
 int cdev_fdopen(struct cdev *cdev, unsigned long flags);
 int cdev_close(struct cdev *cdev);
 int cdev_flush(struct cdev *cdev);
+#if IN_PROPER
 ssize_t cdev_read(struct cdev *cdev, void *buf, size_t count, loff_t offset, ulong flags);
 ssize_t cdev_write(struct cdev *cdev, const void *buf, size_t count, loff_t offset, ulong flags);
+struct cdev *cdev_by_name(const char *filename);
+struct cdev *cdev_open_by_name(const char *name, unsigned long flags);
+#else
+static inline ssize_t cdev_read(struct cdev *cdev, void *buf, size_t count, loff_t offset, ulong flags)
+{
+	return -ENOSYS;
+}
+static inline ssize_t cdev_write(struct cdev *cdev, const void *buf, size_t count, loff_t offset, ulong flags)
+{
+	return -ENOSYS;
+}
+static inline struct cdev *cdev_by_name(const char *filename)
+{
+	return NULL;
+}
+static inline struct cdev *cdev_open_by_name(const char *name, unsigned long flags)
+{
+	return NULL;
+}
+#endif
 int cdev_ioctl(struct cdev *cdev, unsigned int cmd, void *buf);
 int cdev_erase(struct cdev *cdev, loff_t count, loff_t offset);
 int cdev_lseek(struct cdev*, loff_t);
@@ -563,6 +583,7 @@ extern struct list_head cdev_list;
 #define DEVFS_PARTITION_BOOTABLE_ESP	(1U << 12)
 #define DEVFS_PARTITION_FOR_FIXUP	(1U << 13)
 #define DEVFS_WRITE_AUTOERASE		(1U << 14)
+#define DEVFS_PARTITION_CAN_OVERLAP	(1U << 15)
 
 /**
  * cdev_write_requires_erase - Check whether writes must be done to erased blocks

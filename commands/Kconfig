@@ -1,8 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
-config REGINFO
-	bool
-
 config COMMAND_SUPPORT
 	bool
 	depends on !SHELL_NONE
@@ -247,14 +244,6 @@ config CMD_ARM_MMUINFO
 	  SuperSection [1]:         0x0
 	  Failure [0]:              0x0
 
-config CMD_REGINFO
-	depends on HAS_REGINFO
-	select REGINFO
-	tristate
-	prompt "reginfo"
-	help
-	  Print register information.
-
 config CMD_BLKSTATS
 	bool
 	depends on BLOCK
@@ -325,14 +314,17 @@ config CMD_MMC_EXTCSD
 	help
 	  Read or write the extended CSD register of a MMC device.
 
-	  Usage: mmc_extcsd dev [-r | -i index [-r | -v value -y]]
-
+	  Usage: mmc_extcsd dev [-r | -b | -B | -i index [-r | -v value [-y]]]
+	  
 	  Options:
 		  -i      field index of the register
 		  -r      print the register as raw data
 		  -v      value which will be written
 		  -y      don't request when writing to one time programmable fields
-		  __CAUTION__: this could damage the device!
+			  __CAUTION__: this could damage the device!
+		  -b      set bkops-enable (EXT_CSD_BKOPS_EN[163])
+		  -B      set bkops-enable and auto-enable (EXT_CSD_BKOPS_EN[163])
+			  __WARNING__: this is a write-once setting!
 
 config CMD_POLLER
 	tristate
@@ -620,7 +612,7 @@ config CMD_PARTITION
 	help
 	  addpart - add a partition description to a device
 
-	  Usage: addpart [-n] DEVICE PART
+	  Usage: addpart [-nf] DEVICE PART
 
 	  The size and the offset can be given in decimal (without any prefix) and
 	  in hex (prefixed with 0x). Both can have an optional suffix K, M or G.
@@ -630,6 +622,7 @@ config CMD_PARTITION
 
 	  Options:
 		  -n	do not use the device name as prefix of the partition name
+		  -f	force partition creation, even if it overlaps existing ones
 		  DEVICE	device being worked on
 		  PART	SIZE1[@OFFSET1](NAME1)[RO],SIZE2[@OFFSET2](NAME2)[RO],...
 
@@ -1169,6 +1162,24 @@ config CMD_SHA512SUM
 	  Usage: sha512sum FILE|AREA
 
 	  Calculate a SHA512 digest over a FILE or a memory area.
+
+config CMD_FIPTOOL
+	bool
+	select FIP
+	prompt "fiptool"
+	help
+	  Manipulate and inspect TF-A Firmware Image Packages.
+
+config CMD_FIPTOOL_WRITE
+	bool
+	depends on CMD_FIPTOOL
+	prompt "support create/update/remove subcommands to fiptool"
+	help
+	  Adds following subcommands that manipulate FIP files:
+
+	  fiptool create # Create a new FIP with the given images
+	  fiptool update # Update an existing FIP with the given images
+	  fiptool remove # Remove images from FIP
 
 config CMD_UNCOMPRESS
 	bool
@@ -2178,6 +2189,27 @@ config CMD_USBGADGET
 	bool
 	depends on USB_GADGET
 	prompt "usbgadget"
+
+config CMD_DFU
+	bool
+	depends on USB_GADGET_DFU
+	prompt "dfu"
+	help
+	  This command can be used as an alternative to the usbgadget command.
+	  The downside of this command is that it blocks the shell until interrupted
+	  with CTRL-C and unlike the usbgadget command it cannot create multiple
+	  functions on the gadget.
+
+	  Turn's the USB host into DFU mode (Device Firmware Mode) and accepts
+	  a new firmware. The destination is described by DESC in the format
+
+	  DEVICE(NAME)[src]...
+
+	  Here '(' and ')' are literal characters. The '[' and ']' however denote
+	  one of the following optional modes:
+	  's': safe mode (download the complete image before flashing);
+	  'r': readback of the firmware is allowed;
+	  'c': the file will be created (for use with regular files).
 
 config CMD_WD
 	bool

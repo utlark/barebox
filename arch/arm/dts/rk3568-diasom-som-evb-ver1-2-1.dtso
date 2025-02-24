@@ -1,0 +1,138 @@
+/* SPDX-License-Identifier: GPL-2.0+ */
+/* SPDX-FileCopyrightText: Alexander Shiyan <shc_work@mail.ru> */
+
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/pinctrl/rockchip.h>
+
+&gmac0 {
+	nvmem-cells = <&mac0>;
+	nvmem-cell-names = "mac-address";
+	status = "okay";
+};
+
+&gmac1 {
+	nvmem-cells = <&mac1>;
+	nvmem-cell-names = "mac-address";
+	status = "okay";
+};
+
+&i2c4 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/* 24aa025e48 */
+	eeprom@50 {
+		compatible = "atmel,24c02";
+		reg = <0x50>;
+		pagesize = <16>;
+		vcc-supply = <&vcc1v8_sys>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		
+		mac0: mac-address@fa {
+			reg = <0xfa 0x06>;
+			read-only;
+		};
+	};
+
+	/* 24aa025e48 */
+	eeprom@51 {
+		compatible = "atmel,24c02";
+		reg = <0x51>;
+		pagesize = <16>;
+		vcc-supply = <&vcc1v8_sys>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		
+		mac1: mac-address@fa {
+			reg = <0xfa 0x06>;
+			read-only;
+		};
+	};
+};
+
+&vcc_cam0 {
+	regulator-min-microvolt = <5000000>;
+	regulator-max-microvolt = <5000000>;
+	vin-supply = <&vcc5v0_sys>;
+	status = "okay";
+};
+
+&vcc_cam1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&csi1_pwr>;
+	gpio = <&gpio3 RK_PD3 GPIO_ACTIVE_HIGH>;
+	regulator-min-microvolt = <5000000>;
+	regulator-max-microvolt = <5000000>;
+	vin-supply = <&vcc5v0_sys>;
+	status = "okay";
+};
+
+&typec {
+	pinctrl-names = "default";
+	pinctrl-0 = <&fusb302_pins>;
+	interrupt-parent = <&gpio1>;
+	interrupts = <RK_PA5 IRQ_TYPE_LEVEL_LOW>;
+	status = "okay";
+};
+
+&vcc3v3_pcie20 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie20_pwr_pins>;
+	gpio = <&gpio0 RK_PC2 GPIO_ACTIVE_HIGH>;
+	status = "okay";
+};
+
+&vcc5v0_usb3_host1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&usb3_host1_en_pins>;
+	gpio = <&gpio0 RK_PC3 GPIO_ACTIVE_HIGH>;
+	status = "okay";
+};
+
+&vcc5v0_usb3_otg0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&usb3_otg0_en_pins>;
+	gpio = <&gpio0 RK_PC1 GPIO_ACTIVE_HIGH>;
+	enable-active-high;
+	status = "okay";
+};
+
+&pinctrl {
+	csi {
+		csi1_pwr: csi1-pwr-pins {
+			rockchip,pins =
+				<3 RK_PD3 RK_FUNC_GPIO &pcfg_pull_up>;		/* CSI_PWREN1 */
+		};
+	};
+
+	fusb302 {
+		fusb302_pins: fusb302-pins {
+			rockchip,pins =
+				<1 RK_PA5 RK_FUNC_GPIO &pcfg_pull_up>;		/* USB3_OTG_INT */
+		};
+	};
+
+	pcie20 {
+		pcie20_pwr_pins: pcie20-pwr-pins {
+			rockchip,pins =
+				<0 RK_PC2 RK_FUNC_GPIO &pcfg_pull_none>;	/* PCIE20_PWREN */
+		};
+	};
+
+	usb {
+		usb3_host1_en_pins: usb3-host1-en-pins {
+			rockchip,pins =
+				<0 RK_PC3 RK_FUNC_GPIO &pcfg_pull_none>;	/* USB3_HOST1_EN */
+		};
+
+		usb3_otg0_en_pins: usb3-otg0-en-pins {
+			rockchip,pins =
+				<0 RK_PC1 RK_FUNC_GPIO &pcfg_pull_none>;	/* USB3_OTG0_EN */
+		};
+	};
+};

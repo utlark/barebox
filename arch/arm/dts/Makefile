@@ -6,8 +6,9 @@ obj- += dummy.o
 
 lwl-$(CONFIG_MACH_ADVANTECH_ROM_742X) += imx6dl-advantech-rom-7421.dtb.o
 lwl-$(CONFIG_MACH_AFI_GF) += am335x-afi-gf.dtb.o
+lwl-$(CONFIG_MACH_AM625_SK) += k3-am625-sk.dtb.o k3-am625-r5-sk.dtb.o k3-am625sip-r5-sk.dtb.o
 lwl-$(CONFIG_MACH_BEAGLEBONE) += am335x-bone.dtb.o am335x-boneblack.dtb.o am335x-bone-common.dtb.o
-lwl-$(CONFIG_MACH_BEAGLEPLAY) += k3-am625-beagleplay.dtb.o
+lwl-$(CONFIG_MACH_BEAGLEPLAY) += k3-am625-beagleplay.dtb.o k3-am625-r5-beagleplay.dtb.o
 lwl-$(CONFIG_MACH_CLEP7212) += ep7212-clep7212.dtb.o
 lwl-$(CONFIG_MACH_CM_FX6) += imx6dl-cm-fx6.dtb.o imx6q-cm-fx6.dtb.o imx6q-utilite.dtb.o
 lwl-$(CONFIG_MACH_DFI_FS700_M60) += imx6q-dfi-fs700-m60-6q.dtb.o imx6dl-dfi-fs700-m60-6s.dtb.o
@@ -15,10 +16,14 @@ lwl-$(CONFIG_MACH_SAUT_DS_RK3568_MB) += rk3568-saut-mb.dtb.o
 obj-$(CONFIG_MACH_SAUT_DS_RK3568_MB) += rk3568-diasom-som-ver2.dtbo.o
 lwl-$(CONFIG_MACH_DIASOM_DS_IMX8M) += imx8mm-diasom-som-evb.dtb.o
 lwl-$(CONFIG_MACH_DIASOM_DS_RK3568) += rk3568-diasom-som-evb.dtb.o
-obj-$(CONFIG_MACH_DIASOM_DS_RK3568) += rk3568-diasom-som-evb-ver3.dtbo.o
+obj-$(CONFIG_MACH_DIASOM_DS_RK3568) += rk3568-diasom-som-evb-ver1-1-0.dtbo.o
+obj-$(CONFIG_MACH_DIASOM_DS_RK3568) += rk3568-diasom-som-evb-ver1-2-1.dtbo.o
+obj-$(CONFIG_MACH_DIASOM_DS_RK3568) += rk3568-diasom-som-evb-ver1-3-0.dtbo.o
 lwl-$(CONFIG_MACH_DIASOM_DS_RK3568) += rk3568-diasom-som-smarc-evb.dtb.o
+obj-$(CONFIG_MACH_DIASOM_DS_RK3568) += rk3568-diasom-som-ver1.dtbo.o
 obj-$(CONFIG_MACH_DIASOM_DS_RK3568) += rk3568-diasom-som-ver2.dtbo.o
 lwl-$(CONFIG_MACH_DIASOM_DS_RK3588) += rk3588-diasom-btb-evb.dtb.o
+lwl-$(CONFIG_MACH_DIASOM_DS_RK3588) += rk3588-diasom-btb-evb-socket.dtb.o
 lwl-$(CONFIG_MACH_DUCKBILL) += imx28-duckbill.dtb.o
 lwl-$(CONFIG_MACH_KINDLE_MX50) += imx50-kindle-d01100.dtb.o imx50-kindle-d01200.dtb.o imx50-kindle-ey21.dtb.o
 lwl-$(CONFIG_MACH_EFIKA_MX_SMARTBOOK) += imx51-genesi-efika-sb.dtb.o
@@ -91,6 +96,7 @@ lwl-$(CONFIG_MACH_PHYTEC_PHYCORE_IMX7) += imx7d-phyboard-zeta.dtb.o
 lwl-$(CONFIG_MACH_PHYTEC_PHYCORE_STM32MP1) += stm32mp157c-phycore-stm32mp1-3.dtb.o
 lwl-$(CONFIG_MACH_PHYTEC_SOM_IMX8MM) += imx8mm-phyboard-polis-rdk.dtb.o
 lwl-$(CONFIG_MACH_PHYTEC_SOM_IMX8MQ) += imx8mq-phytec-phycore-som.dtb.o
+lwl-$(CONFIG_MACH_PINE64_PINETAB2) += rk3566-pinetab2-v0-1.dtb.o rk3566-pinetab2-v2-0.dtb.o
 lwl-$(CONFIG_MACH_PINE64_QUARTZ64) += rk3566-quartz64-a.dtb.o
 lwl-$(CONFIG_MACH_PLATHOME_OPENBLOCKS_AX3) += armada-xp-openblocks-ax3-4-bb.dtb.o
 lwl-$(CONFIG_MACH_PLATHOME_OPENBLOCKS_A6) += kirkwood-openblocks_a6-bb.dtb.o
@@ -122,6 +128,7 @@ lwl-$(CONFIG_MACH_PROTONIC_STM32MP1) += \
 	stm32mp151-prtt1s.dtb.o \
 	stm32mp151-mecio1.dtb.o \
 	stm32mp151-mect1s.dtb.o
+lwl-$(CONFIG_MACH_PROTONIC_STM32MP13) += stm32mp133c-prihmb.dtb.o
 lwl-$(CONFIG_MACH_RADXA_ROCK) += rk3188-radxarock.dtb.o
 lwl-$(CONFIG_MACH_RADXA_ROCK3) += rk3568-rock-3a.dtb.o
 lwl-$(CONFIG_MACH_RADXA_ROCK5) += rk3588-rock-5b.dtb.o
@@ -169,6 +176,7 @@ lwl-$(CONFIG_MACH_NXP_IMX8MQ_EVK) += imx8mq-evk.dtb.o
 lwl-$(CONFIG_MACH_INNOCOMM_WB15) += imx8mm-innocomm-wb15-evk.dtb.o
 lwl-$(CONFIG_MACH_TQ_MBA8MPXL) += imx8mp-tqma8mpql-mba8mpxl.dtb.o
 lwl-$(CONFIG_MACH_TORADEX_COLIBRI_T20) += tegra20-colibri-iris.dtb.o
+lwl-$(CONFIG_MACH_TORADEX_COLIBRI_IMX6) += imx6dl-colibri-iris.dtb.o
 lwl-$(CONFIG_MACH_TOSHIBA_AC100) += tegra20-paz00.dtb.o
 lwl-$(CONFIG_MACH_TQMA53) += imx53-mba53.dtb.o
 lwl-$(CONFIG_MACH_TQMA6UL) += imx6ul-tqma6ul2-mba6ulx.dtb.o \
@@ -226,6 +234,9 @@ lwl-$(CONFIG_MACH_AT91SAM9X5EK) += at91sam9x5ek.dtb.o
 lwl-$(CONFIG_MACH_XILINX_ZCU102) += zynqmp-zcu102-revA.dtb.o zynqmp-zcu102-revB.dtb.o
 lwl-$(CONFIG_MACH_XILINX_ZCU104) += zynqmp-zcu104-revA.dtb.o
 lwl-$(CONFIG_MACH_XILINX_ZCU106) += zynqmp-zcu106-revA.dtb.o
+
+lwl-$(CONFIG_MACH_VIRT) += qemu-virt32.dtb.o
+lwl-$(CONFIG_ARCH_ARM64_VIRT) += qemu-virt64.dtb.o
 
 lwl-$(CONFIG_MACH_ZII_IMX7D_DEV) += imx7d-zii-rpu2.dtb.o imx7d-zii-rmu2.dtb.o
 lwl-$(CONFIG_MACH_WAGO_PFC_AM35XX) += am35xx-pfc-750_820x.dtb.o

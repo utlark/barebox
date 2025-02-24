@@ -37,65 +37,32 @@
 		compatible = "adc-keys";
 		io-channels = <&saradc 1>;
 		io-channel-names = "buttons";
-		keyup-threshold-microvolt = <1800000>;
+		keyup-threshold-microvolt = <1750000>;
 		poll-interval = <100>;
 
 		button-recovery {
 			label = "Recovery";
 			linux,code = <KEY_VENDOR>;
-			press-threshold-microvolt = <100000>;
+			press-threshold-microvolt = <50000>;
 		};
 	};
 
-	/* From 6.12 */
-	hdmi0: hdmi@fde80000 {
-		compatible = "rockchip,rk3588-dw-hdmi-qp";
-		reg = <0x0 0xfde80000 0x0 0x20000>;
-		clocks = <&cru PCLK_HDMITX0>,
-			 <&cru CLK_HDMITX0_EARC>,
-			 <&cru CLK_HDMITX0_REF>,
-			 <&cru MCLK_I2S5_8CH_TX>,
-			 <&cru CLK_HDMIHDP0>,
-			 <&cru HCLK_VO1>;
-		clock-names = "pclk", "earc", "ref", "aud", "hdp", "hclk_vo1";
-		interrupts = <GIC_SPI 169 IRQ_TYPE_LEVEL_HIGH 0>,
-			     <GIC_SPI 170 IRQ_TYPE_LEVEL_HIGH 0>,
-			     <GIC_SPI 171 IRQ_TYPE_LEVEL_HIGH 0>,
-			     <GIC_SPI 172 IRQ_TYPE_LEVEL_HIGH 0>,
-			     <GIC_SPI 360 IRQ_TYPE_LEVEL_HIGH 0>;
-		interrupt-names = "avp", "cec", "earc", "main", "hpd";
-		phys = <&hdptxphy_hdmi0>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&hdmim0_tx0_cec &hdmim0_tx0_hpd
-			     &hdmim0_tx0_scl &hdmim0_tx0_sda>;
-		power-domains = <&power RK3588_PD_VO1>;
-		resets = <&cru SRST_HDMITX0_REF>, <&cru SRST_HDMIHDP0>;
-		reset-names = "ref", "hdp";
-		rockchip,grf = <&sys_grf>;
-		rockchip,vo-grf = <&vo1_grf>;
-
-		ports {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			hdmi0_in: port@0 {
-				reg = <0>;
-			};
-
-			hdmi0_out: port@1 {
-				reg = <1>;
-			};
-		};
+	backlight: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pwm4 0 1000 0>;
+		brightness-levels = <0 255>;
+		num-interpolated-steps = <256>;
+		default-brightness-level = <255>;
 	};
 
-	hdmi0-con {
-		/* In fact, port connected to RK628, leave this as is for now */
+	hdmi1-con {
+		/* X22 */
 		compatible = "hdmi-connector";
 		type = "a";
 
 		port {
-			hdmi0_con_in: endpoint {
-				remote-endpoint = <&hdmi0_out_con>;
+			hdmi1_con_in: endpoint {
+				remote-endpoint = <&hdmi1_out_con>;
 			};
 		};
 	};
@@ -113,6 +80,17 @@
 		compatible = "fixed-clock";
 		#clock-cells = <0>;
 		clock-frequency = <100000000>;
+	};
+
+	thermal-sensor {
+		compatible = "generic-adc-thermal";
+		#thermal-sensor-cells = <0>;
+		io-channels = <&saradc 3>;
+		io-channel-names = "sensor-channel";
+		temperature-lookup-table = <0 603
+					    25000 1309
+					    50000 2172
+					    75000 2905>;
 	};
 
 	v_sys: v-sys-regulator {
@@ -180,10 +158,49 @@
 		regulator-max-microvolt = <3300000>;
 		vin-supply = <&vcc_5v0_sys>;
 	};
+
+	vcc_lcd: vcc-lcd-regulator {
+		pinctrl-0 = <&lcd_vcc_pins>;
+		pinctrl-names = "default";
+		compatible = "regulator-fixed";
+		enable-active-high;
+		gpio = <&gpio1 RK_PA5 GPIO_ACTIVE_HIGH>;
+		regulator-name = "vcc_lcd";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		vin-supply = <&vcc_3v3_sys>;
+	};
 };
 
-&av1d {
+&brg {
+	pinctrl-0 = <&brg_pins &lvds_pins>;
+	panel-enable-gpios = <&gpio1 RK_PC4 GPIO_ACTIVE_HIGH>;
+	panel-reset-gpios = <&gpio3 RK_PD5 GPIO_ACTIVE_LOW>;
+	panel-backlight = <&backlight>;
+	panel-power-supply = <&vcc_lcd>;
+	panel-reset-delay-ms = <10>;
+	panel-enable-delay-ms = <10>;
+	panel-prepare-delay-ms = <60>;
+	panel-unprepare-delay-ms = <10>;
+	panel-disable-delay-ms = <60>;
 	status = "okay";
+
+	rk628-lvds-out {
+		bus-format = "jeida_24";
+		link-type = "dual_link_odd_even_pixels";
+	};
+
+	display-timings {
+		/* COG-TA25F325P-L */
+
+		src-timing {
+			//TODO:
+		};
+
+		dst-timing {
+			//TODO:
+		};
+	};
 };
 
 &combphy0_ps {
@@ -198,10 +215,8 @@
 
 &gmac0 {
 	pinctrl-names = "default";
-	pinctrl-0 = <
-		&gmac0_miim &gmac0_tx_bus2 &gmac0_rx_bus2
-		&gmac0_rgmii_clk &gmac0_rgmii_bus &eth0_pins
-	>;
+	pinctrl-0 = <&gmac0_miim &gmac0_tx_bus2 &gmac0_rx_bus2
+		     &gmac0_rgmii_clk &gmac0_rgmii_bus &eth0_pins>;
 	clock_in_out = "output";
 	phy-handle = <&rgmii_phy0>;
 	phy-mode = "rgmii-rxid";
@@ -214,10 +229,8 @@
 
 &gmac1 {
 	pinctrl-names = "default";
-	pinctrl-0 = <
-		&gmac1_miim &gmac1_tx_bus2 &gmac1_rx_bus2
-		&gmac1_rgmii_clk &gmac1_rgmii_bus &eth1_pins
-	>;
+	pinctrl-0 = <&gmac1_miim &gmac1_tx_bus2 &gmac1_rx_bus2
+		     &gmac1_rgmii_clk &gmac1_rgmii_bus &eth1_pins>;
 	clock_in_out = "output";
 	phy-handle = <&rgmii_phy1>;
 	phy-mode = "rgmii-rxid";
@@ -228,30 +241,24 @@
 	status = "okay";
 };
 
-&gpu {
+&hdmi1 {
 	status = "okay";
 };
 
-&hdmi0 {
-	/* CEC is not used here */
-	pinctrl-0 = <&hdmim0_tx0_hpd &hdmim0_tx0_scl &hdmim0_tx0_sda>;
+&hdptxphy1 {
 	status = "okay";
 };
 
-&hdmi0_in {
-	hdmi0_in_vp0: endpoint {
-		remote-endpoint = <&vp0_out_hdmi0>;
+&hdmi1_in {
+	hdmi1_in_vp1: endpoint {
+		remote-endpoint = <&vp1_out_hdmi1>;
 	};
 };
 
-&hdmi0_out {
-	hdmi0_out_con: endpoint {
-		remote-endpoint = <&hdmi0_con_in>;
+&hdmi1_out {
+	hdmi1_out_con: endpoint {
+		remote-endpoint = <&hdmi1_con_in>;
 	};
-};
-
-&hdptxphy_hdmi0 {
-	status = "okay";
 };
 
 &i2c3 {
@@ -351,8 +358,9 @@
 	clock-frequency = <100000>;
 	status = "okay";
 
+	/* 24aa025e48 */
 	eeprom@50 {
-		compatible = "microchip,24aa025e48", "atmel,24c02";
+		compatible = "atmel,24c02";
 		reg = <0x50>;
 		pagesize = <16>;
 		vcc-supply = <&vcc_1v8_sys>;
@@ -365,8 +373,9 @@
 		};
 	};
 
+	/* 24aa025e48 */
 	eeprom@51 {
-		compatible = "microchip,24aa025e48", "atmel,24c02";
+		compatible = "atmel,24c02";
 		reg = <0x51>;
 		pagesize = <16>;
 		vcc-supply = <&vcc_1v8_sys>;
@@ -379,8 +388,9 @@
 		};
 	};
 
+	/* 24aa025e48 */
 	eeprom@52 {
-		compatible = "microchip,24aa025e48", "atmel,24c02";
+		compatible = "atmel,24c02";
 		reg = <0x52>;
 		pagesize = <16>;
 		vcc-supply = <&vcc_1v8_sys>;
@@ -461,6 +471,10 @@
 	reset-gpios = <&gpio1 RK_PB2 GPIO_ACTIVE_HIGH>;
 	vpcie3v3-supply = <&vcc_pcie30>;
 //	status = "okay";
+};
+
+&pwm4 {
+	status = "okay";
 };
 
 &sdmmc {
@@ -560,22 +574,27 @@
 	vin-supply = <&v_sys>;
 };
 
-&vop {
-	status = "okay";
-};
-
-&vop_mmu {
-	status = "okay";
-};
-
-&vp0 {
-	vp0_out_hdmi0: endpoint@ROCKCHIP_VOP2_EP_HDMI0 {
-		reg = <ROCKCHIP_VOP2_EP_HDMI0>;
-		remote-endpoint = <&hdmi0_in_vp0>;
+&vp1 {
+	vp1_out_hdmi1: endpoint@ROCKCHIP_VOP2_EP_HDMI1 {
+		reg = <ROCKCHIP_VOP2_EP_HDMI1>;
+		remote-endpoint = <&hdmi1_in_vp1>;
 	};
 };
 
 &pinctrl {
+	brg {
+		lcd_vcc_pins: lcd-vcc-pins {
+			rockchip,pins =
+				<1 RK_PA5 RK_FUNC_GPIO &pcfg_pull_none>;	/* LCD_PWREN_H */
+		};
+
+		lvds_pins: lvds-pins {
+			rockchip,pins =
+				<3 RK_PD5 RK_FUNC_GPIO &pcfg_pull_none>,	/* LCD_nRESET */
+				<1 RK_PC4 RK_FUNC_GPIO &pcfg_pull_none>;	/* LCD_nSTBYB */
+		};
+	};
+
 	leds {
 		leds_evb_pins: leds-evb-pins {
 			rockchip,pins =

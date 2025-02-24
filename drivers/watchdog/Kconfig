@@ -89,6 +89,17 @@ config WATCHDOG_KVX
 	help
 	  Add support for the KVX core watchdog.
 
+config WATCHDOG_KVX_EARLY_INIT
+	bool "KVX Core watchdog early init"
+	depends on WATCHDOG_KVX
+	help
+	  Activate the watchdog with early initcall
+
+config WATCHDOG_KVX_EARLY_TIMEOUT
+	int "KVX Core watchdog early timeout in cycles"
+	depends on WATCHDOG_KVX_EARLY_INIT
+	default 100000000
+
 config WATCHDOG_BCM2835
 	bool "Watchdog for BCM283x SoCs"
 	depends on ARCH_BCM283X || COMPILE_TEST
@@ -176,5 +187,12 @@ config CADENCE_WATCHDOG
 	help
 	  Say Y here if you want to include support for the watchdog
 	  timer in the Xilinx Zynq.
+
+config K3_RTI_WDT
+	bool "Texas Instruments K3 RTI watchdog"
+	depends on ARCH_K3 || COMPILE_TEST
+	help
+	  Say Y here if you want to include support for the K3 watchdog
+	  timer (RTI module) available in the K3 generation of processors.
 
 endif

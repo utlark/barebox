@@ -342,6 +342,63 @@ const char *of_alias_get(struct device_node *np)
 }
 EXPORT_SYMBOL_GPL(of_alias_get);
 
+static const char *of_get_partition_device_alias(struct device_node *np)
+{
+	const char *alias;
+
+	alias = of_alias_get(np);
+	if (alias)
+		return alias;
+
+	np = of_get_parent(np);
+	if (np && of_device_is_compatible(np, "fixed-partitions"))
+		np = of_get_parent(np);
+
+	return of_alias_get(np);
+}
+
+const char *of_property_get_alias_from(struct device_node *root,
+				       const char *np_name, const char *propname,
+				       int index)
+{
+	struct device_node *node, *rnode;
+	const char *path;
+	int ret;
+
+	node = of_find_node_by_path_or_alias(root, np_name);
+	if (!node)
+		return NULL;
+
+	ret = of_property_read_string_index(node, propname, index, &path);
+	if (ret < 0)
+		return NULL;
+
+	rnode = of_find_node_by_path(path);
+	if (!rnode)
+		return NULL;
+
+	return of_get_partition_device_alias(rnode);
+}
+EXPORT_SYMBOL_GPL(of_property_get_alias_from);
+
+const char *of_parse_phandle_and_get_alias_from(struct device_node *root,
+						const char *np_name, const char *phandle_name,
+						int index)
+{
+	struct device_node *node, *rnode;
+
+	node = of_find_node_by_path_or_alias(root, np_name);
+	if (!node)
+		return NULL;
+
+	rnode = of_parse_phandle_from(node, root, phandle_name, index);
+	if (!rnode)
+		return NULL;
+
+	return of_get_partition_device_alias(rnode);
+}
+EXPORT_SYMBOL_GPL(of_parse_phandle_and_get_alias_from);
+
 /*
  * of_find_node_by_alias - Find a node given an alias name
  * @root:    the root node of the tree. If NULL, use internal tree
@@ -2441,12 +2498,12 @@ struct device_node *of_new_node(struct device_node *parent, const char *name)
 	INIT_LIST_HEAD(&node->properties);
 
 	if (parent) {
-		node->name = xstrdup(name);
+		node->name = xstrdup_const(name);
 		node->full_name = basprintf("%pOF/%s",
 					      node->parent, name);
 		list_add(&node->list, &parent->list);
 	} else {
-		node->name = xstrdup("");
+		node->name = xstrdup_const("");
 		node->full_name = xstrdup("");
 		INIT_LIST_HEAD(&node->list);
 	}
@@ -2460,7 +2517,7 @@ struct property *__of_new_property(struct device_node *node, const char *name,
 	struct property *prop;
 
 	prop = xzalloc(sizeof(*prop));
-	prop->name = xstrdup(name);
+	prop->name = xstrdup_const(name);
 	prop->length = len;
 	prop->value = data;
 
@@ -2529,7 +2586,7 @@ void of_delete_property(struct property *pp)
 
 	list_del(&pp->list);
 
-	free(pp->name);
+	free_const(pp->name);
 	free(pp->value);
 	free(pp);
 }
@@ -2545,7 +2602,7 @@ struct property *of_rename_property(struct device_node *np,
 
 	of_property_write_bool(np, new_name, false);
 
-	free(pp->name);
+	free_const(pp->name);
 	pp->name = xstrdup(new_name);
 	return pp;
 }
@@ -2927,7 +2984,7 @@ void of_delete_node(struct device_node *node)
 		list_del(&node->list);
 	}
 
-	free(node->name);
+	free_const(node->name);
 	free(node->full_name);
 	free(node);
 }

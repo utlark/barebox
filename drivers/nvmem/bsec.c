@@ -17,8 +17,7 @@
 #include <mach/stm32mp/bsec.h>
 #include <machine_id.h>
 #include <linux/nvmem-provider.h>
-
-#include "stm32-bsec-optee-ta.h"
+#include <soc/stm32/stm32-bsec-optee-ta.h>
 
 #define BSEC_OTP_SERIAL	13
 
@@ -153,7 +152,7 @@ static int stm32_bsec_pta_read(void *context, unsigned int offset, unsigned int 
 {
 	struct bsec_priv *priv = context;
 
-	return stm32_bsec_optee_ta_read(priv->ctx, offset, val, sizeof(val));
+	return stm32_bsec_optee_ta_read(priv->ctx, offset, val, sizeof(*val));
 }
 
 static int stm32_bsec_pta_write(void *context, unsigned int offset, unsigned int val)

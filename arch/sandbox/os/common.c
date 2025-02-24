@@ -20,6 +20,7 @@
  * files here...
  */
 #define _GNU_SOURCE
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -45,6 +46,12 @@
  */
 #include <mach/linux.h>
 #include <mach/hostfile.h>
+
+#ifdef CONFIG_CONSOLE_NONE
+int __attribute__((unused)) barebox_loglevel;
+#else
+extern int barebox_loglevel;
+#endif
 
 #define DELETED_OFFSET (sizeof(" (deleted)") - 1)
 
@@ -183,6 +190,11 @@ void linux_hang(void)
 int linux_open(const char *filename, int readwrite)
 {
 	return open(filename, (readwrite ? O_RDWR : O_RDONLY) | O_CLOEXEC);
+}
+
+int linux_close(int fd)
+{
+	return close(fd);
 }
 
 int linux_read(int fd, void *buf, size_t count)
@@ -492,12 +504,22 @@ static int add_dtb(const char *file)
 	return -1;
 }
 
+static char *cmdline;
+
+const char *barebox_cmdline_get(void)
+{
+	return cmdline;
+}
+
 static void print_usage(const char*);
+
+#define OPT_LOGLEVEL		(CHAR_MAX + 1)
 
 static struct option long_options[] = {
 	{"help",     0, 0, 'h'},
 	{"malloc",   1, 0, 'm'},
 	{"image",    1, 0, 'i'},
+	{"command",  1, 0, 'c'},
 	{"env",      1, 0, 'e'},
 	{"dtb",      1, 0, 'd'},
 	{"stdout",   1, 0, 'O'},
@@ -505,17 +527,21 @@ static struct option long_options[] = {
 	{"stdinout", 1, 0, 'B'},
 	{"xres",     1, 0, 'x'},
 	{"yres",     1, 0, 'y'},
+#ifndef CONFIG_CONSOLE_NONE
+	{"loglevel", 1, 0, OPT_LOGLEVEL},
+#endif
 	{0, 0, 0, 0},
 };
 
-static const char optstring[] = "hm:i:e:d:O:I:B:x:y:";
+static const char optstring[] = "hm:i:c:e:d:O:I:B:x:y:";
 
 int main(int argc, char *argv[])
 {
 	void *ram;
 	int opt, ret, fd, fd2;
 	int malloc_size = CONFIG_MALLOC_SIZE;
-	int fdno = 0, envno = 0, option_index = 0;
+	int loglevel = -1, fdno = 0, envno = 0, option_index = 0;
+	char *new_cmdline;
 	char *aux;
 
 #ifdef CONFIG_ASAN
@@ -537,7 +563,16 @@ int main(int argc, char *argv[])
 		case 'm':
 			malloc_size = strtoul(optarg, NULL, 0);
 			break;
+		case OPT_LOGLEVEL:
+			loglevel = strtoul(optarg, NULL, 0);
+			break;
 		case 'i':
+			break;
+		case 'c':
+			if (asprintf(&new_cmdline, "%s%s\n", cmdline ?: "", optarg) < 0)
+				exit(1);
+			free(cmdline);
+			cmdline = new_cmdline;
 			break;
 		case 'e':
 			break;
@@ -645,6 +680,10 @@ int main(int argc, char *argv[])
 	barebox_register_console(fileno(stdin), fileno(stdout));
 
 	rawmode();
+
+	if (loglevel >= 0)
+		barebox_loglevel = loglevel;
+
 	start_barebox();
 
 	/* never reached */
@@ -669,6 +708,7 @@ static void print_usage(const char *prgname)
 "  -i, --image=<dev>=<file>\n"
 "                       Same as above, the files will show up as\n"
 "                       /dev/<dev>\n"
+"  -c, --command=<cmd>  Run extra command after init scripts\n"
 "  -e, --env=<file>     Map a file with an environment to barebox. With this \n"
 "                       option, files are mapped as /dev/env0 ... /dev/envx\n"
 "                       and thus are used as the default environment.\n"
@@ -684,7 +724,19 @@ static void print_usage(const char *prgname)
 "                       stdin and stdout. <filein> and <fileout> can be regular\n"
 "                       files or FIFOs.\n"
 "  -x, --xres=<res>     SDL width.\n"
-"  -y, --yres=<res>     SDL height.\n",
-	prgname
+"  -y, --yres=<res>     SDL height.\n"
+#ifndef CONFIG_CONSOLE_NONE
+"      --loglevel=<num> Default log level to use, where <num> is one of:\n"
+"			  0    system is unusable (emerg)\n"
+"			  1    action must be taken immediately (alert)\n"
+"			  2    critical conditions (crit)\n"
+"			  3    error conditions (err)\n"
+"			  4    warning conditions (warn)\n"
+"			  5    normal but significant condition (notice)\n"
+"			  6    informational (info)\n"
+"			  7    debug-level messages (debug)\n"
+"			  8    verbose debug messages (vdebug)\n"
+#endif
+	, prgname
 	);
 }

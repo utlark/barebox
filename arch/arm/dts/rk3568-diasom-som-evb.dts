@@ -20,6 +20,8 @@
 		camera1 = &imx335_i2c4;
 		camera2 = &imx335_i2c7;
 		camera3 = &fpdlink;
+		camera4 = &imx415_i2c4;
+		camera5 = &imx415_i2c7;
 		can0 = &can1;
 		can1 = &can2;
 		ethernet0 = &gmac0;
@@ -29,7 +31,7 @@
 		i2c8 = &i2c8;
 		i2c9 = &i2c9;
 		i2c10 = &i2c10;
-		mmc0 = &sdmmc0;
+		mmc1 = &sdmmc0;
 		sound0 = &sound0;
 	};
 
@@ -50,6 +52,12 @@
 	clk27m: clk27m {
 		compatible = "fixed-clock";
 		clock-frequency = <27000000>;
+		#clock-cells = <0>;
+	};
+
+	clk37m125: clk37m125 {
+		compatible = "fixed-clock";
+		clock-frequency = <37125000>;
 		#clock-cells = <0>;
 	};
 
@@ -181,16 +189,14 @@
 	};
 
 	vcc3v3_pcie20: vcc3v3-pcie20-pwr-regulator {
-		pinctrl-0 = <&pcie20_pwr_pins>;
-		pinctrl-names = "default";
 		compatible = "regulator-fixed";
 		enable-active-high;
-		gpio = <&gpio3 RK_PD3 GPIO_ACTIVE_HIGH>;
 		regulator-name = "3v3_pcie20";
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
 		startup-delay-us = <20000>;
 		vin-supply = <&vcc3v3_sys>;
+		status = "disabled";
 	};
 
 	vcc3v3_pcie30: vcc3v3-pcie30-regulator {
@@ -221,28 +227,24 @@
 	};
 
 	vcc5v0_usb3_host1: vcc5v0-usb3-host1-regulator {
-		pinctrl-names = "default";
-		pinctrl-0 = <&usb3_host1_en_pins>;
 		compatible = "regulator-fixed";
 		enable-active-high;
-		gpio = <&gpio1 RK_PB2 GPIO_ACTIVE_HIGH>;
 		regulator-name = "vcc5v0_usb3_host1";
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 		startup-delay-us = <20000>;
 		vin-supply = <&vcc5v0_sys>;
+		status = "disabled";
 	};
 
 	vcc5v0_usb3_otg0: vcc5v0-usb3-otg0-regulator {
-		pinctrl-names = "default";
-		pinctrl-0 = <&usb3_otg0_en_pins>;
 		compatible = "regulator-fixed";
-		gpio = <&gpio1 RK_PA5 GPIO_ACTIVE_LOW>;
 		regulator-name = "vcc5v0_usb3_otg0";
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 		startup-delay-us = <20000>;
 		vin-supply = <&vcc5v0_sys>;
+		status = "disabled";
 	};
 
 	vcc_cam0: vcc-cam0-regulator {
@@ -254,45 +256,16 @@
 		enable-active-high;
 		gpio = <&gpio2 RK_PD2 GPIO_ACTIVE_HIGH>;
 		regulator-name = "vcc_cam0";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
 		startup-delay-us = <250000>;
-		vin-supply = <&vcc5v0_sys>;
-	};
-
-	vcc_cam1_v1: vcc-cam1-v1-regulator {
-		pinctrl-names = "default";
-		pinctrl-0 = <&csi1_v1_pwr>;
-		compatible = "regulator-fixed";
-		enable-active-high;
-		gpio = <&gpio0 RK_PD4 GPIO_ACTIVE_HIGH>;
-		regulator-name = "vcc_cam1_v1";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		startup-delay-us = <250000>;
-		vin-supply = <&vcc5v0_sys>;
-	};
-
-	vcc_cam1_v3: vcc-cam1-v3-regulator {
-		pinctrl-names = "default";
-		pinctrl-0 = <&csi1_v3_pwr>;
-		compatible = "regulator-fixed";
-		enable-active-high;
-		gpio = <&gpio0 RK_PA0 GPIO_ACTIVE_HIGH>;
-		regulator-name = "vcc_cam1_v3";
-		regulator-min-microvolt = <3300000>;
-		regulator-max-microvolt = <3300000>;
-		startup-delay-us = <250000>;
-		vin-supply = <&vcc3v3_sys>;
 		status = "disabled";
 	};
 
 	vcc_cam1: vcc-cam1-regulator {
 		compatible = "regulator-fixed";
+		enable-active-high;
 		regulator-name = "vcc_cam1";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		vin-supply = <&vcc_cam1_v1>;
+		startup-delay-us = <250000>;
+		status = "disabled";
 	};
 };
 
@@ -327,28 +300,40 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			xc7160_in: endpoint@0 {
+			imx335_i2c4_in: endpoint@0 {
 				reg = <0>;
-				data-lanes = <1 2 3 4>;
-				remote-endpoint = <&xc7160_out>;
-			};
-
-			imx335_i2c4_in: endpoint@1 {
-				reg = <1>;
 				data-lanes = <1 2 3 4>;
 				remote-endpoint = <&imx335_i2c4_out>;
 			};
 
-			imx335_i2c7_in: endpoint@2 {
-				reg = <2>;
+			imx335_i2c7_in: endpoint@1 {
+				reg = <1>;
 				data-lanes = <1 2>;
 				remote-endpoint = <&imx335_i2c7_out>;
 			};
 
-			ub954_csi_in: endpoint@3 {
+			imx415_i2c4_in: endpoint@2 {
+				reg = <2>;
+				data-lanes = <1 2 3 4>;
+				remote-endpoint = <&imx415_i2c4_out>;
+			};
+
+			imx415_i2c7_in: endpoint@3 {
 				reg = <3>;
 				data-lanes = <1 2>;
+				remote-endpoint = <&imx415_i2c7_out>;
+			};
+
+			ub954_csi_in: endpoint@4 {
+				reg = <4>;
+				data-lanes = <1 2>;
 				remote-endpoint = <&ub954_csi_out>;
+			};
+
+			xc7160_in: endpoint@5 {
+				reg = <5>;
+				data-lanes = <1 2 3 4>;
+				remote-endpoint = <&xc7160_out>;
 			};
 		};
 
@@ -443,7 +428,6 @@
 	phy-handle = <&rgmii_phy0>;
 	phy-mode = "rgmii-id";
 	phy-supply = <&vcc3v3_sys>;
-	status = "okay";
 };
 
 &gmac1 {
@@ -456,7 +440,6 @@
 	phy-handle = <&rgmii_phy1>;
 	phy-mode = "rgmii-id";
 	phy-supply = <&vcc3v3_sys>;
-	status = "okay";
 };
 
 &gpu {
@@ -488,14 +471,11 @@
 	clock-frequency = <400000>;
 	status = "okay";
 
-	usb@22 {
-		pinctrl-names = "default";
-		pinctrl-0 = <&fusb302_pins>;
+	typec: usb@22 {
 		compatible = "fcs,fusb302";
 		reg = <0x22>;
-		interrupt-parent = <&gpio0>;
-		interrupts = <RK_PC1 IRQ_TYPE_LEVEL_LOW>;
 		vbus-supply = <&vcc5v0_usb3_otg0>;
+		status = "disabled";
 
 		connector {
 			compatible = "usb-c-connector";
@@ -553,7 +533,7 @@
 };
 
 &i2c4 {
-	clock-frequency = <400000>;
+	clock-frequency = <100000>;
 	status = "okay";
 
 	es8388: codec@10 {
@@ -571,7 +551,7 @@
 		#sound-dai-cells = <0>;
 	};
 
-	imx335_i2c4: camera@1a {
+	imx335_i2c4: camera-0@1a {
 		compatible = "sony,imx335";
 		reg = <0x1a>;
 		clocks = <&xin24m>;
@@ -586,6 +566,26 @@
 				data-lanes = <1 2 3 4>;
 				remote-endpoint = <&imx335_i2c4_in>;
 				link-frequencies = /bits/ 64 <594000000>;
+			};
+		};
+	};
+
+	imx415_i2c4: camera-1@1a {
+		compatible = "sony,imx415";
+		reg = <0x1a>;
+		clocks = <&clk37m125>;
+		clock-names = "inck";
+		power-domains = <&power RK3568_PD_VI>;
+		avdd-supply = <&vcc_cam0>;
+		dvdd-supply = <&vcc_cam0>;
+		ovdd-supply = <&vcc_cam0>;
+		status = "disabled";
+
+		port {
+			imx415_i2c4_out: endpoint {
+				data-lanes = <1 2 3 4>;
+				remote-endpoint = <&imx415_i2c4_in>;
+				link-frequencies = /bits/ 64 <891000000>;
 			};
 		};
 	};
@@ -632,7 +632,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			imx335_i2c7: camera@1a {
+			imx335_i2c7: camera-0@1a {
 				compatible = "sony,imx335";
 				reg = <0x1a>;
 				clocks = <&xin24m>;
@@ -647,6 +647,26 @@
 						data-lanes = <1 2>;
 						remote-endpoint = <&imx335_i2c7_in>;
 						link-frequencies = /bits/ 64 <594000000>;
+					};
+				};
+			};
+
+			imx415_i2c7: camera-1@1a {
+				compatible = "sony,imx415";
+				reg = <0x1a>;
+				clocks = <&clk37m125>;
+				clock-names = "inck";
+				power-domains = <&power RK3568_PD_VI>;
+				avdd-supply = <&vcc_cam0>;
+				dvdd-supply = <&vcc_cam0>;
+				ovdd-supply = <&vcc_cam0>;
+				status = "disabled";
+
+				port {
+					imx415_i2c7_out: endpoint {
+						data-lanes = <1 2>;
+						remote-endpoint = <&imx415_i2c7_in>;
+						link-frequencies = /bits/ 64 <891000000>;
 					};
 				};
 			};
@@ -995,22 +1015,6 @@
 	phy-supply = <&vcc5v0_usb3_host1>;
 };
 
-&vdda0v9_image {
-	/* Temporary hack regulator-always-on and regulator-boot-on
-	   properties until we have regulator handling for dsi & lvds nodes
-	*/
-	regulator-always-on;
-	regulator-boot-on;
-};
-
-&vcca1v8_image {
-	/* Temporary hack regulator-always-on and regulator-boot-on
-	   properties until we have regulator handling for dsi & lvds nodes
-	*/
-	regulator-always-on;
-	regulator-boot-on;
-};
-
 &pinctrl {
 	pinctrl-0 = <&board_pins>;
 	pinctrl-names = "default";
@@ -1037,21 +1041,6 @@
 			rockchip,pins =
 				<3 RK_PB6 RK_FUNC_GPIO &pcfg_pull_up>;		/* CSI_RESET0# */
 		};
-
-		csi1_v1_pwr: csi1-v1-pwr-pins {
-			rockchip,pins =
-				<0 RK_PD4 RK_FUNC_GPIO &pcfg_pull_up>;		/* CSI_PWREN1 v1 */
-		};
-
-		csi1_v3_pwr: csi1-v3-pwr-pins {
-			rockchip,pins =
-				<0 RK_PA0 RK_FUNC_GPIO &pcfg_pull_up>;		/* CSI_PWREN1 v3 */
-		};
-
-		csi1_rst: csi1-rst-pins {
-			rockchip,pins =
-				<1 RK_PB3 RK_FUNC_GPIO &pcfg_pull_up>;		/* CSI_RESET1# */
-		};
 	};
 
 	dsi {
@@ -1059,13 +1048,6 @@
 			rockchip,pins =
 				<0 RK_PC5 RK_FUNC_GPIO &pcfg_pull_up>,		/* DSI_PWREN */
 				<0 RK_PB6 RK_FUNC_GPIO &pcfg_pull_up>;		/* DSI_RESET# */
-		};
-	};
-
-	fusb302 {
-		fusb302_pins: fusb302-pins {
-			rockchip,pins =
-				<0 RK_PC1 RK_FUNC_GPIO &pcfg_pull_up>;		/* USB3_OTG_INT */
 		};
 	};
 
@@ -1104,11 +1086,6 @@
 				<2 RK_PD1 4 &pcfg_pull_none>,			/* PCIE20_WAKEn_M1 */
 				<1 RK_PB1 RK_FUNC_GPIO &pcfg_pull_none>;	/* PCIE20_PERST */
 		};
-
-		pcie20_pwr_pins: pcie20-pwr-pins {
-			rockchip,pins =
-				<3 RK_PD3 RK_FUNC_GPIO &pcfg_pull_none>;	/* PCIE20_PWREN */
-		};
 	};
 
 	pcie30 {
@@ -1127,18 +1104,6 @@
 		pcie30_pwr_pins: pcie30-pwr-pins {
 			rockchip,pins =
 				<3 RK_PD5 RK_FUNC_GPIO &pcfg_pull_up>;		/* PCIE30_PWREN */
-		};
-	};
-
-	usb {
-		usb3_host1_en_pins: usb3-host1-en-pins {
-			rockchip,pins =
-				<1 RK_PB2 RK_FUNC_GPIO &pcfg_pull_none>;	/* USB3_HOST1_EN */
-		};
-
-		usb3_otg0_en_pins: usb3-otg0-en-pins {
-			rockchip,pins =
-				<1 RK_PA5 RK_FUNC_GPIO &pcfg_pull_none>;	/* USB3_OTG0_EN */
 		};
 	};
 

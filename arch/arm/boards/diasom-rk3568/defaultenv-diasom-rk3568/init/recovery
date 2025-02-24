@@ -16,12 +16,12 @@ fi
 
 [ "$recover" = "1" ] || exit 0
 
-if [ -e /dev/mmc1.root ]; then
+if [ -e /dev/mmc0.root ]; then
 	MS="-S"
-	global.system.partitions="/dev/mmc1.root(rootfs)"
+	global.system.partitions="/dev/mmc0.root(rootfs)"
 fi
 
-global.fastboot.partitions="/dev/mmc1(emmc)"
+global.fastboot.partitions="/dev/mmc0(emmc)"
 usbgadget -a -A $MS
 
 exit 0

@@ -38,6 +38,9 @@
 };
 
 &i2c0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
 	vdd_cpu: regulator@1c {
 		compatible = "tcs,tcs4525";
 		reg = <0x1c>;
@@ -54,8 +57,4 @@
 			regulator-off-in-suspend;
 		};
 	};
-};
-
-&vcc0v9_cpu {
-	status = "disabled";
 };

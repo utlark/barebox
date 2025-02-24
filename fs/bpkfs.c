@@ -127,12 +127,12 @@ static struct bpkfs_handle_data *bpkfs_get_by_type(
 	return NULL;
 }
 
-static int bpkfs_open(struct device *dev, FILE *f, const char *filename)
+static int bpkfs_open(struct device *dev, struct file *f, const char *filename)
 {
 	struct bpkfs_handle *priv = dev->priv;
 	struct bpkfs_handle_data *d;
 	struct bpkfs_handle_hw *h;
-	char *dir, *file;
+	const char *dir, *file;
 	int ret = -EINVAL;
 	char *tmp = xstrdup(filename);
 	char *tmp2 = xstrdup(filename);
@@ -146,7 +146,7 @@ static int bpkfs_open(struct device *dev, FILE *f, const char *filename)
 	if (!h)
 		goto out;
 
-	file = basename(tmp2);
+	file = kbasename(tmp2);
 	d = bpkfs_data_get_by_name(h, file);
 	if (!d)
 		goto out;
@@ -161,8 +161,8 @@ static int bpkfs_open(struct device *dev, FILE *f, const char *filename)
 		lseek(d->fd, d->offset, SEEK_SET);
 	}
 
-	f->size = d->size;
-	f->priv = d;
+	f->f_size = d->size;
+	f->private_data = d;
 	ret = 0;
 
 out:
@@ -171,19 +171,19 @@ out:
 	return ret;
 }
 
-static int bpkfs_close(struct device *dev, FILE *file)
+static int bpkfs_close(struct device *dev, struct file *file)
 {
-	struct bpkfs_handle_data *d = file->priv;
+	struct bpkfs_handle_data *d = file->private_data;
 
 	close(d->fd);
 
 	return 0;
 }
 
-static int bpkfs_read(struct device *dev, FILE *file, void *buf,
+static int bpkfs_read(struct device *dev, struct file *file, void *buf,
 		      size_t insize)
 {
-	struct bpkfs_handle_data *d = file->priv;
+	struct bpkfs_handle_data *d = file->private_data;
 
 	if (bpkfs_is_crc_file(d)) {
 		memcpy(buf, &d->data[d->pos], insize);
@@ -193,9 +193,9 @@ static int bpkfs_read(struct device *dev, FILE *file, void *buf,
 	}
 }
 
-static int bpkfs_lseek(struct device *dev, FILE *file, loff_t pos)
+static int bpkfs_lseek(struct device *dev, struct file *file, loff_t pos)
 {
-	struct bpkfs_handle_data *d = file->priv;
+	struct bpkfs_handle_data *d = file->private_data;
 
 	if (!bpkfs_is_crc_file(d))
 		lseek(d->fd, d->offset + pos, SEEK_SET);
@@ -284,7 +284,7 @@ static int bpkfs_stat(struct device *dev, const char *filename,
 	struct bpkfs_handle *priv = dev->priv;
 	struct bpkfs_handle_data *d;
 	struct bpkfs_handle_hw *h;
-	char *dir, *file;
+	const char *dir, *file;
 	int ret = -EINVAL;
 	char *tmp = xstrdup(filename);
 	char *tmp2 = xstrdup(filename);
@@ -311,7 +311,7 @@ static int bpkfs_stat(struct device *dev, const char *filename,
 	if (!h)
 		goto out;
 
-	file = basename(tmp2);
+	file = kbasename(tmp2);
 	d = bpkfs_data_get_by_name(h, file);
 	if (!d)
 		goto out;
@@ -491,15 +491,19 @@ err:
 	return ret;
 }
 
+static const struct fs_legacy_ops bpkfs_ops = {
+	.opendir   = bpkfs_opendir,
+	.readdir   = bpkfs_readdir,
+	.closedir  = bpkfs_closedir,
+	.stat      = bpkfs_stat,
+};
+
 static struct fs_driver bpkfs_driver = {
 	.open      = bpkfs_open,
 	.close     = bpkfs_close,
 	.read      = bpkfs_read,
 	.lseek     = bpkfs_lseek,
-	.opendir   = bpkfs_opendir,
-	.readdir   = bpkfs_readdir,
-	.closedir  = bpkfs_closedir,
-	.stat      = bpkfs_stat,
+	.legacy_ops = &bpkfs_ops,
 	.flags     = 0,
 	.type = filetype_bpk,
 	.drv = {

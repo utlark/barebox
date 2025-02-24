@@ -193,7 +193,7 @@ u32 get_sdr_cs1_base(void)
 	base = (cs_cfg & 0x0000000F) << 2; /* get CS1STARTHIGH */
 	base = base | ((cs_cfg & 0x00000300) >> 8); /* get CS1STARTLOW */
 	base = base << 25;
-	base += 0x80000000;
+	base += OMAP_DRAM_ADDR_SPACE_START;
 	return base;
 }
 EXPORT_SYMBOL(get_sdr_cs1_base);
@@ -553,7 +553,7 @@ const struct gpmc_config omap3_nand_cfg = {
 	.size = GPMC_SIZE_16M,
 };
 
-#ifndef __PBL__
+#if IN_PROPER
 static int omap3_gpio_init(void)
 {
 	add_generic_device("omap-gpio", 0, NULL, OMAP3_GPIO1_BASE,

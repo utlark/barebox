@@ -29,6 +29,83 @@
 		mmc0 = &sdhci;
 	};
 
+	hdmi0-con {
+		/* RK628 */
+		compatible = "hdmi-connector";
+		type = "a";
+
+		port {
+			hdmi0_con_in: endpoint {
+				remote-endpoint = <&hdmi0_out_con>;
+			};
+		};
+	};
+
+	/* 6.14+ */
+	hdptxphy1_grf: syscon@fd5e4000 {
+		compatible = "rockchip,rk3588-hdptxphy-grf", "syscon";
+		reg = <0x0 0xfd5e4000 0x0 0x100>;
+	};
+
+	/* 6.14+ */
+	hdptxphy1: phy@fed70000 {
+		compatible = "rockchip,rk3588-hdptx-phy";
+		reg = <0x0 0xfed70000 0x0 0x2000>;
+		clocks = <&cru CLK_USB2PHY_HDPTXRXPHY_REF>, <&cru PCLK_HDPTX1>;
+		clock-names = "ref", "apb";
+		#phy-cells = <0>;
+		resets = <&cru SRST_HDPTX1>, <&cru SRST_P_HDPTX1>,
+			 <&cru SRST_HDPTX1_INIT>, <&cru SRST_HDPTX1_CMN>,
+			 <&cru SRST_HDPTX1_LANE>, <&cru SRST_HDPTX1_ROPLL>,
+			 <&cru SRST_HDPTX1_LCPLL>;
+		reset-names = "phy", "apb", "init", "cmn", "lane", "ropll",
+			      "lcpll";
+		rockchip,grf = <&hdptxphy1_grf>;
+		status = "disabled";
+	};
+
+	/* 6.14+ */
+	hdmi1: hdmi@fdea0000 {
+		compatible = "rockchip,rk3588-dw-hdmi-qp";
+		reg = <0x0 0xfdea0000 0x0 0x20000>;
+		clocks = <&cru PCLK_HDMITX1>,
+			 <&cru CLK_HDMITX1_EARC>,
+			 <&cru CLK_HDMITX1_REF>,
+			 <&cru MCLK_I2S6_8CH_TX>,
+			 <&cru CLK_HDMIHDP1>,
+			 <&cru HCLK_VO1>;
+		clock-names = "pclk", "earc", "ref", "aud", "hdp", "hclk_vo1";
+		interrupts = <GIC_SPI 173 IRQ_TYPE_LEVEL_HIGH 0>,
+			     <GIC_SPI 174 IRQ_TYPE_LEVEL_HIGH 0>,
+			     <GIC_SPI 175 IRQ_TYPE_LEVEL_HIGH 0>,
+			     <GIC_SPI 176 IRQ_TYPE_LEVEL_HIGH 0>,
+			     <GIC_SPI 361 IRQ_TYPE_LEVEL_HIGH 0>;
+		interrupt-names = "avp", "cec", "earc", "main", "hpd";
+		phys = <&hdptxphy1>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&hdmim2_tx1_cec &hdmim0_tx1_hpd
+			     &hdmim1_tx1_scl &hdmim1_tx1_sda>;
+		power-domains = <&power RK3588_PD_VO1>;
+		resets = <&cru SRST_HDMITX1_REF>, <&cru SRST_HDMIHDP1>;
+		reset-names = "ref", "hdp";
+		rockchip,grf = <&sys_grf>;
+		rockchip,vo-grf = <&vo1_grf>;
+		status = "disabled";
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			hdmi1_in: port@0 {
+				reg = <0>;
+			};
+
+			hdmi1_out: port@1 {
+				reg = <1>;
+			};
+		};
+	};
+
 	leds: leds {
 		compatible = "gpio-leds";
 		pinctrl-names = "default";
@@ -45,7 +122,7 @@
 		};
 	};
 
-	/* FIXME: First BTB sample crash with DABT at 0x3fc000200 & 0x3fff00000 */
+	/* BTB crashed with DABT at 0x3fc000200 & 0x3fff00000 */
 	reserved-memory {
 		#address-cells = <2>;
 		#size-cells = <2>;
@@ -84,10 +161,6 @@
 
 /delete-node/ &xin32k;
 
-&av1d {
-	status = "disabled";
-};
-
 &cpu_b0 {
 	cpu-supply = <&vdd_cpu_big0>;
 };
@@ -123,6 +196,32 @@
 &gpu {
 	mali-supply = <&vdd_gpu>;
 	sram-supply = <&vdd_gpu>;
+};
+
+&gpu {
+	status = "okay";
+};
+
+&hdmi0 {
+	/* CEC is not used here */
+	pinctrl-0 = <&hdmim0_tx0_hpd &hdmim0_tx0_scl &hdmim0_tx0_sda>;
+	status = "okay";
+};
+
+&hdmi0_in {
+	hdmi0_in_vp0: endpoint {
+		remote-endpoint = <&vp0_out_hdmi0>;
+	};
+};
+
+&hdmi0_out {
+	hdmi0_out_con: endpoint {
+		remote-endpoint = <&hdmi0_con_in>;
+	};
+};
+
+&hdptxphy_hdmi0 {
+	status = "okay";
 };
 
 &i2c0 {
@@ -187,8 +286,9 @@
 	clock-frequency = <400000>;
 	status = "okay";
 
+	/* 24aa02e48 */
 	eeprom@50 {
-		compatible = "microchip,24aa02e48", "microchip,24aa025e48", "atmel,24c02";
+		compatible = "atmel,24c02";
 		reg = <0x50>;
 		pagesize = <8>;
 		vcc-supply = <&vcc_3v3>;
@@ -201,14 +301,13 @@
 		};
 	};
 
-	hdmi@51 {
-		pinctrl-0 = <&brg_pins>;
+	brg: hdmi@51 {
 		pinctrl-names = "default";
+		pinctrl-0 = <&brg_pins>;
 		compatible = "rockchip,rk628";
 		reg = <0x51>;
 		enable-gpios = <&gpio0 RK_PB0 GPIO_ACTIVE_HIGH>;
-		/* Should not work without IRQ and RESET pins */
-		//TODO
+		rk628-hdmi-in;
 		status = "disabled";
 	};
 
@@ -231,6 +330,11 @@
 			#clock-cells = <0>;
 		};
 	};
+};
+
+&i2s5_8ch {
+	/* HDMI0 Sound */
+	status = "okay";
 };
 
 &saradc {
@@ -264,10 +368,8 @@
 		interrupt-parent = <&gpio0>;
 		interrupts = <RK_PA7 IRQ_TYPE_LEVEL_LOW>;
 		pinctrl-names = "default";
-		pinctrl-0 = <
-			&pmic_pins &rk806_dvs1_null
-			&rk806_dvs2_null &rk806_dvs3_null
-		>;
+		pinctrl-0 = <&pmic_pins &rk806_dvs1_null
+			     &rk806_dvs2_null &rk806_dvs3_null>;
 		spi-max-frequency = <20000000>;
 		system-power-controller;
 
@@ -570,12 +672,32 @@
 };
 
 &tsadc {
+	/* Fix pinctrl names until it fixed in mainline */
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&tsadc_shut_org>;
+	pinctrl-1 = <&tsadc_gpio_func>;
+	rockchip,hw-tshut-mode = <1>;
 	status = "okay";
 };
 
 &uart2 {
 	pinctrl-0 = <&uart2m0_xfer>;
 	status = "okay";
+};
+
+&vop {
+	status = "okay";
+};
+
+&vop_mmu {
+	status = "okay";
+};
+
+&vp0 {
+	vp0_out_hdmi0: endpoint@ROCKCHIP_VOP2_EP_HDMI0 {
+		reg = <ROCKCHIP_VOP2_EP_HDMI0>;
+		remote-endpoint = <&hdmi0_in_vp0>;
+	};
 };
 
 &pinctrl {

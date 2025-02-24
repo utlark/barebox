@@ -471,6 +471,7 @@ struct mci_cmd {
 	unsigned cmdidx;	/**< Command to be sent to the SD/MMC card */
 	unsigned resp_type;	/**< Type of expected response, refer MMC_RSP_* macros */
 	unsigned cmdarg;	/**< Command's arguments */
+	unsigned busy_timeout;	/**< Busy timeout in ms */
 	unsigned response[4];	/**< card's response */
 };
 
@@ -610,7 +611,7 @@ struct mci_part {
 	struct mci		*mci;
 	uint64_t		size;		/* partition size (in bytes) */
 	unsigned int		part_cfg;	/* partition type */
-	char			*name;
+	const char		*name;
 	int			idx;
 	unsigned int		area_type;
 #define MMC_BLK_DATA_AREA_MAIN	(1<<0)

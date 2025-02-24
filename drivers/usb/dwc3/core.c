@@ -16,6 +16,7 @@
 #include <driver.h>
 #include <init.h>
 #include <linux/reset.h>
+#include <linux/usb/of.h>
 
 #include "core.h"
 #include "gadget.h"

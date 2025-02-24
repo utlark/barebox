@@ -1,13 +1,13 @@
 # SPDX-License-Identifier: GPL-2.0
-VERSION = 2024
-PATCHLEVEL = 12
+VERSION = 2025
+PATCHLEVEL = 02
 SUBLEVEL = 0
 EXTRAVERSION =
 NAME = None
 
 # *DOCUMENTATION*
 # To see a list of typical targets execute "make help"
-# More info can be located in ./README
+# More info can be located in the documentation.
 # Comments in this file are targeted only to the developer, do not
 # expect to learn how to build the kernel reading this file.
 
@@ -66,9 +66,8 @@ unexport GREP_OPTIONS
 #
 #	$(Q)ln $@ :<
 #
-# If KBUILD_VERBOSE equals 0 then the above command will be hidden.
-# If KBUILD_VERBOSE equals 1 then the above command is displayed.
-# If KBUILD_VERBOSE equals 2 then give the reason why each target is rebuilt.
+# If KBUILD_VERBOSE contains 1, the whole command is echoed.
+# If KBUILD_VERBOSE contains 2, the reason for rebuilding is printed.
 #
 # To put more focus on warnings, be less verbose as default
 # Use 'make V=1' to see the full commands
@@ -80,12 +79,11 @@ ifndef KBUILD_VERBOSE
   KBUILD_VERBOSE = 0
 endif
 
-ifeq ($(KBUILD_VERBOSE),1)
+quiet = quiet_
+Q = @
+ifneq ($(findstring 1, $(KBUILD_VERBOSE)),)
   quiet =
   Q =
-else
-  quiet=quiet_
-  Q = @
 endif
 
 # If the user is running make -s (silent mode), suppress echoing of
@@ -314,12 +312,15 @@ __build_one_by_one:
 else # !mixed-build
 
 include scripts/Kbuild.include
+include scripts/Makefile.compiler
 
 # Read KERNELRELEASE from include/config/kernel.release (if it exists)
-KERNELRELEASE = $(shell cat include/config/kernel.release 2> /dev/null)
+KERNELRELEASE = $(call read-file, include/config/kernel.release)
 KERNELVERSION = $(VERSION)$(if $(PATCHLEVEL),.$(PATCHLEVEL)$(if $(SUBLEVEL),.$(SUBLEVEL)))$(EXTRAVERSION)
 BUILDSYSTEM_VERSION =
 export VERSION PATCHLEVEL SUBLEVEL KERNELRELEASE KERNELVERSION BUILDSYSTEM_VERSION
+
+include $(srctree)/scripts/subarch.include
 
 # Cross compiling and selecting different set of gcc/bin-utils
 # ---------------------------------------------------------------------------
@@ -383,11 +384,23 @@ HOST_LFS_CFLAGS := $(shell getconf LFS_CFLAGS 2>/dev/null)
 HOST_LFS_LDFLAGS := $(shell getconf LFS_LDFLAGS 2>/dev/null)
 HOST_LFS_LIBS := $(shell getconf LFS_LIBS 2>/dev/null)
 
-HOSTCC       = gcc
-HOSTCXX      = g++
+ifneq ($(LLVM),)
+ifneq ($(filter %/,$(LLVM)),)
+LLVM_PREFIX := $(LLVM)
+else ifneq ($(filter -%,$(LLVM)),)
+LLVM_SUFFIX := $(LLVM)
+endif
+
+HOSTCC	= $(LLVM_PREFIX)clang$(LLVM_SUFFIX)
+HOSTCXX	= $(LLVM_PREFIX)clang++$(LLVM_SUFFIX)
+else
+HOSTCC	= gcc
+HOSTCXX	= g++
+endif
 
 KBUILD_USERHOSTCFLAGS := -Wall -Wmissing-prototypes -Wstrict-prototypes \
-			      -O2 -fomit-frame-pointer -std=gnu11
+			      -O2 -fomit-frame-pointer -std=gnu11 \
+			      -D_GNU_SOURCE=""
 KBUILD_USERCFLAGS  := $(KBUILD_USERHOSTCFLAGS) $(USERCFLAGS)
 KBUILD_USERLDFLAGS := $(USERLDFLAGS)
 
@@ -397,15 +410,26 @@ KBUILD_HOSTLDFLAGS  := $(HOST_LFS_LDFLAGS) $(HOSTLDFLAGS)
 KBUILD_HOSTLDLIBS   := $(HOST_LFS_LIBS) $(HOSTLDLIBS)
 
 # Make variables (CC, etc...)
-
-LD		= $(CROSS_COMPILE)ld
-CC		= $(CROSS_COMPILE)gcc
 CPP		= $(CC) -E
+ifneq ($(LLVM),)
+CC		= $(LLVM_PREFIX)clang$(LLVM_SUFFIX)
+LD		= $(LLVM_PREFIX)ld.lld$(LLVM_SUFFIX)
+AR		= $(LLVM_PREFIX)llvm-ar$(LLVM_SUFFIX)
+NM		= $(LLVM_PREFIX)llvm-nm$(LLVM_SUFFIX)
+OBJCOPY		= $(LLVM_PREFIX)llvm-objcopy$(LLVM_SUFFIX)
+OBJDUMP		= $(LLVM_PREFIX)llvm-objdump$(LLVM_SUFFIX)
+READELF		= $(LLVM_PREFIX)llvm-readelf$(LLVM_SUFFIX)
+STRIP		= $(LLVM_PREFIX)llvm-strip$(LLVM_SUFFIX)
+else
+CC		= $(CROSS_COMPILE)gcc
+LD		= $(CROSS_COMPILE)ld
 AR		= $(CROSS_COMPILE)ar
 NM		= $(CROSS_COMPILE)nm
-STRIP		= $(CROSS_COMPILE)strip
 OBJCOPY		= $(CROSS_COMPILE)objcopy
 OBJDUMP		= $(CROSS_COMPILE)objdump
+READELF		= $(CROSS_COMPILE)readelf
+STRIP		= $(CROSS_COMPILE)strip
+endif
 LEX		= flex
 YACC		= bison
 AWK		= awk
@@ -459,6 +483,7 @@ KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS_MODULE := -DMODULE
 KBUILD_CFLAGS_MODULE := -DMODULE
+CLANG_FLAGS :=
 
 LDFLAGS_barebox	:= -Map barebox.map
 
@@ -528,6 +553,10 @@ ifdef building_out_of_srctree
 	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/mkmakefile $(srctree)
 	$(Q)test -e .gitignore || \
 	{ echo "# this is build directory, ignore it"; echo "*"; } > .gitignore
+endif
+
+ifeq ($(CONFIG_CC_IS_CLANG),y)
+include $(srctree)/scripts/Makefile.clang
 endif
 
 ifdef config-build
@@ -660,6 +689,25 @@ KBUILD_CFLAGS	+= -fno-omit-frame-pointer -fno-optimize-sibling-calls
 KBUILD_CFLAGS	+= $(call cc-disable-warning,frame-address,)
 endif
 
+KBUILD_CFLAGS-$(CONFIG_CC_IS_CLANG) += -Wno-gnu
+
+# Initialize all stack variables with a 0xAA pattern.
+KBUILD_CFLAGS-$(CONFIG_INIT_STACK_ALL_PATTERN)	+= -ftrivial-auto-var-init=pattern
+
+# Initialize all stack variables with a zero value.
+ifdef CONFIG_INIT_STACK_ALL_ZERO
+KBUILD_CFLAGS	+= -ftrivial-auto-var-init=zero
+ifdef CONFIG_CC_HAS_AUTO_VAR_INIT_ZERO_ENABLER
+# https://github.com/llvm/llvm-project/issues/44842
+CC_AUTO_VAR_INIT_ZERO_ENABLER := -enable-trivial-auto-var-init-zero-knowing-it-will-be-removed-from-clang
+export CC_AUTO_VAR_INIT_ZERO_ENABLER
+KBUILD_CFLAGS	+= $(CC_AUTO_VAR_INIT_ZERO_ENABLER)
+endif
+endif
+
+# Clear used registers at func exit (to reduce data lifetime and ROP gadgets).
+KBUILD_CFLAGS-$(CONFIG_ZERO_CALL_USED_REGS)	+= -fzero-call-used-regs=used-gpr
+
 KBUILD_CFLAGS-$(CONFIG_WERROR) += -Werror
 
 # This warning generated too much noise in a regular build.
@@ -669,6 +717,14 @@ KBUILD_CFLAGS += $(call cc-disable-warning, unused-but-set-variable)
 KBUILD_CFLAGS += $(call cc-disable-warning, trampolines)
 
 KBUILD_CFLAGS += $(call cc-option, -fno-delete-null-pointer-checks,)
+
+# Tell gcc to never replace conditional load with a non-conditional one
+ifdef CONFIG_CC_IS_GCC
+# gcc-10 renamed --param=allow-store-data-races=0 to
+# -fno-allow-store-data-races.
+KBUILD_CFLAGS	+= $(call cc-option,--param=allow-store-data-races=0)
+KBUILD_CFLAGS	+= $(call cc-option,-fno-allow-store-data-races)
+endif
 
 # disable invalid "can't wrap" optimizations for signed / pointers
 KBUILD_CFLAGS	+= $(call cc-option,-fno-strict-overflow)
@@ -734,7 +790,7 @@ barebox-flash-images: $(KBUILD_IMAGE)
 
 images: barebox.bin FORCE
 	$(Q)$(MAKE) $(build)=images $@
-images/%.s: barebox.bin FORCE
+images/%: barebox.bin FORCE
 	$(Q)$(MAKE) $(build)=images $@
 
 ifdef CONFIG_EFI_STUB
@@ -838,7 +894,7 @@ quiet_cmd_sysmap = SYSMAP  System.map
 define rule_barebox__
 	$(if $(CONFIG_KALLSYMS),,+$(call cmd,barebox_version))
 	$(call cmd,barebox__)
-	$(Q)echo 'cmd_$@ := $(cmd_barebox__)' > $(@D)/.$(@F).cmd
+	$(Q)echo 'savedcmd_$@ := $(cmd_barebox__)' > $(@D)/.$(@F).cmd
 	$(call cmd,prelink__)
 	$(call cmd,sysmap)
 endef
@@ -885,7 +941,7 @@ cmd_ksym_ld = $(cmd_barebox__)
 define rule_ksym_ld
 	+$(call cmd,barebox_version)
 	$(call cmd,barebox__)
-	$(Q)echo 'cmd_$@ := $(cmd_barebox__)' > $(@D)/.$(@F).cmd
+	$(Q)echo 'savedcmd_$@ := $(cmd_barebox__)' > $(@D)/.$(@F).cmd
 endef
 
 # Generate .S file with all kernel symbols
@@ -950,6 +1006,9 @@ barebox: $(BAREBOX_LDS) $(BAREBOX_OBJS) $(kallsyms.o) FORCE
 	$(call if_changed_rule,barebox__)
 	$(Q)rm -f .old_version
 
+barebox.fit: images/barebox-$(CONFIG_ARCH_LINUX_NAME).fit
+	$(Q)ln -fsn $< $@
+
 barebox.srec: barebox
 	$(OBJCOPY) -O srec $< $@
 
@@ -977,7 +1036,7 @@ include/config/kernel.release: FORCE
 # Carefully list dependencies so we do not try to build scripts twice
 # in parallel
 PHONY += scripts
-scripts: scripts_basic include/generated/utsrelease.h
+scripts: scripts_basic scripts_dtc include/generated/utsrelease.h
 	$(Q)$(MAKE) $(build)=$(@)
 
 # Things we need to do before we recursively start building the kernel
@@ -1055,16 +1114,33 @@ include/generated/utsrelease.h: include/config/kernel.release FORCE
 
 ifneq ($(wildcard $(srctree)/arch/$(SRCARCH)/dts/),)
 dtstree := arch/$(SRCARCH)/dts
+export dtstree
 endif
 
 ifneq ($(dtstree),)
 
-PHONY += dtbs
-all_dtbs += $(patsubst $(srctree)/%.dts,$(objtree)/%.dtb,$(wildcard $(srctree)/$(dtstree)/*.dts))
-targets += $(all_dtbs)
-dtbs: $(all_dtbs)
+%.dtb: dtbs_prepare
+	$(Q)$(MAKE) $(build)=$(dtstree) $(dtstree)/$@
+
+%.dtbo: dtbs_prepare
+	$(Q)$(MAKE) $(build)=$(dtstree) $(dtstree)/$@
+
+PHONY += dtbs dtbs_prepare
+dtbs: dtbs_prepare
+	$(Q)$(MAKE) $(build)=$(dtstree) need-dtbslist=1
+
+dtbs_prepare: include/config/kernel.release scripts_dtc
+
+ifdef CONFIG_OFDEVICE
+images: dtbs
+images/%: dtbs
+endif
 
 endif
+
+PHONY += scripts_dtc
+scripts_dtc: scripts_basic
+	$(Q)$(MAKE) $(build)=scripts/dtc
 
 # ---------------------------------------------------------------------------
 # Modules
@@ -1183,6 +1259,7 @@ clean: archclean $(clean-dirs)
 		\( -name '*.[oas]' -o -name '*.ko' -o -name '.*.cmd' \
 		-o -name '.*.d' -o -name '.*.tmp' -o -name '*.mod.c' \
 		-o -name '*lex.c' -o -name '.tab.[ch]' \
+		-o -name 'dtbs-list' \
 		-o -name '*.symtypes' -o -name '*.bbenv.*' -o -name "*.bbenv" \) \
 		-type f -print | xargs rm -f
 
@@ -1244,17 +1321,19 @@ help:
 	@echo  ''
 	@echo  'Other generic targets:'
 	@echo  '  all		  - Build all targets marked with [*]'
-	@echo  '* barebox           - Build the bare kernel'
+	@echo  '* barebox         - Build the barebox proper binary'
+ifdef CONFIG_PBL_IMAGE
+	@echo  '* images          - Build final prebootloader-prefixed images'
+	@echo  '* barebox.fit     - Build 2nd stage barebox with device trees FIT image'
+endif
 	@echo  '  dir/            - Build all files in dir and below'
 	@echo  '  dir/file.[ois]  - Build specified target only'
 	@echo  '  dir/file.ko     - Build module including final link'
+	@echo  '  compile_commands.json'
+	@echo  '                  - Generate compilation database for IDEs/LSP'
 	@echo  '  tags/TAGS	  - Generate tags file for editors'
 	@echo  '  cscope	  - Generate cscope index'
 	@echo  '                    (default: $(INSTALL_HDR_PATH))'
-	@echo  ''
-	@echo  'Static analysers'
-	@echo  '  checkstack      - Generate a list of stack hogs'
-	@echo  '  namespacecheck  - Name space analysis on compiled kernel'
 	@echo  ''
 	@echo  'Architecture specific targets ($(SRCARCH)):'
 	@$(if $(archhelp),$(archhelp),\
@@ -1262,21 +1341,22 @@ help:
 	@echo  ''
 	@$(if $(dtstree), \
 		echo '  Devicetree:'; \
-		echo '    * dtbs             - Build device tree blobs for all boards'; \
+		echo '    * dtbs             - Build device tree blobs for enabled boards'; \
 		echo '')
 	@$(if $(boards), \
 		$(foreach b, $(boards), \
 		printf "  %-24s - Build for %s\\n" $(b) $(subst _defconfig,,$(b));) \
 		echo '')
 
-	@echo  '  make V=0|1 [targets] 0 => quiet build (default), 1 => verbose build'
-	@echo  '  make V=2   [targets] 2 => give reason for rebuild of target'
+	@echo  '  make V=n   [targets] 0: quiet build (default), 1: verbose build'
+	@echo  '                       2: give reason for rebuild of target'
+	@echo  '                       V=1 and V=2 can be combined with V=12'
 	@echo  '  make O=dir [targets] Locate all output files in "dir", including .config'
 	@echo  '  make C=1   [targets] Check all c source with $$CHECK (sparse by default)'
 	@echo  '  make C=2   [targets] Force check of all c source with $$CHECK'
 	@echo  ''
 	@echo  'Execute "make" or "make all" to build all targets marked with [*] '
-	@echo  'For further info see the ./README file'
+	@echo  'For further info see the documentation'
 
 # Generate tags for editors
 # ---------------------------------------------------------------------------

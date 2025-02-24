@@ -22,11 +22,24 @@ static int diasom_imx8m_probe_i2c(struct i2c_adapter *adapter, const int addr)
 	return (i2c_transfer(adapter, &msg, 1) == 1) ? 0: -ENODEV;
 }
 
+static struct i2c_adapter *diasom_imx8m_i2c_get_adapter(const int nr)
+{
+	char *alias = basprintf("i2c%i", nr);
+	struct device *dev;
+
+	dev = of_device_enable_and_register_by_alias(alias);
+	free(alias);
+	if (!dev)
+		return NULL;
+
+	return i2c_get_adapter(nr);
+}
+
 static int diasom_imx8m_evb_fixup(struct device_node *, void *)
 {
 	struct i2c_adapter *adapter;
 
-	adapter = i2c_get_adapter(2);
+	adapter = diasom_imx8m_i2c_get_adapter(2);
 	if (adapter) {
 		if (!diasom_imx8m_probe_i2c(adapter, 0x3d)) {
 			pr_info("Camera AR0234 detected.\n");
@@ -44,7 +57,7 @@ static int diasom_imx8m_evb_fixup(struct device_node *, void *)
 	return 0;
 }
 
-static int diasom_imx8m_probe(struct device *dev)
+static int __init diasom_imx8m_probe(struct device *dev)
 {
 	enum bootsource bootsource = bootsource_get();
 	int instance = bootsource_get_instance();
@@ -70,19 +83,19 @@ static int diasom_imx8m_probe(struct device *dev)
 
 	defaultenv_append_directory(defaultenv_diasom_imx8m);
 
-	if (of_machine_is_compatible("diasom,ds-imx8m-evb"))
+	if (of_machine_is_compatible("diasom,ds-imx8m-som-evb"))
 		of_register_fixup(diasom_imx8m_evb_fixup, NULL);
 
 	return 0;
 }
 
-static const struct of_device_id diasom_imx8m_of_match[] = {
+static const struct of_device_id __init diasom_imx8m_of_match[] = {
 	{ .compatible = "diasom,ds-imx8m-som", },
 	{ }
 };
 BAREBOX_DEEP_PROBE_ENABLE(diasom_imx8m_of_match);
 
-static struct driver diasom_imx8m_driver = {
+static struct driver __init diasom_imx8m_driver = {
 	.name = "board-ds-imx8m",
 	.probe = diasom_imx8m_probe,
 	.of_compatible = diasom_imx8m_of_match,

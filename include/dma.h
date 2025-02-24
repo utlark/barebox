@@ -22,6 +22,10 @@
 #define DMA_ALIGNMENT	32
 #endif
 
+#ifndef ARCH_DMA_MINALIGN
+#define ARCH_DMA_MINALIGN	DMA_ALIGNMENT
+#endif
+
 #ifdef CONFIG_HAS_DMA
 void *dma_alloc(size_t size);
 void *dma_zalloc(size_t size);
@@ -40,6 +44,11 @@ static inline void *dma_zalloc(size_t size)
 static inline void dma_free(void *mem)
 {
 	free(mem);
+}
+
+static inline void dma_free_const(const void *mem)
+{
+	free_const(mem);
 }
 
 static inline void dma_free_sensitive(void *mem)
@@ -90,7 +99,7 @@ void arch_sync_dma_for_device(void *vaddr, size_t size,
 			      enum dma_data_direction dir);
 #endif
 
-#ifndef __PBL__
+#if IN_PROPER
 void dma_sync_single_for_cpu(struct device *dev, dma_addr_t address,
 			     size_t size, enum dma_data_direction dir);
 

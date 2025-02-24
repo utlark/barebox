@@ -26,6 +26,7 @@ struct efi_partition_desc {
 	struct partition_desc pd;
 	gpt_header *gpt;
 	gpt_entry *ptes;
+	struct param_d *param_guid;
 };
 
 struct efi_partition {
@@ -112,7 +113,7 @@ static gpt_entry *alloc_read_gpt_entries(struct block_device *blk,
 	if (!count)
 		return NULL;
 
-	pte = kzalloc(count, GFP_KERNEL);
+	pte = calloc(count, 1);
 	if (!pte)
 		return NULL;
 
@@ -120,8 +121,7 @@ static gpt_entry *alloc_read_gpt_entries(struct block_device *blk,
 	size = count / GPT_BLOCK_SIZE;
 	ret = block_read(blk, pte, from, size);
 	if (ret) {
-		kfree(pte);
-		pte=NULL;
+		free(pte);
 		return NULL;
 	}
 	return pte;
@@ -149,14 +149,13 @@ static gpt_header *alloc_read_gpt_header(struct block_device *blk,
 	unsigned ssz = bdev_logical_block_size(blk);
 	int ret;
 
-	gpt = kzalloc(ssz, GFP_KERNEL);
+	gpt = calloc(ssz, 1);
 	if (!gpt)
 		return NULL;
 
 	ret = block_read(blk, gpt, lba, 1);
 	if (ret) {
-		kfree(gpt);
-		gpt=NULL;
+		free(gpt);
 		return NULL;
 	}
 
@@ -254,10 +253,10 @@ static int is_gpt_valid(struct block_device *blk, u64 lba,
 	return 1;
 
  fail_ptes:
-	kfree(*ptes);
+	free(*ptes);
 	*ptes = NULL;
  fail:
-	kfree(*gpt);
+	free(*gpt);
 	*gpt = NULL;
 	return 0;
 }
@@ -376,7 +375,7 @@ compare_gpts(struct device *dev, gpt_header *pgpt, gpt_header *agpt,
 	}
 
 	if (error_found)
-		dev_warn(dev, "GPT: Use GNU Parted to correct GPT errors.\n");
+		dev_warn(dev, "GPT: Use parted to correct GPT errors.\n");
 	return;
 }
 
@@ -433,8 +432,8 @@ static int find_valid_gpt(void *buf, struct block_device *blk, gpt_header **gpt,
 	if (good_pgpt) {
 		*gpt  = pgpt;
 		*ptes = pptes;
-		kfree(agpt);
-		kfree(aptes);
+		free(agpt);
+		free(aptes);
 		if (!good_agpt)
 			dev_warn(blk->dev, "Alternate GPT is invalid, using primary GPT.\n");
 		return 1;
@@ -442,17 +441,17 @@ static int find_valid_gpt(void *buf, struct block_device *blk, gpt_header **gpt,
 	else if (good_agpt) {
 		*gpt  = agpt;
 		*ptes = aptes;
-		kfree(pgpt);
-		kfree(pptes);
+		free(pgpt);
+		free(pptes);
 		dev_warn(blk->dev, "Primary GPT is invalid, using alternate GPT.\n");
 		return 1;
 	}
 
  fail:
-	kfree(pgpt);
-	kfree(agpt);
-	kfree(pptes);
-	kfree(aptes);
+	free(pgpt);
+	free(agpt);
+	free(pptes);
+	free(aptes);
 	*gpt = NULL;
 	*ptes = NULL;
 	return 0;
@@ -501,6 +500,13 @@ static void part_get_efi_name(gpt_entry *pte, const char *src)
 	}
 }
 
+static void add_gpt_diskuuid_param(struct efi_partition_desc *epd,
+				   struct block_device *blk)
+{
+	epd->param_guid = dev_add_param_string_fixed(blk->dev,
+						     "guid", blk->cdev.diskuuid);
+}
+
 static struct partition_desc *efi_partition(void *buf, struct block_device *blk)
 {
 	gpt_header *gpt = NULL;
@@ -513,9 +519,6 @@ static struct partition_desc *efi_partition(void *buf, struct block_device *blk)
 
 	if (!find_valid_gpt(buf, blk, &gpt, &ptes) || !gpt || !ptes)
 		return NULL;
-
-	snprintf(blk->cdev.diskuuid, sizeof(blk->cdev.diskuuid), "%pUl", &gpt->disk_guid);
-	dev_add_param_string_fixed(blk->dev, "guid", blk->cdev.diskuuid);
 
 	blk->cdev.flags |= DEVFS_IS_GPT_PARTITIONED;
 
@@ -532,6 +535,9 @@ static struct partition_desc *efi_partition(void *buf, struct block_device *blk)
 
 	epd->gpt = gpt;
 	epd->ptes = ptes;
+
+	snprintf(blk->cdev.diskuuid, sizeof(blk->cdev.diskuuid), "%pUl", &gpt->disk_guid);
+	add_gpt_diskuuid_param(epd, blk);
 
 	for (i = 0; i < nb_part; i++) {
 		if (!is_pte_valid(&ptes[i], last_lba(blk))) {
@@ -567,6 +573,7 @@ static void efi_partition_free(struct partition_desc *pd)
 		free(epart);
 	}
 
+	dev_remove_param(epd->param_guid);
 	free(epd->ptes);
 	free(epd->gpt);
 	free(epd);
@@ -593,6 +600,8 @@ static __maybe_unused struct partition_desc *efi_partition_create_table(struct b
 	gpt->partition_entry_lba = cpu_to_le64(2);
 	gpt->num_partition_entries = cpu_to_le32(128);
 	gpt->sizeof_partition_entry = cpu_to_le32(sizeof(gpt_entry));
+
+	add_gpt_diskuuid_param(epd, blk);
 
 	pr_info("Created new disk label with GUID %pU\n", &gpt->disk_guid);
 
@@ -642,8 +651,8 @@ static __maybe_unused int efi_partition_mkpart(struct partition_desc *pd,
 	}
 
 	if (end_lba >= last_lba(pd->blk) - 33) {
-		pr_err("invalid end LBA %lld, maximum is %lld\n", start_lba,
-		       last_lba(pd->blk) - 33);
+		pr_err("invalid end LBA %lld, maximum is %lld\n", end_lba,
+		       last_lba(pd->blk) - 34);
 		return -EINVAL;
 	}
 
@@ -749,6 +758,7 @@ static __maybe_unused int efi_partition_write(struct partition_desc *pd)
 		le32_to_cpu(gpt->sizeof_partition_entry);
 
 	gpt->my_lba = cpu_to_le64(1);
+	gpt->alternate_lba = cpu_to_le64(last_lba(blk));
 	gpt->partition_entry_array_crc32 = cpu_to_le32(efi_crc32(
 			(const unsigned char *)epd->ptes, count));
 	gpt->header_crc32 = 0;

@@ -6,6 +6,10 @@
 #include <linux/types.h>	/* for size_t */
 #include <linux/stddef.h>	/* for NULL */
 #include <linux/overflow.h>	/* for array_size */
+/*
+ * Include machine specific inline routines
+ */
+#include <asm/string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,26 +20,27 @@ extern char * strsep(char **,const char *);
 extern __kernel_size_t strspn(const char *,const char *);
 
 
+#ifndef strchr
 #define strchr(s, c) ({ \
 	(typeof(&(s)[0]))(_strchr((s), c)); \
 	})
+#endif
 
+#ifndef strrchr
 #define strrchr(s, c) ({ \
 	(typeof(&(s)[0]))(_strrchr((s), c)); \
 	})
+#endif
 
+#ifndef strstr
 #define strstr(s1, s2) ({ \
 	(typeof(&(s1)[0]))(_strstr((s1), (s2))); \
 	})
+#endif
 
 #ifndef __HAVE_ARCH_STRCHRNUL
 extern char * strchrnul(const char *,int);
 #endif
-
-/*
- * Include machine specific inline routines
- */
-#include <asm/string.h>
 
 #ifndef __HAVE_ARCH_STRCPY
 extern char * strcpy(char *,const char *);
@@ -54,6 +59,9 @@ extern char * strcat(char *, const char *);
 #endif
 #ifndef __HAVE_ARCH_STRNCAT
 extern char * strncat(char *, const char *, __kernel_size_t);
+#endif
+#ifndef __HAVE_ARCH_STRLCAT
+extern __kernel_size_t strlcat(char *dest, const char *src, __kernel_size_t count);
 #endif
 #ifndef __HAVE_ARCH_STRCMP
 extern int strcmp(const char *,const char *);
@@ -85,6 +93,11 @@ extern __kernel_size_t strnlen(const char *,__kernel_size_t);
 #ifndef __HAVE_ARCH_STRDUP
 extern char * strdup(const char *);
 #endif
+
+extern void free_const(const void *x);
+extern const char *strdup_const(const char *s);
+const char *xstrdup_const(const char *s);
+
 #ifndef __HAVE_ARCH_STRNDUP
 extern char *strndup(const char *, size_t);
 #endif
@@ -153,7 +166,14 @@ static inline const char *kbasename(const char *path)
 }
 #endif
 
+#if IN_PROPER
 void *memdup(const void *, size_t);
+#else
+static inline void *memdup(const void *buf, size_t size)
+{
+	return NULL;
+}
+#endif
 
 #define memdup_array(arr, count) memdup(arr, array_size(count, sizeof(*arr)));
 
