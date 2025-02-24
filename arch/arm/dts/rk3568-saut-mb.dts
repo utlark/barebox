@@ -4,18 +4,19 @@
 /dts-v1/;
 
 #include <dt-bindings/soc/rockchip,vop2.h>
+
 #include "rk3568-diasom-som.dtsi"
 
 / {
 	model = "Saut DS-RK3568-MB";
-	compatible = "saut,ds-rk3568-som-mb", "diasom,ds-rk3568-som", "rockchip,rk3568";
+	compatible = "diasom,ds-rk3568-som", "rockchip,rk3568";
 	
 	aliases {
 		can0 = &can1;
 		can1 = &can2;
 		ethernet0 = &gmac0;
 		sound0 = &sound0;
-		mmc0 = &sdmmc0;
+		mmc1 = &sdmmc0;
 	};
 	
 	chosen {

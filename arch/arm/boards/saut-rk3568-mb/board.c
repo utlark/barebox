@@ -31,6 +31,19 @@ static int saut_rk3568_probe_i2c(struct i2c_adapter *adapter, const int addr)
 	return (i2c_transfer(adapter, &msg, 1) == 1) ? 0: -ENODEV;
 }
 
+static struct i2c_adapter *saut_rk3568_i2c_get_adapter(const int nr)
+{
+	char *alias = basprintf("i2c%i", nr);
+	struct device *dev;
+
+	dev = of_device_enable_and_register_by_alias(alias);
+	free(alias);
+	if (!dev)
+		return NULL;
+
+	return i2c_get_adapter(nr);
+}
+
 static int __init saut_rk3568_check_recovery(void)
 {
 	struct aiochannel *aio_ch0;
@@ -78,11 +91,11 @@ device_initcall(saut_rk3568_check_recovery);
 									\
 		__res = resp[__off] >> __shft;				\
 		if (__size + __shft > 32)				\
-		__res |= resp[__off-1] << ((32 - __shft) % 32);		\
+			__res |= resp[__off-1] << ((32 - __shft) % 32);	\
 		__res & __mask;						\
 	})
 
-static unsigned extract_psn(struct mci *mci)
+static unsigned __init extract_psn(struct mci *mci)
 {
 	if (!IS_SD(mci)) {
 		if (mci->version > MMC_VERSION_1_4)
@@ -94,15 +107,15 @@ static unsigned extract_psn(struct mci *mci)
 	return UNSTUFF_BITS(mci->csd, 24, 32);
 }
 
-static int __init diasom_rk3568_machine_id(void)
+static int __init saut_rk3568_machine_id(void)
 {
 	struct mci *mci;
 	unsigned serial;
 
-	if (!of_machine_is_compatible("diasom,ds-rk3568-som"))
+	if (!of_machine_is_compatible("rockchip,rk3568"))
 		return 0;
 
-	mci = mci_get_device_by_name("mmc1");
+	mci = mci_get_device_by_name("mmc0");
 	if (!mci) {
 		pr_err("Unable to get MCI device!\n");
 		return -ENODEV;
@@ -116,34 +129,68 @@ static int __init diasom_rk3568_machine_id(void)
 
 	return 0;
 }
-of_populate_initcall(diasom_rk3568_machine_id);
+of_populate_initcall(saut_rk3568_machine_id);
 
-static int __init diasom_rk3568_late_init(void)
+static bool __init saut_rk3568_load_overlay(const void *ovl)
 {
+	if (ovl) {
+		int ret;
+
+		ret = of_overlay_apply_dtbo(of_get_root_node(), ovl);
+		if (!ret)
+			return true;
+
+		pr_err("Cannot apply overlay: %pe!\n", ERR_PTR(ret));
+	}
+
+	return false;
+}
+
+static int __init saut_rk3568_init(void)
+{
+	bool do_probe = false;
+	int ret = 0;
+
 	if (of_machine_is_compatible("diasom,ds-rk3568-som")) {
-		struct i2c_adapter *adapter = i2c_get_adapter(0);
+		struct i2c_adapter *adapter =
+			saut_rk3568_i2c_get_adapter(0);
+		void *som_ovl;
 
 		if (!adapter) {
 			pr_err("Cannot determine SOM version.\n");
-			return 0;
+			return -ENOTSUPP;
 		}
 
 		if (!saut_rk3568_probe_i2c(adapter, 0x1c)) {
 			extern char __dtbo_rk3568_diasom_som_ver2_start[];
-			struct device_node *overlay;
 
+			som_ovl = __dtbo_rk3568_diasom_som_ver2_start;
 			pr_info("SOM version 2+ detected.\n");
+		} else {
+			extern char __dtbo_rk3568_diasom_som_ver1_start[];
 
-			overlay = of_unflatten_dtb(__dtbo_rk3568_diasom_som_ver2_start, INT_MAX);
-			of_overlay_apply_tree(of_get_root_node(), overlay);
-			of_probe();
-		} else
+			som_ovl = __dtbo_rk3568_diasom_som_ver1_start;
 			pr_info("SOM version 1 detected.\n");
+		}
+
+		if (saut_rk3568_load_overlay(som_ovl))
+			do_probe = true;
+	} else
+		return 0;
+
+	if (do_probe) {
+		struct device_node *root = of_get_root_node();
+
+		of_probe();
+
+		/* Ensure reload aliases & model name */
+		of_set_root_node(NULL);
+		of_set_root_node(root);
 	}
 
-	return 0;
+	return ret;
 }
-late_initcall(diasom_rk3568_late_init);
+device_initcall(saut_rk3568_init);
 
 static int __init saut_rk3568_probe(struct device *dev)
 {
@@ -152,7 +199,7 @@ static int __init saut_rk3568_probe(struct device *dev)
 
 	barebox_set_hostname("saut");
 
-	if (bootsource != BOOTSOURCE_MMC || instance) {
+	if (bootsource != BOOTSOURCE_MMC || !instance) {
 		if (bootsource != BOOTSOURCE_MMC) {
 			pr_info("Boot source: %s, instance %i\n",
 				bootsource_to_string(bootsource),
@@ -164,22 +211,22 @@ static int __init saut_rk3568_probe(struct device *dev)
 	} else
 		of_device_enable_path("/chosen/environment-sd");
 
-	rk3568_bbu_mmc_register("sd", 0, "/dev/mmc0");
+	rk3568_bbu_mmc_register("sd", 0, "/dev/mmc1");
 	rk3568_bbu_mmc_register("emmc", BBU_HANDLER_FLAG_DEFAULT,
-				"/dev/mmc1");
+				"/dev/mmc0");
 
 	defaultenv_append_directory(defaultenv_saut_rk3568);
 
 	return 0;
 }
 
-static const struct of_device_id saut_rk3568_of_match[] = {
+static const struct of_device_id __init saut_rk3568_of_match[] = {
 	{ .compatible = "diasom,ds-rk3568-som" },
 	{ },
 };
 BAREBOX_DEEP_PROBE_ENABLE(saut_rk3568_of_match);
 
-static struct driver saut_rk3568_driver = {
+static struct driver __init saut_rk3568_driver = {
 	.name = "board-ds-rk3568-som",
 	.probe = saut_rk3568_probe,
 	.of_compatible = saut_rk3568_of_match,
